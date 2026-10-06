@@ -200,7 +200,8 @@ const h=new URLSearchParams(location.hash.slice(1));
 let db=null;
 if(h.get("u")&&h.get("k")){db={u:h.get("u"),k:h.get("k")};sset("raport2-director",JSON.stringify(db));}
 else{try{db=JSON.parse(sget("raport2-director")||"null");}catch(e){}}
-if(location.hash)history.replaceState(null,"",location.pathname);
+// адрес с ключом остаётся в строке: iPhone «На экран Домой» сохраняет текущий адрес, а у значка своё хранилище
+if(db&&!(h.get("u")&&h.get("k"))){try{history.replaceState(null,"",location.pathname+"#u="+encodeURIComponent(db.u)+"&k="+encodeURIComponent(db.k));}catch(e){}}
 let D=null,view=sget("raport2-dtab")||"sum",open={};
 function status(t,cls){const s=$("status");s.hidden=!t;s.className="banner"+(cls?" "+cls:"");s.textContent=t||"";}
 function show(v){view=v;["sum","obj","feed"].forEach(x=>{$("v-"+x).hidden=x!==v;$("tab-"+x).setAttribute("aria-selected",String(x===v));});sset("raport2-dtab",v);if(v==="feed")markSeen();}
