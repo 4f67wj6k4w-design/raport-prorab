@@ -224,7 +224,7 @@ td.src small{display:block;color:var(--muted);font-size:11px}
       <h2><span><span class="num"></span>. <span id="h-haul-t">Вывоз</span></span></h2>
       <div class="haul-hd" id="h-haul-hd"><span>Перевозчик, ниже — материал</span><span>Рейсов</span><span>м³</span><span></span></div>
       <div id="f-haul"></div>
-      <datalist id="carrier-list"></datalist>
+      <datalist id="carrier-list"></datalist><datalist id="unit-list"><option value="м³"><option value="м²"><option value="т"><option value="шт"><option value="п.м."><option value="%"><option value="маш.-ч"><option value="рейс"></datalist>
       <button type="button" class="btn small" id="f-haul-add" style="margin-top:6px">+ Добавить перевозчика</button>
       <div class="hint" id="f-haul-hint" hidden>Перевозчики подставлены из прошлой смены — впишите рейсы и объём.</div>
     </section>
@@ -647,7 +647,7 @@ function buildForm(){
 }
 function rowHint(r){
   const h=r.querySelector(".wh");const c=r.querySelector("select").value;h.className="wh";
-  if(c==="__other"){h.textContent="Работа вне бюджета — впишите наименование и единицу.";return;}
+  if(c==="__other"){h.textContent="Работа вне бюджета — впишите наименование и единицу (м³, м², т, шт…).";return;}
   const x=WORKS.find(w=>w.c===c);if(!x){h.textContent="";return;}
   const D=$("f-date").value,me=docId();const done=cumWorks(list().filter(q=>q.date<=D&&q.id!==me))[x.k]||0;
   h.textContent=x.n+" · по бюджету "+(x.t?fmt(x.t)+" "+x.u:"не задан")+" · выполнено "+fmt(done)+(x.t?" ("+fmt(done/x.t*100,1)+"%) · осталось "+fmt(Math.max(0,x.t-done)):"");
@@ -655,7 +655,7 @@ function rowHint(r){
 }
 function addWork(d){d=d||{};
   const r=document.createElement("div");r.className="wrow";
-  r.innerHTML='<select aria-label="Работа"></select><input class="wq" inputmode="decimal" placeholder="0" aria-label="Объём"><button type="button" class="btn del" aria-label="Удалить строку">×</button><input type="text" class="won" placeholder="Что сделано" hidden><input type="text" class="wou" placeholder="ед." hidden><div class="wh"></div>';
+  r.innerHTML='<select aria-label="Работа"></select><input class="wq" inputmode="decimal" placeholder="0" aria-label="Объём"><button type="button" class="btn del" aria-label="Удалить строку">×</button><input type="text" class="won" placeholder="Что сделано" hidden><input type="text" class="wou" placeholder="ед.: м³, м², т, шт" list="unit-list" hidden><div class="wh"></div>';
   const sel=r.querySelector("select");
   const add=(v,t)=>{const o=document.createElement("option");o.value=v;o.textContent=t;sel.appendChild(o);};
   add("","— выберите работу —");manual().forEach(x=>add(x.c,x.c+" · "+x.n+", "+x.u));add("__other","Другая работа (нет в бюджете)…");
@@ -673,7 +673,8 @@ function readWorks(){
     const c=r.querySelector("select").value,v=num(r.querySelector(".wq").value),n=i+1;
     if(c==="__other"){const nm=r.querySelector(".won").value.trim(),u=r.querySelector(".wou").value.trim();
       if(!nm&&v===null)return;if(!nm)bad.push("работа "+n+": наименование");if(v===null)bad.push("работа "+n+": объём");
-      if(nm&&v!==null)extra.push({n:nm,u:u||"ед.",v:v});return;}
+      if(nm&&!u)bad.push("работа "+n+" («"+nm+"»): единица измерения (м³, м², т, шт…)");
+      if(nm&&u&&v!==null)extra.push({n:nm,u:u,v:v});return;}
     if(!c){if(v!==null)bad.push("работа "+n+": выберите вид работ");return;}
     if(v===null){bad.push("работа "+n+": объём");return;}
     works[c]=(works[c]||0)+v;
@@ -683,7 +684,7 @@ function readWorks(){
 function mkRow(cls,html){const r=document.createElement("div");r.className=cls;r.innerHTML=html;r.querySelector("button.del").onclick=()=>{r.remove();dirty=true;};return r;}
 function addSub(d){d=d||{};const r=mkRow("mach",'<input type="text" list="sub-list" placeholder="Субподрядчик"><input inputmode="numeric" placeholder="0"><button type="button" class="btn del" aria-label="Удалить строку">×</button>');
   const i=r.querySelectorAll("input");i[0].value=d.n||"";i[1].value=d.p!=null?String(d.p):"";$("f-subs").appendChild(r);}
-function addMach(d){d=d||{};const r=mkRow("mach tech",'<input type="text" class="tn" list="mach-list" placeholder="Например, экскаватор CAT 336"><input class="tq" inputmode="numeric" placeholder="1" aria-label="Количество"><input class="th" inputmode="decimal" placeholder="м/ч" aria-label="Моточасы"><button type="button" class="btn del" aria-label="Удалить строку">×</button>');
+function addMach(d){d=d||{};const r=mkRow("mach tech",'<input type="text" class="tn" list="mach-list" placeholder="Например, экскаватор CAT 336"><input class="tq" inputmode="numeric" placeholder="шт" aria-label="Количество, шт"><input class="th" inputmode="decimal" placeholder="часы" aria-label="Моточасы"><button type="button" class="btn del" aria-label="Удалить строку">×</button>');
   const i=r.querySelectorAll("input");i[0].value=d.n||"";i[1].value=d.q!=null?String(d.q):"";i[2].value=d.h!=null?String(d.h).replace(".",","):"";$("f-mach").appendChild(r);}
 function addHaul(d){d=d||{};const r=mkRow(HL.tn?"haul tn":"haul",'<input type="text" class="cr" list="carrier-list"><button type="button" class="btn del" aria-label="Удалить строку">×</button><select></select><input inputmode="numeric" placeholder="0"><input inputmode="decimal" placeholder="0">'+(HL.tn?'<input inputmode="decimal" placeholder="т" aria-label="Тонн">':''));
   r.querySelector(".cr").placeholder=HL.c;if(HL.tn){const q=r.querySelectorAll("input");q[1].placeholder="рейсов";q[2].placeholder="м³";q[3].value=d.w!=null?String(d.w).replace(".",","):"";}
@@ -748,32 +749,46 @@ function validate(o){
   if(o.people.own==null&&!o.subs.length)e.push("люди на объекте");
   o.haul.forEach((h,i)=>{if(!h.c)e.push(HL.t.toLowerCase()+" "+(i+1)+": "+HL.c.toLowerCase());if(HL.tn?(h.v===null&&h.w===null):h.t===null)e.push(HL.t.toLowerCase()+" "+(i+1)+": "+(HL.tn?"м³ или т":"рейсы"));});
   o.subs.forEach((x,i)=>{if(!x.n)e.push("субподрядчик "+(i+1)+": название");if(x.p===null)e.push("субподрядчик "+(i+1)+": людей");});
+  o.mach.forEach((m,i)=>{if(m.q>3&&m.h==null)e.push("техника "+(i+1)+" («"+m.n+"»): в «шт» стоит "+m.q+" — это часы? Перенесите в поле «часы», в «шт» — количество машин");});
   o.downtime.forEach((d,i)=>{if(!d.fault)e.push("простой "+(i+1)+": по чьей вине");if(d.h===null)e.push("простой "+(i+1)+": часы");});
   {const pct=WORKS.filter(x=>String(x.u).trim()==="%"&&typeof o.works[x.c]==="number");
    if(pct.length){const cum=cumWorks(list().filter(r=>r.date<=o.date&&r.id!==o.id).concat([o]));
     pct.forEach(x=>{const v=o.works[x.c];if(v>100)e.push(x.n+": "+fmt(v)+"% за смену — больше 100%");else if(cum[x.k]>100.5)e.push(x.n+": с начала получится "+fmt(cum[x.k],1)+"% — проверьте, сколько % сделано за смену");});}}
   return e;
 }
-function checkForm(){const m=$("save-msg");const o=collect();const e=validate(o);if(e.length){m.textContent="Заполните или исправьте: "+e.join("; ");m.className="msg bad";return null;}delete o._bad;o.savedAt=new Date().toISOString();sset("raport2-foreman",o.foreman);return o;}
+let warnAck="";
+function softWarn(o){const w=[];const cum=cumWorks(list().filter(r=>r.date<=o.date&&r.id!==o.id).concat([o]));
+  WORKS.filter(x=>x.t&&!isAuto(x)&&typeof o.works[x.c]==="number").forEach(x=>{const v=o.works[x.c];
+    if(String(x.u).trim()!=="%"&&cum[x.k]>=x.t*0.999&&v>x.t*0.03)w.push("«"+x.n+"»: "+fmt(v)+" "+x.u+" за смену — работа закрывается на 100%. Это объём за смену, а не остаток?");
+    else if(String(x.u).trim()!=="%"&&v>x.t*0.25)w.push("«"+x.n+"»: "+fmt(v)+" "+x.u+" за смену — это "+fmt(v/x.t*100,0)+"% всего объёма по проекту.");});
+  return w;}
+function checkForm(){const m=$("save-msg");const o=collect();const e=validate(o);if(e.length){m.textContent="Заполните или исправьте: "+e.join("; ");m.className="msg bad";warnAck="";return null;}
+  {const w=softWarn(o),key=JSON.stringify(w)+JSON.stringify(o.works);if(w.length&&warnAck!==key){warnAck=key;m.textContent="Проверьте: "+w.join(" ")+" Если всё верно — нажмите «Сохранить рапорт» ещё раз.";m.className="msg warnc";return null;}}delete o._bad;o.savedAt=new Date().toISOString();sset("raport2-foreman",o.foreman);return o;}
 function persist(o){
   const ok=saveLocal(o);reports=loadLocal();if(!ok)reports[o.id]=o;dirty=false;
   if(C.db){setOutbox(outbox().concat([o.id]));flush().then(()=>{const left=outbox().length;if(linkDead){syncStatus(DEAD_MSG,"bad");return;}syncStatus(left?"Рапорт сохранён на телефоне, в базу отправится при появлении связи (в очереди: "+left+").":"Рапорт записан в базу.",left?"":"okb");}).catch(()=>{});}
   const m=$("save-msg");m.textContent=(ok?"Сохранено на телефоне: ":"Принято (не сохранилось на телефоне): ")+ruDate(o.date)+", "+(o.shift==="D"?"день":"ночь")+" · "+new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});m.className="msg "+(ok?"ok":"warnc");
   updProg();if(!$("v-sum").hidden)renderSum();if(!$("v-log").hidden)renderLog();
 }
+const plur=(n,a,b,c)=>{n=Math.abs(Math.round(n));const m=n%10,h=n%100;return m===1&&h!==11?a:m>=2&&m<=4&&(h<12||h>14)?b:c;};
 function shiftText(o){
   const id=o.id;const prev=list().filter(r=>r.date<=o.date&&r.id!==id);const cum=cumWorks(prev.concat([o]));
-  const L=[];L.push((C.title||"РАПОРТ").toUpperCase()+" · "+C.name);L.push(ruDate(o.date)+" · "+(o.shift==="D"?"дневная":"ночная")+" смена · прораб "+o.foreman);L.push("");
-  const done=WORKS.filter(x=>o.works[x.c]);L.push("Выполнено (смена / с начала"+(WORKS.some(x=>x.t)?" / по проекту":"")+"):");if(!done.length&&!(o.extra||[]).length)L.push("— объёмов нет");
-  done.forEach(x=>L.push("— "+x.c+" "+x.n+": "+fmt(o.works[x.c])+" / "+fmt(cum[x.k])+(x.t?" / "+fmt(x.t):"")+" "+x.u+(x.t?" ("+fmt(cum[x.k]/x.t*100,1)+"%)":"")));
-  (o.extra||[]).forEach(e=>L.push("— вне бюджета: "+e.n+": "+fmt(e.v)+" "+e.u));
-  if(o.other)L.push("Примечание: "+o.other);
-  if(o.haul.length){L.push(HL.t+":");o.haul.forEach(h=>L.push("— "+h.c+": "+h.m+" — "+(h.t!=null?fmt(h.t,0)+" рейс., ":"")+fmt(h.v)+" м³"+(HL.tn&&h.w!=null?" ("+fmt(h.w)+" т)":"")));}
+  const L=[];L.push((C.title||"Рапорт прораба").toUpperCase());L.push(C.name);
+  L.push(ruDate(o.date)+", "+(o.shift==="D"?"дневная":"ночная")+" смена");L.push((C.hl&&C.hl.t?"Мастер":"Прораб")+": "+o.foreman);L.push("");
+  // работы: ручные + авто с планом (остальное видно в разделе вывоза и технике)
+  const done=WORKS.filter(x=>o.works[x.c]&&!isMachSrc(x)&&(!isAuto(x)||x.t));
+  L.push("ВЫПОЛНЕНО ЗА СМЕНУ");if(!done.length)L.push("• объёмов нет");
+  done.forEach(x=>{L.push("• "+x.n+" — "+fmt(o.works[x.c])+" "+x.u);L.push("   с начала "+fmt(cum[x.k])+(x.t?" из "+fmt(x.t)+" "+x.u+" ("+fmt(cum[x.k]/x.t*100,1)+"%)":" "+x.u));});
+  if((o.extra||[]).length){L.push("");L.push("ДОП. РАБОТЫ (нет в бюджете)");o.extra.forEach(e=>L.push("• "+e.n+" — "+fmt(e.v)+" "+e.u));}
+  if(o.haul.length){const tt=o.haul.reduce((a,h)=>a+(h.t||0),0),tv=o.haul.reduce((a,h)=>a+(h.v||0),0),tw=o.haul.reduce((a,h)=>a+(h.w||0),0);
+    L.push("");L.push(HL.t.toUpperCase()+": "+(tt?fmt(tt,0)+" "+plur(tt,"рейс","рейса","рейсов")+", ":"")+fmt(tv)+" м³"+(HL.tn&&tw?" / "+fmt(tw)+" т":""));
+    o.haul.forEach(h=>L.push("• "+h.m+": "+(h.c||"—")+" — "+(h.t!=null?fmt(h.t,0)+" "+plur(h.t,"рейс","рейса","рейсов")+", ":"")+fmt(h.v)+" м³"+(HL.tn&&h.w!=null?" / "+fmt(h.w)+" т":"")));}
   L.push("");
   const pp=[];if(o.people.own!=null)pp.push("свои "+o.people.own);o.subs.forEach(x=>pp.push(x.n+" "+(x.p!=null?x.p:"?")));
-  L.push("Люди: "+(pp.length?pp.join(", ")+" — всего "+pplOf(o):"нет данных"));
-  if(!$("c-mach").hidden)L.push("Техника: "+(o.mach.length?o.mach.map(m=>m.n+" "+m.q+(m.h!=null?" ("+fmt(m.h)+" м/ч)":"")).join(", "):"нет"));
-  if(!$("c-dt").hidden){L.push("Простои: "+(o.downtime.length?"":"нет"));o.downtime.forEach(d=>L.push("— "+(d.what||"")+" — "+fmt(d.h)+" ч — "+(d.why||"")+" (вина: "+(d.fault||"?")+")"));}
+  L.push("ЛЮДИ: "+(pp.length?pplOf(o)+" чел. ("+pp.join(", ")+")":"не указаны"));
+  if(!$("c-mach").hidden){if(!o.mach.length)L.push("ТЕХНИКА: нет");else{L.push("ТЕХНИКА: "+fmt(o.mach.reduce((a,m)=>a+(m.h||0),0))+" маш.-ч");o.mach.forEach(m=>L.push("• "+m.n+(m.q>1?" ×"+m.q:"")+" — "+(m.h!=null?fmt(m.h)+" ч":"часы не указаны")));}}
+  if(!$("c-dt").hidden){if(!o.downtime.length)L.push("ПРОСТОЕВ НЕТ");else{L.push("ПРОСТОИ:");o.downtime.forEach(d=>L.push("• "+(d.what||"")+" — "+fmt(d.h)+" ч, "+(d.why||"")+" (вина: "+(d.fault||"?")+")"));}}
+  if(o.other){L.push("");L.push("ПРИМЕЧАНИЕ: "+o.other);}
   return L.join("\n");
 }
 function sendTo(kind,ev){
