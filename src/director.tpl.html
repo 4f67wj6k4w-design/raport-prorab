@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2E671F">
+<meta name="robots" content="noindex">
+<title>Руководитель — ГК «КРАШМАШ»</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+[hidden]{display:none!important}
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px)}
+{{CSS}}
+.dnav{display:grid;grid-template-columns:48px 1fr 48px;gap:8px;align-items:center}
+.dnav .btn{min-height:44px;padding:0;font-size:20px}
+#v-sum .dg{background:#fff;border-radius:10px;overflow:hidden;color:#1d1d1b}
+.ob{padding:12px 0;border-top:1px solid var(--line)}
+.ob:first-child{border-top:0}
+.ob-h{display:flex;gap:8px;align-items:flex-start;justify-content:space-between}
+.ob-h b{font-weight:600;line-height:1.3}
+.ob-s{font-size:12px;color:var(--muted);margin-top:2px}
+.st{flex:none;font-size:12px;padding:3px 8px;border-radius:999px;white-space:nowrap;background:var(--sunk)}
+.st.ok{background:color-mix(in srgb,var(--ok) 20%,var(--surface));color:var(--ok)}
+.st.no{background:color-mix(in srgb,var(--bad) 18%,var(--surface));color:var(--bad)}
+.pw{padding:7px 0;border-top:1px dashed var(--line)}
+.pw:first-child{border-top:0}
+.pw .pn{font-size:14px}
+.pw .pn small{display:block;color:var(--muted);font-size:11px}
+.pw .pv{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:12px;color:var(--muted);margin-top:2px}
+.pw .pv b{font-family:var(--f-num);font-weight:600;color:var(--fg)}
+.pw .pv b.bad{color:var(--bad)}
+.pw .bar{margin-top:4px}
+.top3{margin-top:6px}
+.more{margin-top:8px}
+.feed{padding:12px 0;border-top:1px solid var(--line)}
+.feed:first-child{border-top:0}
+.feed .fh{font-weight:600;line-height:1.3}
+.feed .fm{font-size:12px;color:var(--muted);margin:2px 0 0}
+.feed .new{display:inline-block;font-size:11px;background:var(--accent);color:#fff;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+.feed .gp{max-height:none}
+.grp{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:14px 0 2px}
+.foot{margin-top:18px;text-align:center;font-size:12px;color:var(--muted)}
+.tabs .cnt{display:inline-block;min-width:18px;font-size:11px;background:#fff;color:var(--accent);border-radius:9px;padding:0 5px;margin-left:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brandrow">
+      <div class="ttl"><div class="obj">Все объекты</div><h1>Кабинет руководителя</h1></div>
+      <img src="{{LOGO}}" alt="Группа компаний КРАШМАШ" width="120" height="48">
+    </div>
+    <nav class="tabs" role="tablist">
+      <button role="tab" id="tab-sum" aria-selected="true" data-v="sum">Сводка</button>
+      <button role="tab" id="tab-obj" aria-selected="false" data-v="obj">Объекты</button>
+      <button role="tab" id="tab-feed" aria-selected="false" data-v="feed">Лента<span class="cnt" id="new-cnt" hidden></span></button>
+    </nav>
+  </header>
+  <div id="status" class="banner" hidden></div>
+  <section class="card">
+    <div class="dnav">
+      <button type="button" class="btn" id="d-prev" aria-label="Предыдущий день">‹</button>
+      <input type="date" id="d-date" aria-label="Дата">
+      <button type="button" class="btn" id="d-next" aria-label="Следующий день">›</button>
+    </div>
+    <div class="hint" id="upd"></div>
+  </section>
+
+  <div id="v-sum">
+    <section class="card"><div class="dg" id="sum-out"><div class="empty">Загрузка…</div></div>
+      <button type="button" class="btn small" id="d-copy" style="margin-top:10px">Скопировать текст сводки</button></section>
+  </div>
+  <div id="v-obj" hidden>
+    <section class="card"><h2>Объекты <span id="obj-cnt"></span></h2><div id="obj-out"></div></section>
+  </div>
+  <div id="v-feed" hidden>
+    <section class="card"><h2>Рапорты <span>за 3 дня до выбранной даты</span></h2><div id="feed-out"></div></section>
+  </div>
+  <div class="foot">Данные из базы рапортов. Пока страница открыта, она обновляется каждые 5 минут.</div>
+</div>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const sget=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const sset=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const todayISO=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);};
+const ru=s=>s?s.slice(8,10)+"."+s.slice(5,7)+"."+s.slice(0,4):"";
+const fmt=(v,d)=>{if(v===null||v===undefined||v===""||isNaN(v))return "—";return Number(v).toLocaleString("ru-RU",{maximumFractionDigits:d===undefined?2:d});};
+const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;};
+const h=new URLSearchParams(location.hash.slice(1));
+let db=null;
+if(h.get("u")&&h.get("k")){db={u:h.get("u"),k:h.get("k")};sset("raport2-director",JSON.stringify(db));}
+else{try{db=JSON.parse(sget("raport2-director")||"null");}catch(e){}}
+if(location.hash)history.replaceState(null,"",location.pathname);
+let D=null,view=sget("raport2-dtab")||"sum",open={};
+function status(t,cls){const s=$("status");s.hidden=!t;s.className="banner"+(cls?" "+cls:"");s.textContent=t||"";}
+function show(v){view=v;["sum","obj","feed"].forEach(x=>{$("v-"+x).hidden=x!==v;$("tab-"+x).setAttribute("aria-selected",String(x===v));});sset("raport2-dtab",v);if(v==="feed")markSeen();}
+const lastSeen=()=>sget("raport2-dseen")||"";
+function newCount(){if(!D)return 0;const s=lastSeen();return D.feed.filter(f=>f.savedAt&&f.savedAt>s).length;}
+function markSeen(){if(!D)return;const mx=D.feed.reduce((a,f)=>f.savedAt>a?f.savedAt:a,lastSeen());setTimeout(()=>{sset("raport2-dseen",mx);paintCnt();},4000);}
+function paintCnt(){const n=newCount(),c=$("new-cnt");c.hidden=!n;c.textContent=n;}
+async function load(quiet){
+  if(!db){status("Откройте приложение по ссылке руководителя (в ней адрес базы).","bad");return;}
+  const date=$("d-date").value||todayISO();
+  if(!quiet){$("sum-out").innerHTML='<div class="empty" style="padding:10px">Загрузка…</div>';}
+  try{const u=db.u+(db.u.includes("?")?"&":"?")+new URLSearchParams({k:db.k,a:"dash",date:date,days:3});
+    const r=await fetch(u,{redirect:"follow"});const j=await r.json();
+    if(!j.ok)throw new Error(j.error==="action"?"обновите скрипт базы (новая версия развертывания)":j.error==="key"?"неверный ключ":(j.error||"ошибка"));
+    D=j;status("");render();
+    $("upd").textContent="Обновлено в "+new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+" · рапортов за "+ru(date)+": "+j.digest.ok+" из "+j.digest.total;}
+  catch(e){status("Не удалось загрузить: "+(e.message||"нет связи"),"bad");}
+}
+function pw(w){
+  const e=el("div","pw");const pn=el("div","pn");const c=el("span","code",w.c);pn.appendChild(c);pn.appendChild(document.createTextNode(" "+w.n+", "+w.u));
+  if(w.ro)pn.appendChild(el("small",null,"справочно"));else if(w.auto)pn.appendChild(el("small",null,"считается автоматически"));
+  e.appendChild(pn);const pv=el("div","pv");
+  const add=(l,v,bad)=>{const s=el("span",null,l+" ");const b=el("b",bad?"bad":null,v);s.appendChild(b);pv.appendChild(s);};
+  add("план",w.t?fmt(w.t):"не задан");add("выполнено",fmt(w.done),w.t&&w.done>w.t);if(w.t){add("остаток",fmt(Math.max(0,w.t-w.done)));add("",fmt(w.done/w.t*100,1)+"%");}
+  e.appendChild(pv);if(w.t){const bar=el("div","bar");const i=el("i");i.style.width=Math.min(100,w.done/w.t*100)+"%";bar.appendChild(i);e.appendChild(bar);}
+  return e;}
+function render(){
+  $("sum-out").innerHTML=D.digest.html.replace(/КРАШ МАШ/g,"КРАШМАШ");
+  // объекты
+  const oo=$("obj-out");oo.innerHTML="";const act=D.objects.filter(o=>o.active),rest=D.objects.filter(o=>!o.active);
+  $("obj-cnt").textContent="в работе: "+act.length;
+  const draw=o=>{const b=el("div","ob");const hd=el("div","ob-h");const t=el("div");t.appendChild(el("b",null,o.name));
+    t.appendChild(el("div","ob-s",o.last?"последний рапорт: "+ru(o.last.date)+", "+(o.last.shift==="N"?"ночь":"день")+(o.last.foreman?" — "+o.last.foreman:""):"рапортов пока нет"));hd.appendChild(t);
+    hd.appendChild(el("span","st "+(o.today?"ok":(o.active?"no":"")),o.today?"рапорт есть":(o.active?"нет рапорта":"нет данных")));b.appendChild(hd);
+    const planned=o.works.filter(w=>w.t&&!w.ro).sort((a,b2)=>(b2.done/b2.t)-(a.done/a.t));
+    const top=el("div","top3");planned.filter(w=>w.done<w.t).slice(0,3).forEach(w=>top.appendChild(pw(w)));if(top.children.length)b.appendChild(top);
+    const full=el("div");full.hidden=!open[o.pid];
+    (o.info||[]).forEach(s=>full.appendChild(el("div","ob-s",s)));
+    o.works.forEach(w=>full.appendChild(pw(w)));
+    if(o.extra.length){full.appendChild(el("div","grp","Вне бюджета"));o.extra.forEach(x=>full.appendChild(pw({c:"",n:x.n,u:x.u,t:0,done:x.v})));}
+    b.appendChild(full);
+    const btn=el("button","btn small more",open[o.pid]?"Свернуть паспорт":"Весь паспорт объекта");btn.type="button";
+    btn.onclick=()=>{open[o.pid]=!open[o.pid];full.hidden=!open[o.pid];btn.textContent=open[o.pid]?"Свернуть паспорт":"Весь паспорт объекта";};
+    b.appendChild(btn);oo.appendChild(b);};
+  act.forEach(draw);
+  if(rest.length){oo.appendChild(el("div","grp","Без рапортов за 7 дней"));rest.forEach(draw);}
+  if(!D.objects.length)oo.appendChild(el("div","empty","Объекты появятся с первыми рапортами прорабов."));
+  // лента
+  const fo=$("feed-out");fo.innerHTML="";const s=lastSeen();
+  if(!D.feed.length)fo.appendChild(el("div","empty","Рапортов за эти дни нет."));
+  D.feed.forEach(f=>{const b=el("div","feed");const t=el("div","fh",f.name);if(f.savedAt&&f.savedAt>s)t.appendChild(el("span","new","новый"));b.appendChild(t);
+    b.appendChild(el("div","fm",ru(f.date)+" · "+(f.shift==="N"?"ночная":"дневная")+" смена · "+f.foreman+(f.savedAt?" · сдан "+new Date(f.savedAt).toLocaleString("ru-RU",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"}):"")));
+    b.appendChild(el("pre","gp",f.text));fo.appendChild(b);});
+  paintCnt();if(view==="feed")markSeen();
+}
+const shiftD=n=>{const d=new Date(($("d-date").value||todayISO())+"T12:00:00");d.setDate(d.getDate()+n);$("d-date").value=d.toISOString().slice(0,10);load();};
+$("d-date").value=todayISO();
+$("d-date").addEventListener("change",()=>load());$("d-prev").onclick=()=>shiftD(-1);$("d-next").onclick=()=>shiftD(1);
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>show(b.dataset.v));
+$("d-copy").onclick=()=>{if(!D)return;const done=ok=>status(ok?"Текст скопирован":"Не удалось скопировать",ok?"okb":"bad");try{navigator.clipboard.writeText(D.digest.text).then(()=>done(true),()=>done(false));}catch(e){done(false);}};
+setInterval(()=>{if(!document.hidden)load(true);},300000);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden&&D)load(true);});
+show(["sum","obj","feed"].includes(view)?view:"sum");load();
+})();
+</script>
+</body>
+</html>

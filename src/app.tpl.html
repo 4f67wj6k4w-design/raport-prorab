@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2E671F">
+<title>Рапорт прораба — ГК «КРАШМАШ»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+[hidden]{display:none!important}
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px)}
+{{CSS}}
+/* --- конструктор --- */
+.wt{display:grid;grid-template-columns:70px 64px 1fr 40px;gap:6px;align-items:center;padding:10px 0;border-top:1px dashed var(--line)}
+.wt:first-child{border-top:0}
+.wt .wn{grid-column:1/4}
+.wt .d0{grid-column:1/3}
+.wt .src{grid-column:3/5}
+.wt input,.wt select{min-height:40px;padding:8px}
+.wt .del{min-width:40px;min-height:40px;padding:0;font-size:18px}
+.wt-hd{display:grid;grid-template-columns:62px 1fr 56px 96px 34px;gap:6px;font-size:12px;color:var(--muted)}
+.wt-hd span:nth-child(4){text-align:right}
+.linkbox{font:13px var(--f-num);word-break:break-all;background:var(--sunk);border-radius:8px;padding:10px;max-height:110px;overflow:auto}
+.qr{display:flex;justify-content:center;padding:10px;background:#fff;border-radius:8px;margin-top:10px}
+.proj{display:flex;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.proj:first-child{border-top:0}
+.proj .nm{flex:1;min-width:0}
+.proj .nm small{display:block;color:var(--muted);font-size:12px}
+.toggles{display:flex;flex-wrap:wrap;gap:8px 16px}
+.toggles label{display:flex;gap:6px;align-items:center;font-size:15px}
+.toggles input{width:20px;height:20px;min-height:0}
+.foot{margin-top:18px;text-align:center;font-size:12px;color:var(--muted)}
+.foot a{color:var(--muted)}
+.banner.okb{border-left-color:var(--ok)}
+.wrow{display:grid;grid-template-columns:1fr 92px 44px;gap:6px 8px;align-items:center;padding:10px 0;border-top:1px dashed var(--line)}
+.wrow:first-child{border-top:0}
+.wrow select,.wrow input{min-width:0}
+.wrow .wq{text-align:right;font-family:var(--f-num)}
+.wrow .del{min-width:44px;padding:0;font-size:20px;line-height:1}
+.wrow .wh{grid-column:1/-1;font-size:12px;color:var(--muted);line-height:1.4}
+.wrow .wh.bad{color:var(--bad)}
+.mach.tech{grid-template-columns:1fr 1fr 44px;padding:10px 0;border-top:1px dashed var(--line)}
+.mach.tech:first-child{border-top:0}
+.mach.tech .tn{grid-column:1/3;grid-row:1}
+.mach.tech .del{grid-column:3;grid-row:1}
+.mach.tech .tq{grid-column:1;grid-row:2;text-align:right;font-family:var(--f-num)}
+.mach.tech .th{grid-column:2;grid-row:2;text-align:right;font-family:var(--f-num)}
+.tech-hd{display:grid;grid-template-columns:1fr 1fr 44px;gap:8px;font-size:12px;color:var(--muted)}
+.tech-hd span:first-child{grid-column:1/-1}
+.tech-hd span:nth-child(2),.tech-hd span:nth-child(3){text-align:right}
+.pw{padding:9px 0;border-top:1px solid var(--line)}
+.pw:first-child{border-top:0}
+.pw .pn{font-weight:500}
+.pw .pn small{display:block;color:var(--muted);font-size:11px;font-weight:400}
+.pw .pv{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:13px;color:var(--muted);margin-top:3px}
+.pw .pv b{font-family:var(--f-num);font-weight:600;color:var(--fg)}
+.pw .pv b.bad{color:var(--bad)}
+.pw .bar{margin-top:5px}
+.haul.tn{grid-template-columns:1fr 1fr 1fr 44px}
+.haul.tn .cr{grid-column:1/4}
+.haul.tn select{grid-column:1/-1}
+.haul.tn input{text-align:right;font-family:var(--f-num)}
+.haul.tn input.cr{text-align:left;font-family:inherit}
+.passinfo div{padding:2px 0}
+td.src small{display:block;color:var(--muted);font-size:11px}
+.mode-pill{display:inline-block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;background:rgba(255,255,255,.18);border-radius:4px;padding:2px 6px;margin-bottom:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brandrow">
+      <div class="ttl">
+        <div id="mode-pill" class="mode-pill" hidden>Конструктор</div>
+        <div class="obj" id="hdr-obj">Рапорт прораба</div>
+        <h1 id="hdr-title">Рапорт прораба</h1>
+      </div>
+      <img src="{{LOGO}}" alt="Группа компаний КРАШМАШ" width="120" height="48">
+    </div>
+    <nav class="tabs" role="tablist" id="tabs-form" hidden>
+      <button role="tab" id="tab-form" aria-selected="true" data-v="form">Рапорт</button>
+      <button role="tab" id="tab-pass" aria-selected="false" data-v="pass">Паспорт</button>
+      <button role="tab" id="tab-sum" aria-selected="false" data-v="sum">Итоги</button>
+      <button role="tab" id="tab-log" aria-selected="false" data-v="log">Журнал</button>
+    </nav>
+    <nav class="tabs" role="tablist" id="tabs-admin" hidden>
+      <button role="tab" id="tab-edit" aria-selected="true" data-a="edit">Объект</button>
+      <button role="tab" id="tab-list" aria-selected="false" data-a="list">Мои объекты</button>
+    </nav>
+  </header>
+
+  <div id="status" class="banner" hidden></div>
+
+  <!-- ================= КОНСТРУКТОР ================= -->
+  <div id="v-edit" hidden>
+    <section class="card">
+      <h2>1. Объект</h2>
+      <label class="f">Название и адрес (шапка формы)<input type="text" id="a-name" placeholder="г. Москва, ул. …, д. … — Котлован"></label>
+      <label class="f" style="margin-top:10px">Заголовок<input type="text" id="a-title" placeholder="Рапорт прораба"></label>
+      <label class="f" style="margin-top:10px">«Выполнено ранее» — по состоянию на дату (для текущих объектов)<input type="date" id="a-d0date"></label>
+      <label class="f" style="margin-top:10px">Сведения для паспорта объекта (заказчик, РП, сроки — по строке)<textarea id="a-info" rows="3" placeholder="Заказчик: …&#10;Руководитель проекта: …&#10;Сроки: 01.09–12.11.2026"></textarea></label>
+      <div class="hint">Код объекта: <span class="code" id="a-pid"></span> — по нему на телефоне прораба разделяются рапорты разных объектов.</div>
+    </section>
+
+    <section class="card">
+      <h2>2. Виды работ и объёмы по проекту</h2>
+      <div class="hint" style="margin:0 0 4px">В строке: наименование; ниже — код, единица, объём по проекту; ещё ниже — выполнено ранее (для текущих объектов) и источник.</div>
+      <div id="a-works"></div>
+      <div class="row" style="margin-top:8px">
+        <button type="button" class="btn small" id="a-work-add">+ Добавить работу</button>
+        <button type="button" class="btn small" id="a-paste-toggle">Вставить из Excel</button>
+      </div>
+      <div id="a-paste" hidden style="margin-top:10px">
+        <label class="f">Скопируйте из Excel строки (столбцы: Наименование · Ед. · Объём по проекту · Выполнено ранее — последний можно не указывать; или с кодом впереди) и вставьте сюда<textarea id="a-paste-text" rows="6" placeholder="Разработка грунта	м3	215650&#10;Обратная засыпка	м3	23410"></textarea></label>
+        <div class="row" style="margin-top:6px"><button type="button" class="btn small primary" id="a-paste-go">Добавить строки</button><span class="hint" id="a-paste-msg"></span></div>
+      </div>
+      <div class="hint">Это паспорт объекта (бюджет): прораб видит его на вкладке «Паспорт», а в рапорте сам выбирает работы из этого списка. «Источник» под строкой: материал вывоза — объём считается из раздела «Вывоз»; «моточасы» — из моточасов техники.</div>
+    </section>
+
+    <section class="card">
+      <h2>3. Разделы формы</h2>
+      <div class="toggles">
+        <label><input type="checkbox" id="sec-haul" checked> Вывоз</label>
+        <label><input type="checkbox" id="sec-subs" checked> Субподрядчики</label>
+        <label><input type="checkbox" id="sec-mach" checked> Техника</label>
+        <label><input type="checkbox" id="sec-dt" checked> Простои</label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="f">Раздел «Вывоз» называется<input type="text" id="a-hlt" placeholder="Вывоз"></label>
+        <label class="f">Вместо «Перевозчик»<input type="text" id="a-hlc" placeholder="Перевозчик"></label>
+      </div>
+      <div class="toggles" style="margin-top:8px"><label><input type="checkbox" id="a-hltn"> В разделе «Вывоз» учитывать тонны</label></div>
+      <div class="hint">Для площадок переработки: например, «Продажа», «Покупатель» и тонны.</div>
+    </section>
+
+    <section class="card">
+      <h2>4. Справочники-подсказки <span>по строке на пункт</span></h2>
+      <div class="row">
+        <label class="f">Материалы вывоза<textarea id="a-mats" rows="6"></textarea></label>
+        <label class="f">Субподрядчики<textarea id="a-subs" rows="6"></textarea></label>
+        <label class="f">Техника<textarea id="a-mach" rows="6"></textarea></label>
+        <label class="f">Перевозчики<textarea id="a-carr" rows="6"></textarea></label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>5. База данных (Google Таблица)</h2>
+      <label class="f">URL веб-приложения Apps Script<input type="url" id="a-dburl" placeholder="https://script.google.com/macros/s/…/exec"></label>
+      <label class="f" style="margin-top:10px">Ключ объекта (у каждого объекта свой — выдаёт Claude; не ключ кабинета!)<input type="text" id="a-dbkey" placeholder="ключ объекта"></label>
+      <div class="row" style="margin-top:8px"><button type="button" class="btn small" id="a-dbtest">Проверить связь</button><span class="hint" id="a-dbmsg"></span></div>
+      <div class="hint">Настройка общая для всех объектов. Если база указана, рапорты всех прорабов пишутся в таблицу, а история не теряется при смене телефона. Без базы рапорты хранятся только на телефоне.</div>
+    </section>
+
+    <section class="card">
+      <h2>6. Ссылка для прораба</h2>
+      <button type="button" class="btn primary" id="a-make" style="width:100%">Сохранить и сформировать ссылку</button>
+      <div id="a-out" hidden>
+        <div class="hint" id="a-out-msg"></div>
+        <div class="linkbox" id="a-link" style="margin-top:8px"></div>
+        <div class="sendgrid" style="margin-top:10px">
+          <a class="btn send max" id="a-send-max" href="https://web.max.ru/" target="_blank" rel="noopener">MAX</a>
+          <a class="btn send tg" id="a-send-tg" href="https://t.me/" target="_blank" rel="noopener">Telegram</a>
+          <a class="btn send wa" id="a-send-wa" href="https://wa.me/" target="_blank" rel="noopener">WhatsApp</a>
+          <button type="button" class="btn send" id="a-copy">Скопировать ссылку</button>
+        </div>
+        <a class="btn" id="a-open" href="#" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;margin-top:8px;text-decoration:none">Открыть форму прораба</a>
+        <div class="qr" id="a-qr"></div>
+        <div class="hint" style="text-align:center">QR-код можно распечатать и повесить в прорабской.</div>
+      </div>
+      <div class="hint">Объёмы по проекту зашиты в ссылку: прораб их не меняет. Если поправите объёмы — сформируйте ссылку заново и разошлите; накопленные рапорты на телефонах сохранятся (код объекта прежний).</div>
+    </section>
+  </div>
+
+  <div id="v-list" hidden>
+    <section class="card">
+      <h2>Мои объекты <span>на этом устройстве</span></h2>
+      <div id="l-projects"></div>
+      <div class="row" style="margin-top:10px">
+        <button type="button" class="btn small primary" id="a-new">+ Новый объект</button>
+        <button type="button" class="btn small" id="a-demo">Заполнить примером</button>
+        <button type="button" class="btn small" id="a-fromdb">Загрузить объекты из базы</button>
+      </div>
+      <div class="hint" id="a-fromdb-msg"></div>
+    </section>
+    <section class="card">
+      <h2>Открыть по ссылке</h2>
+      <label class="f">Вставьте ссылку на форму объекта, чтобы отредактировать его<input type="text" id="a-import" placeholder="https://…#p=…"></label>
+      <button type="button" class="btn small" id="a-import-go" style="margin-top:8px">Загрузить в конструктор</button>
+      <span class="hint" id="a-import-msg"></span>
+    </section>
+  </div>
+
+  <!-- ================= ФОРМА ПРОРАБА ================= -->
+  <div id="v-form" hidden>
+    <section class="card">
+      <h2>Смена</h2>
+      <div class="row">
+        <label class="f">Дата<input type="date" id="f-date"></label>
+        <div class="f" style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)">Смена
+          <div class="seg" id="f-shift">
+            <button type="button" data-s="D" aria-pressed="true">День</button>
+            <button type="button" data-s="N" aria-pressed="false">Ночь</button>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="f">Прораб (Фамилия И.О.)<input type="text" id="f-foreman" autocomplete="name" placeholder="Иванов И.И."></label>
+      </div>
+      <div id="f-exists" class="hint" hidden></div>
+    </section>
+
+    <section class="card" id="c-works">
+      <h2><span>1. Работы за смену</span><span>объём</span></h2>
+      <div id="f-works"></div>
+      <button type="button" class="btn small" id="f-work-add" style="margin-top:6px">+ Добавить работу</button>
+      <div class="hint">Выберите работу из паспорта объекта или «Другая работа», если её нет в бюджете.</div>
+      <div class="hint" id="f-autohint" hidden></div>
+      <label class="f" style="margin-top:8px">Примечание<textarea id="f-other" placeholder="Что важно знать руководителю"></textarea></label>
+    </section>
+
+    <section class="card" id="c-haul">
+      <h2><span><span class="num"></span>. <span id="h-haul-t">Вывоз</span></span></h2>
+      <div class="haul-hd" id="h-haul-hd"><span>Перевозчик, ниже — материал</span><span>Рейсов</span><span>м³</span><span></span></div>
+      <div id="f-haul"></div>
+      <datalist id="carrier-list"></datalist>
+      <button type="button" class="btn small" id="f-haul-add" style="margin-top:6px">+ Добавить перевозчика</button>
+      <div class="hint" id="f-haul-hint" hidden>Перевозчики подставлены из прошлой смены — впишите рейсы и объём.</div>
+    </section>
+
+    <section class="card" id="c-mdi">
+      <h2><span><span class="num"></span>. Люди</span><span>чел.</span></h2>
+      <div class="row"><label class="f">Свои рабочие и ИТР на объекте<input id="p-mdi" inputmode="numeric" placeholder="0"></label></div>
+    </section>
+
+    <section class="card" id="c-subs">
+      <h2><span><span class="num"></span>. Субподрядчики</span><span>чел.</span></h2>
+      <div class="mach-hd"><span>Субподрядчик</span><span>Людей</span><span></span></div>
+      <div id="f-subs"></div>
+      <datalist id="sub-list"></datalist>
+      <button type="button" class="btn small" id="f-sub-add" style="margin-top:6px">+ Добавить субподрядчика</button>
+      <div class="hint" id="f-sub-hint" hidden>Список подставлен из прошлой смены — проверьте количество людей.</div>
+    </section>
+
+    <section class="card" id="c-mach">
+      <h2><span><span class="num"></span>. Техника на объекте</span><span>ед.</span></h2>
+      <div class="tech-hd"><span>Техника (тип или марка), ниже:</span><span>Кол-во, ед.</span><span>Моточасы</span></div>
+      <div id="f-mach"></div>
+      <datalist id="mach-list"></datalist>
+      <button type="button" class="btn small" id="f-mach-add" style="margin-top:6px">+ Добавить технику</button>
+      <div class="hint" id="f-mach-hint" hidden>Список подставлен из прошлой смены — проверьте количество.</div>
+    </section>
+
+    <section class="card" id="c-dt">
+      <h2><span><span class="num"></span>. Простои</span></h2>
+      <div id="f-dt"></div>
+      <button type="button" class="btn small" id="f-dt-add">+ Добавить простой</button>
+      <div class="hint">Укажите, по чьей вине. Простои по вине генподрядчика и заказчика — основание для продления срока.</div>
+    </section>
+
+    <section class="card" id="c-send">
+      <h2><span><span class="num"></span>. Отправить рапорт в чат</span></h2>
+      <div class="sendgrid">
+        <a class="btn send max" id="send-max" href="https://web.max.ru/" target="_blank" rel="noopener">MAX</a>
+        <a class="btn send tg" id="send-tg" href="https://t.me/" target="_blank" rel="noopener">Telegram</a>
+        <a class="btn send wa" id="send-wa" href="https://wa.me/" target="_blank" rel="noopener">WhatsApp</a>
+        <button type="button" class="btn send" id="send-copy">Скопировать текст</button>
+      </div>
+      <div class="hint" id="send-msg">Кнопка сохраняет рапорт и открывает мессенджер с готовым текстом — выберите рабочий чат и отправьте. Для MAX текст копируется: откройте чат и вставьте.</div>
+      <pre class="gp" id="send-preview" hidden></pre>
+    </section>
+  </div>
+
+  <div id="v-pass" hidden>
+    <section class="card">
+      <h2>Паспорт объекта</h2>
+      <div class="passinfo" id="p-info"></div>
+      <div class="hint" id="p-asof"></div>
+    </section>
+    <section class="card">
+      <h2>Работы по бюджету <span>план · выполнено · остаток</span></h2>
+      <div id="p-works"></div>
+      <div class="hint">Справочно, менять нельзя. «Выполнено» — сумма всех рапортов плюс выполненное до начала рапортов.</div>
+    </section>
+    <section class="card" id="p-extra-card" hidden>
+      <h2>Работы вне бюджета <span>с начала</span></h2>
+      <div class="tablewrap"><table id="p-extra"><thead><tr><th>Работа</th><th>Ед.</th><th>Выполнено</th></tr></thead><tbody></tbody></table></div>
+    </section>
+  </div>
+
+  <div id="v-sum" hidden>
+    <section class="card">
+      <h2>Итоги на дату</h2>
+      <label class="f">Дата<input type="date" id="s-date"></label>
+      <div class="hint" id="s-count"></div>
+    </section>
+    <section class="card">
+      <h2>Выполнение <span>сутки · месяц · с начала</span></h2>
+      <div class="tablewrap"><table id="s-works"><thead><tr><th>Работа</th><th>Сутки</th><th>Месяц</th><th>С начала</th><th>По проекту</th><th>Остаток</th><th>%</th></tr></thead><tbody></tbody></table></div>
+      <div class="hint">Сутки = день + ночь. «С начала» включает выполненное до начала рапортов, если оно указано в объекте. Если подключена база — итоги по всем прорабам объекта, иначе — по рапортам на этом телефоне.</div>
+    </section>
+    <section class="card"><h2>За сутки</h2><div class="kpis" id="s-kpi"></div></section>
+    <section class="card" id="cs-haul"><h2><span id="hs-haul-t">Вывоз</span> <span id="hs-haul-u">рейсов / м³</span></h2>
+      <div class="tablewrap"><table id="s-haul"><thead><tr><th id="hs-haul-c">Материал / перевозчик</th><th>Сутки</th><th>Месяц</th><th>С начала</th></tr></thead><tbody></tbody></table></div></section>
+    <section class="card" id="cs-subs"><h2>Субподрядчики <span>чел.-смены</span></h2>
+      <div class="tablewrap"><table id="s-subs"><thead><tr><th>Субподрядчик</th><th>Сутки</th><th>Месяц</th><th>С начала</th></tr></thead><tbody></tbody></table></div></section>
+    <section class="card" id="cs-mach"><h2>Техника <span>машино-смены</span></h2>
+      <div class="tablewrap"><table id="s-mach"><thead><tr><th>Техника</th><th>Сутки</th><th>Месяц</th><th>С начала</th></tr></thead><tbody></tbody></table></div></section>
+    <section class="card" id="cs-dt"><h2>Простои <span>часы</span></h2>
+      <div class="tablewrap"><table id="s-dt"><thead><tr><th>По чьей вине</th><th>Сутки</th><th>Месяц</th><th>С начала</th></tr></thead><tbody></tbody></table></div></section>
+    <section class="card"><h2>Дни без рапорта <span>последние 14 дней</span></h2><div class="chips" id="s-miss"></div></section>
+    <section class="card">
+      <h2>Сводка за сутки</h2>
+      <pre class="gp" id="s-gp"></pre>
+      <button type="button" class="btn primary" id="s-copy" style="margin-top:10px">Скопировать текст</button>
+      <span id="s-copied" class="hint ok" hidden>Скопировано</span>
+    </section>
+  </div>
+
+  <div id="v-log" hidden>
+    <section class="card">
+      <h2>Все рапорты <span id="l-count"></span></h2>
+      <div class="log" id="l-list"></div>
+    </section>
+  </div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<div class="savebar" id="savebar" hidden>
+  <div class="in">
+    <div class="msg" id="save-msg">Заполните и сохраните рапорт за смену</div>
+    <button type="button" class="btn primary" id="save">Сохранить рапорт</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const fmt=(v,d)=>{if(v===null||v===undefined||v===""||isNaN(v))return "—";return Number(v).toLocaleString("ru-RU",{maximumFractionDigits:d===undefined?2:d});};
+const num=s=>{if(s===null||s===undefined)return null;const t=String(s).replace(/\s/g,"").replace(",",".");if(t==="")return null;const v=Number(t);return isFinite(v)?v:null;};
+const todayISO=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);};
+const ruDate=s=>s?s.slice(8,10)+"."+s.slice(5,7)+"."+s.slice(0,4):"";
+const sget=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const sset=(k,v)=>{try{localStorage.setItem(k,v);return true}catch(e){return false}};
+const lines=t=>String(t||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+const rid=()=>Math.random().toString(36).slice(2,8);
+const BASE=location.href.split("#")[0];
+
+// ---------- кодирование настроек объекта в ссылку ----------
+function b64u(bytes){let s="";bytes.forEach(b=>s+=String.fromCharCode(b));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
+function unb64u(str){str=str.replace(/-/g,"+").replace(/_/g,"/");while(str.length%4)str+="=";const s=atob(str);const a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return a;}
+async function streamBytes(bytes,ctor){const cs=new ctor("deflate-raw");const w=cs.writable.getWriter();w.write(bytes);w.close();return new Uint8Array(await new Response(cs.readable).arrayBuffer());}
+async function encodeCfg(cfg){
+  const raw=new TextEncoder().encode(JSON.stringify(cfg));
+  if(window.CompressionStream){try{return "z"+b64u(await streamBytes(raw,CompressionStream));}catch(e){}}
+  return "j"+b64u(raw);
+}
+async function decodeCfg(s){
+  const kind=s[0],body=s.slice(1);let bytes=unb64u(body);
+  if(kind==="z"){if(!window.DecompressionStream)throw new Error("old");bytes=await streamBytes(bytes,DecompressionStream);}
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+const cfgParam=h=>{const m=/[#&]p=([A-Za-z0-9_\-]+)/.exec(h||"");return m?m[1]:null;};
+
+// ---------- значения по умолчанию ----------
+const DEF_MATS=["Грунт","Ж/Б","Кирпич","Песок","Строительный мусор","Другое"];
+const DEF_SUBS=[];
+const DEF_MACH=["Экскаватор","Мини-экскаватор","Бульдозер","Фронтальный погрузчик","Каток","Самосвал","Автокран","Кран гусеничный","Буровая установка","Автобетоносмеситель"];
+const FAULT=["Свои","Субподрядчик","Генподрядчик","Заказчик","Погода","Прочее"];
+function blankCfg(){return {v:1,pid:rid(),name:"",title:"Рапорт прораба",works:[],mats:DEF_MATS.slice(),subs:DEF_SUBS.slice(),mach:DEF_MACH.slice(),sec:{haul:1,subs:1,mach:1,dt:1}};}
+const DEMO={v:1,pid:"demo",name:"Пример объекта — Котлован",title:"Рапорт прораба",
+ works:[{c:"ПЛ",n:"Вертикальная планировка",u:"м³",t:5000},{c:"ШП",n:"Шпунт погружено",u:"шт",t:500},
+ {c:"ЗР",n:"Разработка грунта (механизир.)",u:"м³",t:100000},{c:"РС",n:"Распорная система смонтирована",u:"т",t:1000},
+ {c:"ВЫВ",n:"Вывоз и утилизация грунта",u:"м³",t:90000,src:"Грунт"}],
+ mats:DEF_MATS.slice(),subs:["Субподрядчик 1","Субподрядчик 2"],mach:DEF_MACH.slice(),sec:{haul:1,subs:1,mach:1,dt:1}};
+
+// ---------- хранилище конструктора ----------
+const PKEY="raport2-projects";
+function loadProjects(){try{return JSON.parse(sget(PKEY)||"{}")||{};}catch(e){return {};}}
+function saveProject(cfg){const m=loadProjects();m[cfg.pid]={cfg:cfg,at:new Date().toISOString()};return sset(PKEY,JSON.stringify(m));}
+function delProject(pid){const m=loadProjects();delete m[pid];sset(PKEY,JSON.stringify(m));}
+
+// ---------- база (Apps Script) ----------
+const DBKEY="raport2-db";
+function dbSettings(){try{return JSON.parse(sget(DBKEY)||"null");}catch(e){return null;}}
+async function dbGet(db,params){
+  const u=db.u+(db.u.includes("?")?"&":"?")+new URLSearchParams(Object.assign({k:db.k},params)).toString();
+  const r=await fetch(u,{method:"GET",redirect:"follow"});const j=await r.json();if(!j.ok)throw new Error(j.error||"db");return j;
+}
+async function dbPost(db,payload){
+  const body=JSON.stringify(Object.assign({k:db.k},payload));
+  try{const r=await fetch(db.u,{method:"POST",body:body,redirect:"follow"});const j=await r.json();if(!j.ok)throw new Error(j.error||"db");return "ok";}
+  catch(e){if(e&&e.message==="key")throw e;
+    try{await fetch(db.u,{method:"POST",body:body,mode:"no-cors"});return "sent";}catch(e2){throw e2;}}
+}
+// =====================================================================
+// КОНСТРУКТОР
+// =====================================================================
+let A=null;
+function startAdmin(cfg){
+  document.title="Конструктор рапорта — ГК «КРАШМАШ»";
+  $("mode-pill").hidden=false;$("tabs-admin").hidden=false;
+  $("hdr-obj").textContent="Новый объект: виды работ и объёмы";$("hdr-title").textContent="Конструктор рапорта";
+  $("foot").textContent="Конструктор хранит объекты в этом браузере. Прорабы получают только ссылку.";
+  A=cfg||blankCfg();fillAdmin();showA(cfg?"edit":(Object.keys(loadProjects()).length?"list":"edit"));
+}
+function showA(v){["edit","list"].forEach(x=>{$("v-"+x).hidden=x!==v;$("tab-"+x).setAttribute("aria-selected",String(x===v));});if(v==="list")renderProjects();window.scrollTo(0,0);}
+function addWorkRow(w){
+  w=w||{};
+  const r=document.createElement("div");r.className="wt";
+  r.innerHTML='<input type="text" class="wn" placeholder="Наименование работы"><button type="button" class="btn del" aria-label="Удалить">×</button><input type="text" placeholder="Код" maxlength="6"><input type="text" placeholder="Ед."><input inputmode="decimal" placeholder="Объём по проекту" style="text-align:right;font-family:var(--f-num)"><input class="d0" inputmode="decimal" placeholder="Выполнено ранее" style="text-align:right;font-family:var(--f-num)"><select class="src"></select>';
+  const q=r.querySelectorAll("input");const ins=[q[1],q[0],q[2],q[3]];ins[0].value=w.c||"";ins[1].value=w.n||"";ins[2].value=w.u||"";ins[3].value=w.t!=null?String(w.t).replace(".",","):"";
+  q[4].value=w.d0?String(w.d0).replace(".",","):"";q[4].setAttribute("aria-label","Выполнено ранее");
+  ins[0].setAttribute("aria-label","Код");ins[1].setAttribute("aria-label","Наименование");ins[2].setAttribute("aria-label","Единица");ins[3].setAttribute("aria-label","Объём по проекту");
+  const sel=r.querySelector("select");sel.setAttribute("aria-label","Источник объёма");fillSrc(sel,w.src||"");
+  r.querySelector("button").onclick=()=>r.remove();
+  $("a-works").appendChild(r);
+}
+function fillSrc(sel,val){
+  const mats=lines($("a-mats").value);sel.innerHTML="";
+  const o=document.createElement("option");o.value="";o.textContent="Объём вносит прораб";sel.appendChild(o);
+  mats.forEach(m=>{const x=document.createElement("option");x.value=m;x.textContent="Считать из вывоза: "+m+", м³";sel.appendChild(x);});
+  mats.forEach(m=>{const x=document.createElement("option");x.value="trips:"+m;x.textContent="Считать рейсы вывоза: "+m;sel.appendChild(x);});
+  if($("a-hltn").checked)mats.forEach(m=>{const x=document.createElement("option");x.value="tons:"+m;x.textContent="Считать тонны: "+m;sel.appendChild(x);});
+  const mach=lines($("a-mach").value);
+  mach.forEach(m=>{const x=document.createElement("option");x.value="mach:"+m;x.textContent="Считать моточасы: "+m;sel.appendChild(x);});
+  const inM=s=>s.split("|").every(z=>mats.includes(z));
+  const ok=(!val.startsWith("mach:")&&inM(val.replace(/^(trips|tons):/,""))&&(!val.startsWith("tons:")||$("a-hltn").checked))||(val.startsWith("mach:")&&val.slice(5).split("|").every(z=>mach.includes(z)));
+  if(!ok&&val){const x=document.createElement("option");x.value=val;x.textContent=val.startsWith("mach:")?"Моточасы: "+val.slice(5).split("|").join(" + ")+(val.slice(5).split("|").every(z=>mach.includes(z))?"":" (нет в справочнике)"):(val.startsWith("trips:")?"Рейсы вывоза: ":val.startsWith("tons:")?"Тонны: ":"Из вывоза, м³: ")+val.replace(/^(trips|tons):/,"").split("|").join(" + ")+(inM(val.replace(/^(trips|tons):/,""))?"":" (нет в справочнике)");sel.appendChild(x);}
+  sel.value=val||"";
+}
+function fillAdmin(){
+  $("a-name").value=A.name||"";$("a-title").value=A.title||"Рапорт прораба";$("a-d0date").value=A.d0date||"";$("a-pid").textContent=A.pid;$("a-info").value=(A.info||[]).join("\n");
+  $("a-mats").value=(A.mats||[]).join("\n");$("a-subs").value=(A.subs||[]).join("\n");$("a-mach").value=(A.mach||[]).join("\n");$("a-carr").value=(A.carr||[]).join("\n");
+  ["haul","subs","mach","dt"].forEach(k=>$("sec-"+k).checked=!A.sec||A.sec[k]!==0);
+  {const hl=A.hl||{};$("a-hlt").value=hl.t||"";$("a-hlc").value=hl.c||"";$("a-hltn").checked=!!hl.tn;}
+  $("a-works").innerHTML="";(A.works||[]).forEach(addWorkRow);if(!A.works||!A.works.length)addWorkRow();
+  $("a-out").hidden=true;
+  const db=dbSettings();$("a-dburl").value=db?db.u:"";$("a-dbkey").value=db?db.k:"";
+}
+function readAdmin(){
+  const c={v:1,pid:A.pid,d0date:$("a-d0date").value||"",name:$("a-name").value.trim(),title:$("a-title").value.trim()||"Рапорт прораба",works:[],
+    mats:lines($("a-mats").value),subs:lines($("a-subs").value),mach:lines($("a-mach").value),carr:lines($("a-carr").value),info:lines($("a-info").value),sec:{}};
+  ["haul","subs","mach","dt"].forEach(k=>c.sec[k]=$("sec-"+k).checked?1:0);
+  {const ht=$("a-hlt").value.trim(),hc=$("a-hlc").value.trim(),tn=$("a-hltn").checked;if(ht||hc||tn){c.hl={};if(ht)c.hl.t=ht;if(hc)c.hl.c=hc;if(tn)c.hl.tn=1;}}
+  const used=new Set();
+  document.querySelectorAll("#a-works .wt").forEach((row,i)=>{
+    const q=row.querySelectorAll("input");const ins=[q[1],q[0],q[2],q[3]];const n=ins[1].value.trim();if(!n)return;
+    let code=(ins[0].value.trim()||("Р"+(i+1))).slice(0,6);while(used.has(code))code=code+"·";used.add(code);
+    const w={c:code,n:n,u:ins[2].value.trim()||"ед.",t:num(ins[3].value)||0};
+    const d0=num(q[4].value);if(d0)w.d0=d0;
+    const old=(A.works||[]).find(z=>z.c===code);if(old&&old.ro)w.ro=old.ro;
+    const s=row.querySelector("select").value;if(s&&(s.startsWith("mach:")?c.sec.mach:c.sec.haul))w.src=s;
+    c.works.push(w);
+  });
+  if(A.cu)c.cu=A.cu;c.ts=Date.now();
+  const u=$("a-dburl").value.trim(),k=$("a-dbkey").value.trim();
+  if(u&&k){c.db={u:u,k:k};sset(DBKEY,JSON.stringify(c.db));}
+  return c;
+}
+async function makeLink(){
+  const c=readAdmin();const msg=$("a-out-msg");
+  if(!c.name){alertA("Укажите название объекта.");return;}
+  if(!c.works.length){alertA("Добавьте хотя бы один вид работ.");return;}
+  A=c;saveProject(c);
+  if(c.db){dbPost(c.db,{a:"cfg",cfg:c}).catch(()=>{});}
+  const link=BASE+"#p="+(await encodeCfg(c));
+  $("a-out").hidden=false;$("a-link").textContent=link;$("a-open").href=link;
+  msg.textContent="Объект сохранён. Работ: "+c.works.length+". "+(c.db?"Рапорты будут писаться в базу.":"База не указана — рапорты останутся на телефонах.")+" Длина ссылки: "+link.length+" символов.";msg.className="hint "+(c.db?"ok":"warnc");
+  const text="Рапорт прораба — "+c.name+"\nОткройте ссылку на телефоне и добавьте на главный экран:\n"+link;
+  $("a-send-wa").href="https://wa.me/?text="+encodeURIComponent(text);
+  $("a-send-tg").href="https://t.me/share/url?url="+encodeURIComponent(link)+"&text="+encodeURIComponent("Рапорт прораба — "+c.name);
+  $("a-qr").innerHTML="";
+  if(window.QRCode){try{new QRCode($("a-qr"),{text:link,width:220,height:220,correctLevel:QRCode.CorrectLevel.L});}catch(e){$("a-qr").textContent="Ссылка слишком длинная для QR-кода";}}
+  else{$("a-qr").textContent="QR-код недоступен без интернета";}
+  $("a-out").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function alertA(t){const m=$("a-out-msg");$("a-out").hidden=false;$("a-link").textContent="";m.textContent=t;m.className="hint bad";}
+function copyText(t){try{if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t).then(()=>true,()=>false);}catch(e){}return Promise.resolve(false);}
+function pasteRows(){
+  const rows=lines($("a-paste-text").value);let n=0;
+  rows.forEach(line=>{
+    let p=line.split("\t").map(s=>s.trim());if(p.length<2)p=line.split(/;|\s{2,}/).map(s=>s.trim());
+    p=p.filter((x,i)=>x!==""||i===0);
+    let w=null;
+    if(p.length>=4&&num(p[2])===null&&num(p[3])!==null)w={c:p[0].slice(0,6),n:p[1],u:p[2],t:num(p[3]),d0:p.length>=5?num(p[4]):null};
+    else if(p.length>=4&&num(p[2])!==null&&num(p[3])!==null)w={c:"",n:p[0],u:p[1],t:num(p[2]),d0:num(p[3])};
+    else if(p.length>=3&&num(p[2])!==null)w={c:"",n:p[0],u:p[1],t:num(p[2])};
+    else if(p.length>=2&&num(p[p.length-1])!==null)w={c:"",n:p[0],u:"ед.",t:num(p[p.length-1])};
+    if(w&&w.n){
+      const first=$("a-works").querySelector(".wt");
+      if(first&&!first.querySelector(".wn").value.trim()&&$("a-works").children.length===1)first.remove();
+      addWorkRow(w);n++;
+    }
+  });
+  $("a-paste-msg").textContent=n?"Добавлено строк: "+n:"Не удалось распознать строки — нужны столбцы Наименование · Ед. · Объём";
+  $("a-paste-msg").className="hint "+(n?"ok":"bad");if(n)$("a-paste-text").value="";
+}
+function renderProjects(){
+  const m=loadProjects();const el=$("l-projects");el.innerHTML="";
+  const ks=Object.keys(m).sort((a,b)=>(m[b].at||"").localeCompare(m[a].at||""));
+  if(!ks.length){const p=document.createElement("div");p.className="empty";p.textContent="Пока нет объектов. Нажмите «Новый объект» или загрузите пример.";el.appendChild(p);return;}
+  ks.forEach(k=>{
+    const c=m[k].cfg;const r=document.createElement("div");r.className="proj";
+    r.innerHTML='<div class="nm"><b></b><small></small></div><button type="button" class="btn small">Изменить</button><button type="button" class="btn small del">×</button>';
+    r.querySelector("b").textContent=c.name||"(без названия)";
+    r.querySelector("small").textContent="Работ: "+(c.works||[]).length+" · код "+c.pid+" · "+new Date(m[k].at).toLocaleDateString("ru-RU");
+    const bs=r.querySelectorAll("button");bs[0].onclick=()=>{A=c;fillAdmin();showA("edit");};
+    bs[1].onclick=()=>{if(bs[1].dataset.sure){delProject(k);renderProjects();}else{bs[1].dataset.sure="1";bs[1].textContent="Удалить?";setTimeout(()=>{bs[1].dataset.sure="";bs[1].textContent="×";},3000);}};
+    el.appendChild(r);
+  });
+}
+function bindAdmin(){
+  document.querySelectorAll("#tabs-admin button").forEach(b=>b.onclick=()=>showA(b.dataset.a));
+  $("a-work-add").onclick=()=>addWorkRow();
+  $("a-paste-toggle").onclick=()=>{$("a-paste").hidden=!$("a-paste").hidden;};
+  $("a-paste-go").onclick=pasteRows;
+  ["a-mats","a-mach","a-hltn"].forEach(id=>$(id).addEventListener("change",()=>document.querySelectorAll("#a-works select.src").forEach(s=>fillSrc(s,s.value))));
+  $("a-make").onclick=makeLink;
+  $("a-copy").onclick=()=>{const t=$("a-link").textContent;copyText(t).then(ok=>{$("a-out-msg").textContent=ok?"Ссылка скопирована":"Выделите ссылку и скопируйте вручную";$("a-out-msg").className="hint "+(ok?"ok":"warnc");});};
+  $("a-send-max").addEventListener("click",()=>{copyText("Рапорт прораба — "+A.name+"\n"+$("a-link").textContent).then(ok=>{$("a-out-msg").textContent=ok?"Ссылка скопирована — вставьте её в чат MAX":"Скопируйте ссылку вручную";});});
+  $("a-dbtest").onclick=async()=>{const m=$("a-dbmsg");const db={u:$("a-dburl").value.trim(),k:$("a-dbkey").value.trim()};
+    if(!db.u||!db.k){m.textContent="Укажите URL и ключ";m.className="hint bad";return;}
+    m.textContent="Проверяю…";m.className="hint";
+    try{await dbGet(db,{a:"ping"});sset(DBKEY,JSON.stringify(db));m.textContent="Связь есть, база подключена";m.className="hint ok";}
+    catch(e){m.textContent=e&&e.message==="key"?"Неверный ключ":"Нет связи: проверьте URL и что развёрнуто с доступом «Все»";m.className="hint bad";}};
+  $("a-fromdb").onclick=async()=>{const m=$("a-fromdb-msg");const db=dbSettings();
+    if(!db){m.textContent="Сначала укажите базу во вкладке «Объект» (раздел 5) и проверьте связь.";m.className="hint bad";return;}
+    m.textContent="Загружаю…";m.className="hint";
+    try{const j=await dbGet(db,{a:"objects"});(j.objects||[]).forEach(saveProject);renderProjects();m.textContent="Загружено объектов: "+(j.objects||[]).length;m.className="hint ok";}
+    catch(e){m.textContent="Не удалось загрузить: "+(e.message||"ошибка");m.className="hint bad";}};
+  $("a-new").onclick=()=>{A=blankCfg();fillAdmin();showA("edit");};
+  $("a-demo").onclick=()=>{A=JSON.parse(JSON.stringify(DEMO));fillAdmin();showA("edit");};
+  $("a-import-go").onclick=async()=>{const p=cfgParam($("a-import").value);const m=$("a-import-msg");
+    if(!p){m.textContent="В ссылке нет настроек объекта";m.className="hint bad";return;}
+    try{A=await decodeCfg(p);fillAdmin();showA("edit");}catch(e){m.textContent="Ссылка повреждена";m.className="hint bad";}};
+}
+
+// =====================================================================
+// ФОРМА ПРОРАБА
+// =====================================================================
+let HL={t:"Вывоз",c:"Перевозчик",tn:0};
+let C=null, WORKS=[], MATS=[], reports={}, shift="D", dirty=false, LKEY="", OKEY="";
+const slug=s=>nrm(s).replace(/[^a-zа-яё0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"x";
+function startForm(cfg){
+  C=cfg;WORKS=(cfg.works||[]).map(w=>Object.assign({k:"w_"+String(w.c).replace(/[^\wА-Яа-яЁё]/g,"_")},w));
+  MATS=(cfg.mats&&cfg.mats.length?cfg.mats:DEF_MATS);LKEY="raport2-"+cfg.pid;OKEY="raport2-outbox-"+cfg.pid;
+  document.title=(cfg.title||"Рапорт прораба")+" — "+(cfg.name||"");
+  $("hdr-obj").textContent=cfg.name||"";$("hdr-title").textContent=cfg.title||"Рапорт прораба";
+  $("tabs-form").hidden=false;$("savebar").hidden=false;
+  // разделы
+  const sec=cfg.sec||{};const on=k=>sec[k]!==0;
+  $("c-haul").hidden=!on("haul");$("c-subs").hidden=!on("subs");$("c-mach").hidden=!on("mach");$("c-dt").hidden=!on("dt");
+  $("cs-haul").hidden=!on("haul");$("cs-subs").hidden=!on("subs");$("cs-mach").hidden=!on("mach");$("cs-dt").hidden=!on("dt");
+  HL=Object.assign({t:"Вывоз",c:"Перевозчик",tn:0},cfg.hl||{});
+  $("h-haul-t").textContent=HL.t;$("hs-haul-t").textContent=HL.t;$("hs-haul-c").textContent="Материал / "+HL.c.toLowerCase();$("hs-haul-u").textContent=HL.tn?"рейсов / м³ / т":"рейсов / м³";
+  $("f-haul-add").textContent="+ Добавить: "+HL.c.toLowerCase();$("f-haul-hint").textContent="Строки подставлены из прошлой смены — впишите объёмы.";
+  {const hd=$("h-haul-hd");if(HL.tn){hd.innerHTML="<span></span>";hd.style.display="block";hd.firstChild.textContent=HL.c+", ниже — материал, ниже — рейсов · м³ · т";}else hd.firstChild.textContent=HL.c+", ниже — материал";}
+  let n=1;["c-haul","c-mdi","c-subs","c-mach","c-dt","c-send"].forEach(id=>{if(!$(id).hidden){n++;$(id).querySelector(".num").textContent=n;}});
+  // подсказки
+  const dl=(id,arr)=>{const d=$(id);d.innerHTML="";arr.forEach(v=>{const o=document.createElement("option");o.value=v;d.appendChild(o);});};
+  dl("sub-list",cfg.subs||[]);dl("mach-list",(cfg.mach&&cfg.mach.length)?cfg.mach:DEF_MACH);
+  $("foot").innerHTML="";
+  reports=loadLocal();
+  Object.keys(reports).forEach(k=>{const r=reports[k];if(r&&!r.id){r.id=r.date+"_"+r.shift+"_"+slug(r.foreman);if(r.id!==k){reports[r.id]=r;delete reports[k];}}});saveAllLocal();
+  buildForm();bindForm();
+  checkCfgUpdate();
+  $("f-date").value=todayISO();$("s-date").value=todayISO();
+  loadForm();
+  const t0=sget("raport2-tab");if(t0==="sum"||t0==="log"||t0==="pass")show(t0);else show("form");
+}
+const b64u8=s=>Uint8Array.from(atob(s),ch=>ch.charCodeAt(0));
+async function openCfg(j){if(!C.db||!C.db.k||!crypto.subtle)return null;
+  const raw=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("raport-cu|"+C.db.k+"|"+C.pid));
+  const key=await crypto.subtle.importKey("raw",raw,"AES-GCM",false,["decrypt"]);
+  const d=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64u8(j.iv)},key,b64u8(j.d));return JSON.parse(new TextDecoder().decode(d));}
+async function checkCfgUpdate(){
+  if(!C.cu)return;
+  try{const r=await fetch(new URL(C.cu,BASE).href+"?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;
+    let j=await r.json();if(j&&j.e)j=await openCfg(j);if(!j||j.pid!==C.pid||!((j.ts||0)>(C.ts||0)))return;
+    if(C.db&&!j.db)j.db=C.db;
+    const link=BASE+"#p="+(await encodeCfg(j));
+    if(dirty){syncStatus("Паспорт объекта обновлён руководителем. Сохраните рапорт и откройте форму заново.","");return;}
+    location.replace(link);location.reload();
+  }catch(e){}
+}
+function loadLocal(){try{const t=localStorage.getItem(LKEY);return t?JSON.parse(t)||{}:{};}catch(e){return {};}}
+function saveLocal(o){try{const m=loadLocal();m[o.id]=o;localStorage.setItem(LKEY,JSON.stringify(m));return true;}catch(e){return false;}}
+function saveAllLocal(){try{localStorage.setItem(LKEY,JSON.stringify(reports));}catch(e){}}
+const outbox=()=>{try{return JSON.parse(sget(OKEY)||"[]");}catch(e){return [];}};
+const setOutbox=a=>sset(OKEY,JSON.stringify(Array.from(new Set(a))));
+let syncing=false,linkDead=false;
+const DEAD_MSG="Эта ссылка больше не действует. Попросите у руководителя новую ссылку на рапорт — сохранённые рапорты не пропадут, они отправятся по новой ссылке.";
+function syncStatus(t,cls){const s=$("status");s.hidden=false;s.className="banner"+(cls?" "+cls:"");s.textContent=t;}
+async function flush(){
+  if(!C.db||syncing)return;syncing=true;let sent=0,left=0;
+  try{
+    for(const id of outbox()){const r=reports[id];if(!r){setOutbox(outbox().filter(x=>x!==id));continue;}
+      try{const res=await dbPost(C.db,{a:"save",r:r,cfg:C});if(res==="ok"){setOutbox(outbox().filter(x=>x!==id));}sent++;}
+      catch(e){left++;}}
+  }finally{syncing=false;}
+  return {sent:sent,left:left};
+}
+async function pull(){
+  if(!C.db)return;
+  const j=await dbGet(C.db,{a:"list",pid:C.pid});let n=0;const ob=outbox();
+  (j.reports||[]).forEach(r=>{if(!r||!r.id)return;const mine=reports[r.id];
+    if(!mine||(r.savedAt||"")>=(mine.savedAt||"")){reports[r.id]=r;n++;}
+    if(ob.includes(r.id)&&mine&&(r.savedAt||"")>=(mine.savedAt||""))setOutbox(outbox().filter(x=>x!==r.id));});
+  saveAllLocal();return (j.reports||[]).length;
+}
+async function sync(){
+  if(!C.db){syncStatus("Рапорты сохраняются только на этом телефоне. После заполнения отправьте рапорт в рабочий чат кнопкой внизу формы.");return;}
+  syncStatus("Синхронизация с базой…");
+  try{await flush();const total=await pull();const left=outbox().length;
+    {const ck="raport2-cfgday-"+C.pid,td=todayISO();if(sget(ck)!==td){dbPost(C.db,{a:"cfg",cfg:C}).then(()=>sset(ck,td)).catch(()=>{});}}
+    syncStatus(left?"В базе: "+total+" рапорт(ов). Не отправлено: "+left+" — отправятся, когда появится связь.":"Синхронизировано с базой: "+total+" рапорт(ов) по объекту от всех прорабов.",left?"":"okb");
+    if(!dirty)loadForm();updProg();if(!$("v-sum").hidden)renderSum();if(!$("v-log").hidden)renderLog();if(!$("v-pass").hidden)renderPass();}
+  catch(e){if(e&&e.message==="key"){linkDead=true;syncStatus(DEAD_MSG,"bad");return;}
+    syncStatus("Нет связи с базой. Рапорты сохраняются на телефоне и отправятся позже. Не отправлено: "+outbox().length,"");}
+}
+const list=()=>Object.values(reports).filter(r=>r&&r.date);
+const haulOf=r=>Array.isArray(r&&r.haul)?r.haul:[];
+const subsOf=r=>Array.isArray(r&&r.subs)?r.subs:[];
+const machOf=r=>Array.isArray(r&&r.mach)?r.mach:[];
+const pplOf=r=>r?((r.people&&+r.people.own)||0)+subsOf(r).reduce((a,x)=>a+(+x.p||0),0):0;
+const docId=()=>$("f-date").value+"_"+shift+"_"+slug($("f-foreman").value||sget("raport2-foreman")||"");
+
+const secOn=k=>!C.sec||C.sec[k]!==0;
+const isMachSrc=x=>!!x.src&&String(x.src).startsWith("mach:")&&secOn("mach");
+const isHaulSrc=x=>!!x.src&&!String(x.src).startsWith("mach:")&&secOn("haul");
+const isAuto=x=>isMachSrc(x)||isHaulSrc(x);
+const isTrips=x=>String(x.src||"").startsWith("trips:");
+const isTons=x=>String(x.src||"").startsWith("tons:");
+const srcMat=x=>String(x.src||"").replace(/^(trips|tons):/,"");
+const srcLabel=x=>isMachSrc(x)?"моточасы «"+x.src.slice(5).split("|").join("» + «")+"»":(isTrips(x)?"рейсы «":isTons(x)?"тонны «":"«")+srcMat(x).split("|").join("» + «")+"»"+(isTrips(x)||isTons(x)?"":", м³");
+const manual=()=>WORKS.filter(x=>!isAuto(x)&&!x.ro);
+function buildForm(){
+  $("f-works").innerHTML="";
+  const au=WORKS.filter(isAuto);const h=$("f-autohint");
+  h.hidden=!au.length;const hl=au.filter(x=>!isMachSrc(x)).map(x=>x.c),ml=au.filter(isMachSrc).map(x=>x.c);
+  h.textContent=au.length?"Считаются сами, вносить не нужно: "+[hl.length?"из раздела «"+HL.t+"» — "+hl.join(", "):"",ml.length?"из моточасов техники — "+ml.join(", "):""].filter(Boolean).join("; ")+". Подробно — во вкладке «Паспорт».":"";
+}
+function rowHint(r){
+  const h=r.querySelector(".wh");const c=r.querySelector("select").value;h.className="wh";
+  if(c==="__other"){h.textContent="Работа вне бюджета — впишите наименование и единицу.";return;}
+  const x=WORKS.find(w=>w.c===c);if(!x){h.textContent="";return;}
+  const D=$("f-date").value,me=docId();const done=cumWorks(list().filter(q=>q.date<=D&&q.id!==me))[x.k]||0;
+  h.textContent=x.n+" · по бюджету "+(x.t?fmt(x.t)+" "+x.u:"не задан")+" · выполнено "+fmt(done)+(x.t?" ("+fmt(done/x.t*100,1)+"%) · осталось "+fmt(Math.max(0,x.t-done)):"");
+  if(x.t&&done>x.t)h.className="wh bad";
+}
+function addWork(d){d=d||{};
+  const r=document.createElement("div");r.className="wrow";
+  r.innerHTML='<select aria-label="Работа"></select><input class="wq" inputmode="decimal" placeholder="0" aria-label="Объём"><button type="button" class="btn del" aria-label="Удалить строку">×</button><input type="text" class="won" placeholder="Что сделано" hidden><input type="text" class="wou" placeholder="ед." hidden><div class="wh"></div>';
+  const sel=r.querySelector("select");
+  const add=(v,t)=>{const o=document.createElement("option");o.value=v;o.textContent=t;sel.appendChild(o);};
+  add("","— выберите работу —");manual().forEach(x=>add(x.c,x.c+" · "+x.n+", "+x.u));add("__other","Другая работа (нет в бюджете)…");
+  const q=r.querySelector(".wq"),on=r.querySelector(".won"),ou=r.querySelector(".wou");
+  const upd=()=>{const o=sel.value==="__other";on.hidden=!o;ou.hidden=!o;rowHint(r);};
+  sel.onchange=()=>{upd();dirty=true;};
+  if(d.other){sel.value="__other";on.value=d.n||"";ou.value=d.u||"";}else sel.value=d.c&&manual().some(x=>x.c===d.c)?d.c:"";
+  q.value=d.v!=null?String(d.v).replace(".",","):"";
+  r.querySelector("button.del").onclick=()=>{r.remove();dirty=true;if(!$("f-works").children.length)addWork();};
+  $("f-works").appendChild(r);upd();return r;
+}
+function readWorks(){
+  const works={},extra=[],bad=[];
+  document.querySelectorAll("#f-works .wrow").forEach((r,i)=>{
+    const c=r.querySelector("select").value,v=num(r.querySelector(".wq").value),n=i+1;
+    if(c==="__other"){const nm=r.querySelector(".won").value.trim(),u=r.querySelector(".wou").value.trim();
+      if(!nm&&v===null)return;if(!nm)bad.push("работа "+n+": наименование");if(v===null)bad.push("работа "+n+": объём");
+      if(nm&&v!==null)extra.push({n:nm,u:u||"ед.",v:v});return;}
+    if(!c){if(v!==null)bad.push("работа "+n+": выберите вид работ");return;}
+    if(v===null){bad.push("работа "+n+": объём");return;}
+    works[c]=(works[c]||0)+v;
+  });
+  return {works:works,extra:extra,bad:bad};
+}
+function mkRow(cls,html){const r=document.createElement("div");r.className=cls;r.innerHTML=html;r.querySelector("button.del").onclick=()=>{r.remove();dirty=true;};return r;}
+function addSub(d){d=d||{};const r=mkRow("mach",'<input type="text" list="sub-list" placeholder="Субподрядчик"><input inputmode="numeric" placeholder="0"><button type="button" class="btn del" aria-label="Удалить строку">×</button>');
+  const i=r.querySelectorAll("input");i[0].value=d.n||"";i[1].value=d.p!=null?String(d.p):"";$("f-subs").appendChild(r);}
+function addMach(d){d=d||{};const r=mkRow("mach tech",'<input type="text" class="tn" list="mach-list" placeholder="Например, экскаватор CAT 336"><input class="tq" inputmode="numeric" placeholder="1" aria-label="Количество"><input class="th" inputmode="decimal" placeholder="м/ч" aria-label="Моточасы"><button type="button" class="btn del" aria-label="Удалить строку">×</button>');
+  const i=r.querySelectorAll("input");i[0].value=d.n||"";i[1].value=d.q!=null?String(d.q):"";i[2].value=d.h!=null?String(d.h).replace(".",","):"";$("f-mach").appendChild(r);}
+function addHaul(d){d=d||{};const r=mkRow(HL.tn?"haul tn":"haul",'<input type="text" class="cr" list="carrier-list"><button type="button" class="btn del" aria-label="Удалить строку">×</button><select></select><input inputmode="numeric" placeholder="0"><input inputmode="decimal" placeholder="0">'+(HL.tn?'<input inputmode="decimal" placeholder="т" aria-label="Тонн">':''));
+  r.querySelector(".cr").placeholder=HL.c;if(HL.tn){const q=r.querySelectorAll("input");q[1].placeholder="рейсов";q[2].placeholder="м³";q[3].value=d.w!=null?String(d.w).replace(".",","):"";}
+  const sel=r.querySelector("select");MATS.forEach(m=>{const o=document.createElement("option");o.value=m;o.textContent=m;sel.appendChild(o);});
+  const i=r.querySelectorAll("input");i[0].value=d.c||"";sel.value=d.m&&MATS.includes(d.m)?d.m:MATS[0];i[1].value=d.t!=null?String(d.t):"";i[2].value=d.v!=null?String(d.v).replace(".",","):"";
+  $("f-haul").appendChild(r);}
+function addDt(d){d=d||{};const r=document.createElement("div");r.className="dt";
+  r.innerHTML='<input type="text" class="full" placeholder="Что стояло (техника, бригада)"><select><option value="">По чьей вине…</option></select><input inputmode="decimal" placeholder="ч"><input type="text" class="full" placeholder="Причина"><button type="button" class="btn small full">Удалить</button>';
+  const sel=r.querySelector("select");FAULT.forEach(f=>{const o=document.createElement("option");o.value=f;o.textContent=f;sel.appendChild(o);});
+  const i=r.querySelectorAll("input");i[0].value=d.what||"";i[1].value=d.h!=null?String(d.h).replace(".",","):"";i[2].value=d.why||"";sel.value=d.fault||"";
+  r.querySelector("button").onclick=()=>{r.remove();dirty=true;};$("f-dt").appendChild(r);}
+function readHaul(){const a=[];document.querySelectorAll("#f-haul .haul").forEach(row=>{const i=row.querySelectorAll("input");const c=i[0].value.trim(),m=row.querySelector("select").value,t=num(i[1].value),v=num(i[2].value),w=i[3]?num(i[3].value):null;if(c||t!==null||v!==null||w!==null){const o={c:c,m:m,t:t,v:v};if(HL.tn)o.w=w;a.push(o);}});return a;}
+function cumWorks(rs){const o=sumWorks(rs);WORKS.forEach(x=>{if(x.d0)o[x.k]+=x.d0;});return o;}
+function sumWorks(rs){const o={};WORKS.forEach(x=>o[x.k]=0);rs.forEach(r=>{WORKS.forEach(x=>{const v=r.works&&r.works[x.c];if(typeof v==="number")o[x.k]+=v;});});return o;}
+function updProg(){
+  document.querySelectorAll("#f-works .wrow").forEach(rowHint);
+  if(!$("v-pass").hidden)renderPass();
+}
+function setShift(s){shift=s;dirty=false;document.querySelectorAll("#f-shift button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.s===s)));loadForm();}
+const val=(id,v)=>{const e=$(id);if(e)e.value=(v===null||v===undefined)?"":(typeof v==="number"?String(v).replace(".",","):v);};
+function prevWith(fn){const me=slug($("f-foreman").value||sget("raport2-foreman")||"");const cur=$("f-date").value+shift;
+  const c=list().filter(x=>fn(x).length&&(x.date+x.shift)<cur).sort((a,b)=>(b.date+b.shift).localeCompare(a.date+a.shift));
+  return c.find(x=>slug(x.foreman)===me)||c[0];}
+function loadForm(){
+  const r=reports[docId()];
+  $("f-works").innerHTML="";
+  if(r){Object.keys(r.works||{}).forEach(c=>{const x=WORKS.find(w=>w.c===c);if(x&&!isAuto(x))addWork({c:c,v:r.works[c]});});
+    (r.extra||[]).forEach(e=>addWork({other:true,n:e.n,u:e.u,v:e.v}));}
+  if(!$("f-works").children.length)addWork();
+  val("p-mdi",r&&r.people?r.people.own:null);val("f-other",r?r.other:"");
+  const fill=(box,hint,arr,add,fn,strip)=>{$(box).innerHTML="";$(hint).hidden=true;
+    if(r)arr(r).forEach(add);else{const p=prevWith(arr);if(p){arr(p).forEach(d=>add(strip(d)));$(hint).hidden=false;}}
+    if(!$(box).children.length)add();};
+  fill("f-subs","f-sub-hint",subsOf,addSub,null,d=>({n:d.n,p:d.p}));
+  fill("f-mach","f-mach-hint",machOf,addMach,null,d=>({n:d.n,q:d.q}));
+  {const cs=new Map();(C.carr||[]).forEach(v=>cs.set(v.toLowerCase(),v));list().forEach(x=>haulOf(x).forEach(h=>{if(h.c&&!cs.has(h.c.toLowerCase()))cs.set(h.c.toLowerCase(),h.c);}));const d=$("carrier-list");d.innerHTML="";cs.forEach(v=>{const o=document.createElement("option");o.value=v;d.appendChild(o);});}
+  fill("f-haul","f-haul-hint",haulOf,addHaul,null,d=>({c:d.c,m:d.m}));
+  $("f-dt").innerHTML="";(r&&r.downtime||[]).forEach(addDt);
+  updProg();
+  const ex=$("f-exists");
+  if(r){val("f-foreman",r.foreman||sget("raport2-foreman")||"");ex.hidden=false;ex.textContent="Рапорт за эту смену уже сохранён"+(r.savedAt?" ("+new Date(r.savedAt).toLocaleString("ru-RU",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+")":"")+". Изменения перезапишут его.";}
+  else{val("f-foreman",sget("raport2-foreman")||"");ex.hidden=true;}
+  $("save-msg").textContent=r?"Редактирование сохранённого рапорта":"Новый рапорт: "+ruDate($("f-date").value)+", "+(shift==="D"?"день":"ночь");$("save-msg").className="msg";
+}
+function collect(){
+  const o={id:"",pid:C.pid,date:$("f-date").value,shift:shift,foreman:$("f-foreman").value.trim(),works:{},people:{},subs:[],mach:[],haul:[],downtime:[]};
+  {const w=readWorks();o.works=w.works;o.extra=w.extra;o._bad=w.bad;}
+  {const v=num($("p-mdi").value);if(v!==null)o.people.own=v;}
+  if(!$("c-subs").hidden)document.querySelectorAll("#f-subs .mach").forEach(row=>{const i=row.querySelectorAll("input");const n=i[0].value.trim(),p=num(i[1].value);if(n||p!==null)o.subs.push({n:n,p:p});});
+  if(!$("c-mach").hidden)document.querySelectorAll("#f-mach .mach").forEach(row=>{const i=row.querySelectorAll("input");const n=i[0].value.trim(),q=num(i[1].value),h=num(i[2].value);if(n&&(q||h)){const m={n:n,q:q||1};if(h!==null)m.h=h;o.mach.push(m);}});
+  if(!$("c-haul").hidden)o.haul=readHaul();
+  WORKS.filter(isHaulSrc).forEach(x=>{const f=isTrips(x)?"t":isTons(x)?"w":"v",mt=srcMat(x).split("|");const g=Math.round(o.haul.filter(h=>mt.includes(h.m)).reduce((s,h)=>s+(h[f]||0),0)*1000)/1000;if(g)o.works[x.c]=g;else delete o.works[x.c];});
+  WORKS.filter(isMachSrc).forEach(x=>{const ks=x.src.slice(5).split("|").map(nrm);const g=Math.round(o.mach.filter(m=>ks.includes(nrm(m.n))).reduce((s,m)=>s+(m.h||0),0)*1000)/1000;if(g)o.works[x.c]=g;else delete o.works[x.c];});
+  o.trips=o.haul.reduce((s,h)=>s+(h.t||0),0)||null;
+  if(!$("c-dt").hidden)document.querySelectorAll("#f-dt .dt").forEach(row=>{const i=row.querySelectorAll("input");const sel=row.querySelector("select");const d={what:i[0].value.trim(),h:num(i[1].value),why:i[2].value.trim(),fault:sel.value};if(d.what||d.h||d.why)o.downtime.push(d);});
+  o.other=$("f-other").value.trim();
+  o.id=o.date+"_"+o.shift+"_"+slug(o.foreman);
+  return o;
+}
+function validate(o){
+  const e=(o._bad||[]).slice();if(!o.date)e.push("дата");if(!o.foreman)e.push("ФИО прораба");
+  if(o.people.own==null&&!o.subs.length)e.push("люди на объекте");
+  o.haul.forEach((h,i)=>{if(!h.c)e.push(HL.t.toLowerCase()+" "+(i+1)+": "+HL.c.toLowerCase());if(HL.tn?(h.v===null&&h.w===null):h.t===null)e.push(HL.t.toLowerCase()+" "+(i+1)+": "+(HL.tn?"м³ или т":"рейсы"));});
+  o.subs.forEach((x,i)=>{if(!x.n)e.push("субподрядчик "+(i+1)+": название");if(x.p===null)e.push("субподрядчик "+(i+1)+": людей");});
+  o.downtime.forEach((d,i)=>{if(!d.fault)e.push("простой "+(i+1)+": по чьей вине");if(d.h===null)e.push("простой "+(i+1)+": часы");});
+  {const pct=WORKS.filter(x=>String(x.u).trim()==="%"&&typeof o.works[x.c]==="number");
+   if(pct.length){const cum=cumWorks(list().filter(r=>r.date<=o.date&&r.id!==o.id).concat([o]));
+    pct.forEach(x=>{const v=o.works[x.c];if(v>100)e.push(x.n+": "+fmt(v)+"% за смену — больше 100%");else if(cum[x.k]>100.5)e.push(x.n+": с начала получится "+fmt(cum[x.k],1)+"% — проверьте, сколько % сделано за смену");});}}
+  return e;
+}
+function checkForm(){const m=$("save-msg");const o=collect();const e=validate(o);if(e.length){m.textContent="Заполните или исправьте: "+e.join("; ");m.className="msg bad";return null;}delete o._bad;o.savedAt=new Date().toISOString();sset("raport2-foreman",o.foreman);return o;}
+function persist(o){
+  const ok=saveLocal(o);reports=loadLocal();if(!ok)reports[o.id]=o;dirty=false;
+  if(C.db){setOutbox(outbox().concat([o.id]));flush().then(()=>{const left=outbox().length;if(linkDead){syncStatus(DEAD_MSG,"bad");return;}syncStatus(left?"Рапорт сохранён на телефоне, в базу отправится при появлении связи (в очереди: "+left+").":"Рапорт записан в базу.",left?"":"okb");}).catch(()=>{});}
+  const m=$("save-msg");m.textContent=(ok?"Сохранено на телефоне: ":"Принято (не сохранилось на телефоне): ")+ruDate(o.date)+", "+(o.shift==="D"?"день":"ночь")+" · "+new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});m.className="msg "+(ok?"ok":"warnc");
+  updProg();if(!$("v-sum").hidden)renderSum();if(!$("v-log").hidden)renderLog();
+}
+function shiftText(o){
+  const id=o.id;const prev=list().filter(r=>r.date<=o.date&&r.id!==id);const cum=cumWorks(prev.concat([o]));
+  const L=[];L.push((C.title||"РАПОРТ").toUpperCase()+" · "+C.name);L.push(ruDate(o.date)+" · "+(o.shift==="D"?"дневная":"ночная")+" смена · прораб "+o.foreman);L.push("");
+  const done=WORKS.filter(x=>o.works[x.c]);L.push("Выполнено (смена / с начала"+(WORKS.some(x=>x.t)?" / по проекту":"")+"):");if(!done.length&&!(o.extra||[]).length)L.push("— объёмов нет");
+  done.forEach(x=>L.push("— "+x.c+" "+x.n+": "+fmt(o.works[x.c])+" / "+fmt(cum[x.k])+(x.t?" / "+fmt(x.t):"")+" "+x.u+(x.t?" ("+fmt(cum[x.k]/x.t*100,1)+"%)":"")));
+  (o.extra||[]).forEach(e=>L.push("— вне бюджета: "+e.n+": "+fmt(e.v)+" "+e.u));
+  if(o.other)L.push("Примечание: "+o.other);
+  if(o.haul.length){L.push(HL.t+":");o.haul.forEach(h=>L.push("— "+h.c+": "+h.m+" — "+(h.t!=null?fmt(h.t,0)+" рейс., ":"")+fmt(h.v)+" м³"+(HL.tn&&h.w!=null?" ("+fmt(h.w)+" т)":"")));}
+  L.push("");
+  const pp=[];if(o.people.own!=null)pp.push("свои "+o.people.own);o.subs.forEach(x=>pp.push(x.n+" "+(x.p!=null?x.p:"?")));
+  L.push("Люди: "+(pp.length?pp.join(", ")+" — всего "+pplOf(o):"нет данных"));
+  if(!$("c-mach").hidden)L.push("Техника: "+(o.mach.length?o.mach.map(m=>m.n+" "+m.q+(m.h!=null?" ("+fmt(m.h)+" м/ч)":"")).join(", "):"нет"));
+  if(!$("c-dt").hidden){L.push("Простои: "+(o.downtime.length?"":"нет"));o.downtime.forEach(d=>L.push("— "+(d.what||"")+" — "+fmt(d.h)+" ч — "+(d.why||"")+" (вина: "+(d.fault||"?")+")"));}
+  return L.join("\n");
+}
+function sendTo(kind,ev){
+  const o=checkForm();if(!o){ev.preventDefault();return;}
+  const t=shiftText(o),enc=encodeURIComponent(t),a=ev.currentTarget;
+  if(kind==="wa")a.href="https://wa.me/?text="+enc;
+  if(kind==="tg")a.href="https://t.me/share/url?url="+encodeURIComponent(" ")+"&text="+enc;
+  if(kind==="max")a.href="https://web.max.ru/";
+  if(kind==="copy"||kind==="max"){copyText(t).then(ok=>{const p=$("send-preview");p.textContent=t;p.hidden=false;
+    if(!ok){const rg=document.createRange();rg.selectNodeContents(p);const s=window.getSelection();s.removeAllRanges();s.addRange(rg);}
+    $("send-msg").textContent=ok?"Текст скопирован — вставьте его в рабочий чат"+(kind==="max"?" MAX.":"."):"Текст выделен ниже — скопируйте вручную.";$("send-msg").className="hint "+(ok?"ok":"warnc");});}
+  persist(o);
+}
+// ---------- паспорт ----------
+function renderPass(){
+  const all=list();const sc=cumWorks(all);
+  const inf=$("p-info");inf.innerHTML="";
+  [C.name].concat(C.info||[]).forEach((s,i)=>{const d=document.createElement("div");if(i===0){const b=document.createElement("b");b.textContent=s;d.appendChild(b);}else d.textContent=s;inf.appendChild(d);});
+  $("p-asof").textContent="Рапортов"+(C.db?" в базе":" на телефоне")+": "+all.length+(C.d0date?" · выполненное до "+ruDate(C.d0date)+" учтено":"");
+  const pw=$("p-works");pw.innerHTML="";
+  if(!WORKS.length){const d=document.createElement("div");d.className="empty";d.textContent="Бюджет объекта не задан";pw.appendChild(d);}
+  WORKS.forEach(x=>{const d=sc[x.k]||0,pct=x.t?d/x.t:0;const el=document.createElement("div");el.className="pw";
+    el.innerHTML='<div class="pn"><span class="code"></span> <span class="nm"></span></div><div class="pv"><span>план <b class="a"></b></span><span>выполнено <b class="b"></b></span><span>остаток <b class="c"></b></span><span><b class="e"></b></span></div><div class="bar"><i></i></div>';
+    el.querySelector(".code").textContent=x.c;el.querySelector(".nm").textContent=x.n+", "+x.u;
+    if(isAuto(x)){const s=document.createElement("small");s.textContent="считается: "+srcLabel(x);el.querySelector(".pn").appendChild(s);}
+    if(x.ro){const s=document.createElement("small");s.textContent=typeof x.ro==="string"?x.ro:"справочно — в рапорте не заполняется";el.querySelector(".pn").appendChild(s);}
+    el.querySelector(".a").textContent=x.t?fmt(x.t):"не задан";el.querySelector(".b").textContent=fmt(d);
+    el.querySelector(".c").textContent=x.t?fmt(Math.max(0,x.t-d)):"—";el.querySelector(".e").textContent=x.t?fmt(pct*100,1)+"%":"";
+    if(x.t&&d>x.t)el.querySelector(".b").className="b bad";
+    el.querySelector(".bar i").style.width=Math.min(100,pct*100)+"%";if(!x.t)el.querySelector(".bar").remove();pw.appendChild(el);});
+  const ex={};all.forEach(r=>(r.extra||[]).forEach(e=>{const k=nrm(e.n)+"|"+nrm(e.u);if(!ex[k])ex[k]={n:e.n,u:e.u,v:0};ex[k].v+=+e.v||0;}));
+  const ks=Object.keys(ex);$("p-extra-card").hidden=!ks.length;
+  const eb=$("p-extra").querySelector("tbody");eb.innerHTML="";
+  ks.sort((a,b)=>ex[a].n.localeCompare(ex[b].n,"ru")).forEach(k=>{const tr=document.createElement("tr");tr.innerHTML='<td></td><td></td><td class="n"></td>';tr.children[0].textContent=ex[k].n;tr.children[1].textContent=ex[k].u;tr.children[2].textContent=fmt(ex[k].v);eb.appendChild(tr);});
+}
+// ---------- итоги ----------
+const sumField=(rs,f)=>rs.reduce((a,r)=>a+(typeof r[f]==="number"?r[f]:0),0);
+function periods(D){const all=list();return{day:all.filter(r=>r.date===D),month:all.filter(r=>r.date.slice(0,7)===D.slice(0,7)&&r.date<=D),cum:all.filter(r=>r.date<=D)};}
+function trow(tb,label,a,b,c,cls){const tr=document.createElement("tr");tr.innerHTML='<td></td><td class="n"></td><td class="n"></td><td class="n"></td>';tr.children[0].textContent=label;if(cls)tr.children[0].className=cls;tr.children[1].textContent=a;tr.children[2].textContent=b;tr.children[3].textContent=c;tb.appendChild(tr);}
+function emptyRow(tb,t){const tr=document.createElement("tr");tr.innerHTML='<td colspan="4" class="empty"></td>';tr.firstChild.textContent=t;tb.appendChild(tr);}
+const nrm=s=>(s||"").trim().replace(/\s+/g," ").toLowerCase();
+function groupTable(id,P,arr,key,valf,emptyT){
+  const tb=$(id).querySelector("tbody");tb.innerHTML="";const names={};
+  P.cum.forEach(r=>arr(r).forEach(x=>{const k=nrm(x[key]);if(k&&!names[k])names[k]=x[key].trim();}));
+  const s=(rs,k)=>rs.reduce((a,r)=>a+arr(r).filter(x=>nrm(x[key])===k).reduce((q,x)=>q+(+x[valf]||0),0),0);
+  const ks=Object.keys(names).sort((a,b)=>s(P.cum,b)-s(P.cum,a));
+  if(!ks.length)emptyRow(tb,emptyT);ks.forEach(k=>trow(tb,names[k],fmt(s(P.day,k),0),fmt(s(P.month,k),0),fmt(s(P.cum,k),0)));
+}
+function renderSum(){
+  const D=$("s-date").value||todayISO();const P=periods(D);
+  $("s-count").textContent="Рапортов на телефоне: "+list().length+" · на "+ruDate(D)+": "+P.day.length;
+  const sd=sumWorks(P.day),sm=sumWorks(P.month),sc=cumWorks(P.cum);
+  const tb=$("s-works").querySelector("tbody");tb.innerHTML="";
+  WORKS.forEach(x=>{const pct=x.t?sc[x.k]/x.t:0;const tr=document.createElement("tr");
+    tr.innerHTML='<td></td><td class="n"></td><td class="n"></td><td class="n"></td><td class="n"></td><td class="n"></td><td class="n"><div></div><div class="bar"><i></i></div></td>';
+    const td=tr.children;td[0].innerHTML='<span class="code"></span> ';td[0].querySelector(".code").textContent=x.c;td[0].appendChild(document.createTextNode(x.n+", "+x.u));
+    td[1].textContent=fmt(sd[x.k]);td[2].textContent=fmt(sm[x.k]);td[3].textContent=fmt(sc[x.k]);td[4].textContent=x.t?fmt(x.t):"—";td[5].textContent=x.t?fmt(Math.max(0,x.t-sc[x.k])):"—";
+    td[6].firstChild.textContent=x.t?fmt(pct*100,1)+"%":"—";td[6].querySelector("i").style.width=Math.min(100,pct*100)+"%";tb.appendChild(tr);});
+  const dR=P.day.filter(r=>r.shift==="D"),nR=P.day.filter(r=>r.shift==="N");
+  const pd=dR.length?dR:null,pn=nR.length?nR:null;
+  const mq=rs=>rs.reduce((s,r)=>s+machOf(r).reduce((a,m)=>a+(+m.q||0),0),0);
+  const pq=rs=>rs.reduce((s,r)=>s+pplOf(r),0);
+  const k=$("s-kpi");k.innerHTML="";
+  [["Люди день / ночь",(pd?pq(pd):"—")+" / "+(pn?pq(pn):"—")],["Рейсов: "+HL.t.toLowerCase(),fmt(sumField(P.day,"trips"),0)],
+   [HL.t+", м³",fmt(P.day.reduce((a,r)=>a+haulOf(r).reduce((s,h)=>s+(+h.v||0),0),0))]].concat(HL.tn?[[HL.t+", т",fmt(P.day.reduce((a,r)=>a+haulOf(r).reduce((s,h)=>s+(+h.w||0),0),0))]]:[]).concat([["Техника день / ночь",(pd?mq(pd):"—")+" / "+(pn?mq(pn):"—")],
+   ["Простои, ч",fmt(P.day.reduce((a,r)=>a+(r.downtime||[]).reduce((s,d)=>s+(+d.h||0),0),0))]])
+   .forEach(([a,b])=>{const d=document.createElement("div");d.className="kpi";d.innerHTML="<small></small><b></b>";d.firstChild.textContent=a;d.lastChild.textContent=b;k.appendChild(d);});
+  // вывоз
+  {const hb=$("s-haul").querySelector("tbody");hb.innerHTML="";const hs=(rs,f)=>{let t=0,v=0,w=0;rs.forEach(r=>haulOf(r).filter(f).forEach(h=>{t+=+h.t||0;v+=+h.v||0;w+=+h.w||0;}));return fmt(t,0)+" / "+fmt(v)+(HL.tn?" / "+fmt(w):"");};
+   const mats=[];P.cum.forEach(r=>haulOf(r).forEach(h=>{if(h.m&&!mats.includes(h.m))mats.push(h.m);}));
+   const carr={};P.cum.forEach(r=>haulOf(r).forEach(h=>{const kk=nrm(h.c);if(kk&&!carr[kk])carr[kk]=h.c;}));
+   if(!mats.length)emptyRow(hb,"Вывоз пока не вносился");
+   mats.forEach(m=>trow(hb,m,hs(P.day,h=>h.m===m),hs(P.month,h=>h.m===m),hs(P.cum,h=>h.m===m)));
+   Object.keys(carr).forEach(kk=>trow(hb,"· "+carr[kk],hs(P.day,h=>nrm(h.c)===kk),hs(P.month,h=>nrm(h.c)===kk),hs(P.cum,h=>nrm(h.c)===kk),"muted"));}
+  groupTable("s-subs",P,subsOf,"n","p","Субподрядчики пока не вносились");
+  groupTable("s-mach",P,machOf,"n","q","Техника пока не вносилась");
+  {const dtb=$("s-dt").querySelector("tbody");dtb.innerHTML="";const byF=(rs,f)=>rs.reduce((a,r)=>a+(r.downtime||[]).filter(d=>d.fault===f).reduce((s,d)=>s+(+d.h||0),0),0);
+   let any=false;FAULT.forEach(f=>{const c=byF(P.cum,f);if(c>0){any=true;trow(dtb,f,fmt(byF(P.day,f)),fmt(byF(P.month,f)),fmt(c),(f==="Генподрядчик"||f==="Заказчик")?"warnc":"");}});if(!any)emptyRow(dtb,"Простоев не было");}
+  {const ms=$("s-miss");ms.innerHTML="";const dates=new Set(list().map(r=>r.date));const first=list().map(r=>r.date).sort()[0];let miss=0;
+   for(let i=13;i>=0;i--){const d=new Date(D+"T12:00:00");d.setDate(d.getDate()-i);const s=d.toISOString().slice(0,10);if(!first||s<first)continue;if(!dates.has(s)){miss++;const c=document.createElement("span");c.className="chip miss";c.textContent=ruDate(s).slice(0,5);ms.appendChild(c);}}
+   if(!miss){const c=document.createElement("span");c.className="chip";c.textContent=list().length?"Все дни закрыты рапортами":"Рапортов пока нет";ms.appendChild(c);}}
+  $("s-gp").textContent=dayText(D,P,sd,sm,sc,pd,pn);
+}
+function dayText(D,P,sd,sm,sc,pd,pn){
+  if(!P.day.length)return "За "+ruDate(D)+" рапортов нет.";
+  const L=[C.name,"Сводка за "+ruDate(D),""];
+  const pp=r=>{const a=[];if(r.people&&r.people.own!=null)a.push("свои "+r.people.own);subsOf(r).forEach(x=>a.push(x.n+" "+(x.p!=null?x.p:"?")));return a.join(", ")+" — всего "+pplOf(r);};
+  (pd||[]).forEach(r=>L.push("Люди, день ("+r.foreman+"): "+pp(r)));(pn||[]).forEach(r=>L.push("Люди, ночь ("+r.foreman+"): "+pp(r)));L.push("");
+  L.push("Выполнено (сутки / месяц / с начала):");
+  WORKS.forEach(x=>{if(sc[x.k]>0)L.push("— "+x.n+": "+fmt(sd[x.k])+" / "+fmt(sm[x.k])+" / "+fmt(sc[x.k])+" "+x.u+(x.t?" из "+fmt(x.t)+" ("+fmt(sc[x.k]/x.t*100,1)+"%)":""));});
+  P.day.forEach(r=>(r.extra||[]).forEach(e=>L.push("— вне бюджета: "+e.n+": "+fmt(e.v)+" "+e.u+" ("+r.foreman+")")));
+  const dts=[];P.day.forEach(r=>(r.downtime||[]).forEach(d=>dts.push((d.what||"")+" — "+fmt(d.h)+" ч (вина: "+(d.fault||"?")+")")));
+  if(!$("c-dt").hidden){L.push("");L.push("Простои: "+(dts.length?"":"нет"));dts.forEach(s=>L.push("— "+s));}
+  return L.join("\n");
+}
+function renderLog(){
+  const rs=list().sort((a,b)=>(b.date+b.shift).localeCompare(a.date+a.shift));$("l-count").textContent=rs.length?String(rs.length):"";
+  const el=$("l-list");el.innerHTML="";
+  if(!rs.length){const p=document.createElement("div");p.className="empty";p.textContent="Здесь появятся сохранённые рапорты — по одному на смену.";el.appendChild(p);return;}
+  rs.slice(0,150).forEach(r=>{const b=document.createElement("button");b.type="button";b.className="item";
+    const m=document.createElement("div");m.className="meta";const t=document.createElement("span");t.textContent=ruDate(r.date)+" · "+(r.shift==="D"?"день":"ночь")+(r.foreman?" · "+r.foreman:"");m.appendChild(t);
+    if((r.downtime||[]).length){const f=document.createElement("span");f.className="flag";f.style.background="var(--warn)";f.textContent="простой";m.appendChild(f);}
+    b.appendChild(m);const s=document.createElement("div");s.className="sum";
+    const parts=WORKS.filter(x=>r.works&&r.works[x.c]).map(x=>x.c+" "+fmt(r.works[x.c])+" "+x.u);(r.extra||[]).forEach(e=>parts.push(e.n+" "+fmt(e.v)+" "+e.u));if(r.trips)parts.push("рейсов "+fmt(r.trips,0));const p=pplOf(r);if(p)parts.push("люди "+p);
+    s.textContent=parts.join(" · ")||"без объёмов";b.appendChild(s);
+    b.onclick=()=>{$("f-date").value=r.date;setShift(r.shift);show("form");window.scrollTo(0,0);};el.appendChild(b);});
+}
+function show(v){["form","pass","sum","log"].forEach(x=>{$("v-"+x).hidden=x!==v;$("tab-"+x).setAttribute("aria-selected",String(x===v));});$("savebar").hidden=v!=="form";if(v==="pass")renderPass();if(v==="sum")renderSum();if(v==="log")renderLog();sset("raport2-tab",v);}
+function bindForm(){
+  $("f-date").addEventListener("change",()=>{dirty=false;loadForm();});
+  $("f-foreman").addEventListener("change",()=>{if(!dirty)loadForm();});
+  window.addEventListener("online",()=>sync());
+  $("s-date").addEventListener("change",renderSum);
+  $("v-form").addEventListener("input",e=>{if(e.target.id!=="f-date")dirty=true;});
+  document.querySelectorAll("#f-shift button").forEach(b=>b.onclick=()=>setShift(b.dataset.s));
+  document.querySelectorAll("#tabs-form button").forEach(b=>b.onclick=()=>show(b.dataset.v));
+  $("f-dt-add").onclick=()=>{addDt();dirty=true;};$("f-mach-add").onclick=()=>{addMach();dirty=true;};$("f-sub-add").onclick=()=>{addSub();dirty=true;};$("f-haul-add").onclick=()=>{addHaul();dirty=true;};
+  $("f-work-add").onclick=()=>{addWork();dirty=true;};
+  $("save").onclick=()=>{const o=checkForm();if(o)persist(o);};
+  ["wa","tg","max","copy"].forEach(k=>$("send-"+k).addEventListener("click",e=>sendTo(k,e)));
+  $("s-copy").onclick=()=>{const t=$("s-gp").textContent;copyText(t).then(ok=>{$("s-copied").hidden=false;$("s-copied").textContent=ok?"Скопировано":"Выделите текст вручную";setTimeout(()=>$("s-copied").hidden=true,2500);});};
+  sync();
+}
+
+// ---------- пароль конструктора ----------
+const ADM_SALT="6e7ee92de3397291c1d458ec84eaba79",ADM_HASH="0e69da4217b22b38058f5e56853dad46b4234aa4d46ff0cc783452247374ab13";
+async function admHash(pw){const km=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveBits"]);
+  const b=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:Uint8Array.from(ADM_SALT.match(/../g),x=>parseInt(x,16)),iterations:200000},km,256);
+  return Array.from(new Uint8Array(b),x=>x.toString(16).padStart(2,"0")).join("");}
+function adminLock(go){
+  document.title="Конструктор рапорта — ГК «КРАШМАШ»";$("hdr-title").textContent="Конструктор рапорта";$("hdr-obj").textContent="Вход для руководителя";
+  const st=$("status");st.hidden=false;st.className="banner";st.innerHTML="";
+  const f=document.createElement("form");f.style.cssText="display:flex;flex-wrap:wrap;gap:8px;align-items:center";
+  const l=document.createElement("label");l.textContent="Пароль конструктора";l.style.cssText="width:100%;font-weight:600";
+  const i=document.createElement("input");i.type="password";i.autocomplete="current-password";i.style.cssText="flex:1;min-width:160px;padding:10px;font-size:16px;border:1px solid #c9d1c3;border-radius:8px";l.htmlFor=i.id="adm-pw";
+  const b=document.createElement("button");b.type="submit";b.className="btn";b.textContent="Войти";
+  const m=document.createElement("div");m.style.cssText="width:100%;color:#8a1f17;font-size:14px";
+  f.append(l,i,b,m);st.appendChild(f);i.focus();
+  f.onsubmit=async ev=>{ev.preventDefault();b.disabled=true;m.textContent="";
+    try{if(await admHash(i.value)===ADM_HASH){sset("raport2-adm",ADM_HASH);st.hidden=true;st.innerHTML="";go();}else m.textContent="Неверный пароль";}
+    catch(e){m.textContent="Браузер не поддерживает вход. Откройте в Chrome или Safari.";}
+    b.disabled=false;};
+}
+
+// ---------- запуск ----------
+(async function(){
+  bindAdmin();
+  const h=location.hash;const p=cfgParam(h);
+  if(p&&!/admin/.test(h)){
+    try{startForm(await decodeCfg(p));}
+    catch(e){$("status").hidden=false;$("status").className="banner bad";$("status").textContent=e&&e.message==="old"?"Браузер устарел и не может открыть ссылку. Обновите браузер (Chrome или Safari) и откройте ссылку снова.":"Ссылка повреждена — попросите руководителя прислать её заново.";}
+    return;
+  }
+  let cfg=null;if(p){try{cfg=await decodeCfg(p);}catch(e){}}
+  if(sget("raport2-adm")===ADM_HASH)startAdmin(cfg);else adminLock(()=>startAdmin(cfg));
+})();
+window.addEventListener("hashchange",()=>location.reload());
+})();
+</script>
+</body>
+</html>
