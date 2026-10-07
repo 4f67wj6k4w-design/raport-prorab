@@ -597,8 +597,9 @@ function execFrom_(cfgs, reports, date, today) {
     const haulA = sum(W1.map(function (r) { return sum((r.haul || []).map(function (h) { return +h.v || 0; })); })), haulB = sum(W0.map(function (r) { return sum((r.haul || []).map(function (h) { return +h.v || 0; })); }));
     const act = items.filter(function (x) { return x.a + x.b > 0; });
     if (haulA + haulB > 0 && !act.some(function (x) { return /вывоз/i.test(x.n); })) act.push({ n: 'Вывоз', u: 'м³', a: haulA, b: haulB });
-    if (diff(date, first) < 13) reasons.push({ k: 'pace', l: 'n', t: 'Темп неделя к неделе — после ' + ru(add(first, 13)) + ' (нужно 2 недели рапортов)' });
-    else if (!act.length) reasons.push(pct !== null && pct >= 99.5 ? { k: 'pace', l: 'n', t: 'План выполнен, работ за 2 недели нет' } : { k: 'pace', l: W1.length ? 'y' : 'n', t: 'Объёмов работ за 2 недели нет' });
+    if (pct !== null && pct >= 99.5) reasons.push({ k: 'pace', l: 'n', t: 'План выполнен — темп не оценивается' });
+    else if (diff(date, first) < 13) reasons.push({ k: 'pace', l: 'n', t: 'Темп неделя к неделе — после ' + ru(add(first, 13)) + ' (нужно 2 недели рапортов)' });
+    else if (!act.length) reasons.push({ k: 'pace', l: W1.length ? 'y' : 'n', t: 'Объёмов работ за 2 недели нет' });
     else {
       const sh = sum(act.map(function (x) { return x.a / (x.a + x.b); })) / act.length;
       const ratio = sh >= 0.999 ? Infinity : sh / (1 - sh);
