@@ -629,7 +629,7 @@ async function sync(){
   catch(e){if(e&&e.message==="key"){linkDead=true;syncStatus(DEAD_MSG,"bad");return;}
     syncStatus("Нет связи с базой. Рапорты сохраняются на телефоне и отправятся позже. Не отправлено: "+outbox().length,"");}
 }
-const list=()=>Object.values(reports).filter(r=>r&&r.date);
+const list=()=>Object.values(reports).filter(r=>r&&r.date&&r.id!==renameFrom);
 const haulOf=r=>Array.isArray(r&&r.haul)?r.haul:[];
 const subsOf=r=>Array.isArray(r&&r.subs)?r.subs:[];
 const machOf=r=>Array.isArray(r&&r.mach)?r.mach:[];
@@ -729,8 +729,9 @@ function prevWith(fn){const me=slug($("f-foreman").value||sget("raport2-foreman"
   const c=list().filter(x=>fn(x).length&&(x.date+x.shift)<cur).sort((a,b)=>(b.date+b.shift).localeCompare(a.date+a.shift));
   return c.find(x=>slug(x.foreman)===me)||c[0];}
 function fillForemen(){const d=$("foreman-list");if(!d)return;d.innerHTML="";Array.from(new Set(list().map(r=>(r.foreman||"").trim()).filter(Boolean))).sort().forEach(n=>{const o=document.createElement("option");o.value=n;d.appendChild(o);});}
+let loadedId=null,renameFrom=null;
 function loadForm(){fillForemen();
-  const r=reports[docId()];
+  const r=reports[docId()];loadedId=r?r.id:null;renameFrom=null;
   $("f-works").innerHTML="";
   if(r){Object.keys(r.works||{}).forEach(c=>{const x=WORKS.find(w=>w.c===c);if(x&&!isAuto(x))addWork({c:c,v:r.works[c]});});
     (r.extra||[]).forEach(e=>addWork({other:true,n:e.n,u:e.u,v:e.v}));}
@@ -748,7 +749,7 @@ function loadForm(){fillForemen();
   updProg();
   const ex=$("f-exists");
   if(r){val("f-foreman",r.foreman||sget("raport2-foreman")||"");ex.hidden=false;ex.textContent="Рапорт за эту смену уже сохранён"+(r.savedAt?" ("+new Date(r.savedAt).toLocaleString("ru-RU",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+")":"")+". Изменения перезапишут его.";}
-  else{val("f-foreman",sget("raport2-foreman")||"");ex.hidden=true;}
+  else{if(!$("f-foreman").value.trim())val("f-foreman",sget("raport2-foreman")||"");ex.hidden=true;}
   $("save-msg").textContent=r?"Редактирование сохранённого рапорта":"Новый рапорт: "+ruDate($("f-date").value)+", "+(shift==="D"?"день":"ночь");$("save-msg").className="msg";
 }
 function collect(){
@@ -789,6 +790,7 @@ function softWarn(o){const w=[];
 function checkForm(){const m=$("save-msg");const o=collect();const e=validate(o);if(e.length){m.textContent="Заполните или исправьте: "+e.join("; ");m.className="msg bad";warnAck="";return null;}
   {const w=softWarn(o),key=JSON.stringify(w)+JSON.stringify(o.works);if(w.length&&warnAck!==key){warnAck=key;m.textContent="Проверьте: "+w.join(" ")+" Если всё верно — нажмите «Сохранить рапорт» ещё раз.";m.className="msg warnc";return null;}}delete o._bad;o.savedAt=new Date().toISOString();sset("raport2-foreman",o.foreman);return o;}
 function persist(o){
+  if(renameFrom&&renameFrom!==o.id){o.replaces=renameFrom;delete reports[renameFrom];try{const m=loadLocal();delete m[renameFrom];localStorage.setItem(LKEY,JSON.stringify(m));}catch(e){}setOutbox(outbox().filter(x=>x!==renameFrom));renameFrom=null;loadedId=o.id;}
   const ok=saveLocal(o);reports=loadLocal();if(!ok)reports[o.id]=o;dirty=false;
   if(C.db){setOutbox(outbox().concat([o.id]));flush().then(()=>{const left=outbox().length;if(linkDead){syncStatus(DEAD_MSG,"bad");return;}syncStatus(left?"Рапорт сохранён на телефоне, в базу отправится при появлении связи (в очереди: "+left+").":"Рапорт записан в базу.",left?"":"okb");}).catch(()=>{});}
   const m=$("save-msg");m.textContent=(ok?"Сохранено на телефоне: ":"Принято (не сохранилось на телефоне): ")+ruDate(o.date)+", "+(o.shift==="D"?"день":"ночь")+" · "+new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});m.className="msg "+(ok?"ok":"warnc");
@@ -924,10 +926,14 @@ function show(v){["form","pass","sum","log"].forEach(x=>{$("v-"+x).hidden=x!==v;
 function bindForm(){
   $("f-idle").onchange=()=>{document.body.classList.toggle("is-idle",$("f-idle").checked);dirty=true;};
   $("f-date").addEventListener("change",()=>{dirty=false;loadForm();});
-  $("f-foreman").addEventListener("change",()=>{if(!dirty)loadForm();});
+  $("f-foreman").addEventListener("change",()=>{
+    const src=renameFrom||loadedId,nid=docId();
+    if(src&&src!==nid&&reports[src]&&!reports[nid]&&reports[src].date===$("f-date").value){renameFrom=src;dirty=true;
+      const ex=$("f-exists");if(ex){ex.hidden=false;ex.textContent="ФИО изменено: рапорт сохранится под новым ФИО, рапорт «"+reports[src].foreman+"» за эту смену будет удалён.";}return;}
+    renameFrom=null;if(!dirty)loadForm();});
   window.addEventListener("online",()=>sync());
   $("s-date").addEventListener("change",renderSum);
-  $("v-form").addEventListener("input",e=>{if(e.target.id!=="f-date")dirty=true;});
+  $("v-form").addEventListener("input",e=>{if(e.target.id!=="f-date"&&e.target.id!=="f-foreman")dirty=true;});
   document.querySelectorAll("#f-shift button").forEach(b=>b.onclick=()=>setShift(b.dataset.s));
   document.querySelectorAll("#tabs-form button").forEach(b=>b.onclick=()=>show(b.dataset.v));
   $("f-dt-add").onclick=()=>{addDt();dirty=true;};$("f-mach-add").onclick=()=>{addMach();dirty=true;};$("f-sub-add").onclick=()=>{addSub();dirty=true;};$("f-haul-add").onclick=()=>{addHaul();dirty=true;};

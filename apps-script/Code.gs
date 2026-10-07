@@ -74,6 +74,18 @@ function deleteById_(sh, id) {
   return first;
 }
 
+/** Удалить рапорт по ID на всех листах (только если он того же объекта). */
+function deleteReport_(id, pid) {
+  if (!id || !pid) return false;
+  const shR = sheet_('R'), n = shR.getLastRow();
+  if (n < 2) return false;
+  const v = shR.getRange(2, 1, n - 1, 2).getValues();
+  let ok = false;
+  for (let i = v.length - 1; i >= 0; i--) if (String(v[i][0]) === String(id) && String(v[i][1]) === String(pid)) { shR.deleteRow(i + 2); ok = true; }
+  if (ok) ['W', 'H', 'P', 'M', 'D'].forEach(function (k) { deleteById_(sheet_(k), String(id)); });
+  return ok;
+}
+
 function findRow_(sh, col, value) {
   const n = sh.getLastRow();
   if (n < 2) return 0;
@@ -163,7 +175,7 @@ function doPost(e) {
   let body;
   try { body = JSON.parse(e.postData.contents); } catch (err) { return out_({ ok: false, error: 'json' }); }
   if (body.k !== DIRECTOR_KEY) {
-    const pid = (body.cfg && body.cfg.pid) || (body.r && body.r.pid);
+    const pid = (body.cfg && body.cfg.pid) || (body.r && body.r.pid) || body.pid;
     if (!isForeman_(body.k, pid)) return out_({ ok: false, error: 'key' });
     if (body.r && body.r.pid !== pid) return out_({ ok: false, error: 'key' });
     if (body.a === 'save' && !body.r) return out_({ ok: false, error: 'key' });
@@ -172,7 +184,11 @@ function doPost(e) {
   try {
     lock.waitLock(25000);
     if (body.cfg) saveCfg_(body.cfg);
-    if (body.a === 'save') saveReport_(body.r, body.cfg);
+    if (body.a === 'save') {
+      saveReport_(body.r, body.cfg);
+      if (body.r.replaces && body.r.replaces !== body.r.id) deleteReport_(body.r.replaces, body.r.pid);
+    }
+    if (body.a === 'del' && body.id) deleteReport_(body.id, (body.cfg && body.cfg.pid) || body.pid);
     return out_({ ok: true, id: body.r ? body.r.id : null });
   } catch (err) {
     return out_({ ok: false, error: String(err) });
