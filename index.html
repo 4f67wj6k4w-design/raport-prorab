@@ -317,7 +317,7 @@ td.src small{display:block;color:var(--muted);font-size:11px}
         </div>
       </div>
       <div class="row" style="margin-top:10px">
-        <label class="f">Прораб (Фамилия И.О.)<input type="text" id="f-foreman" autocomplete="name" placeholder="Иванов И.И."></label>
+        <label class="f">Прораб (Фамилия И.О.)<input type="text" id="f-foreman" autocomplete="name" list="foreman-list" placeholder="Иванов И.И."><datalist id="foreman-list"></datalist></label>
       </div>
       <div id="f-exists" class="hint" hidden></div>
     </section>
@@ -720,6 +720,7 @@ async function flush(){
 async function pull(){
   if(!C.db)return;
   const j=await dbGet(C.db,{a:"list",pid:C.pid});let n=0;const ob=outbox();
+  {const onSrv=new Set((j.reports||[]).map(r=>r&&r.id));Object.keys(reports).forEach(id=>{if(!onSrv.has(id)&&!ob.includes(id))delete reports[id];});}
   (j.reports||[]).forEach(r=>{if(!r||!r.id)return;const mine=reports[r.id];
     if(!mine||(r.savedAt||"")>=(mine.savedAt||"")){reports[r.id]=r;n++;}
     if(ob.includes(r.id)&&mine&&(r.savedAt||"")>=(mine.savedAt||""))setOutbox(outbox().filter(x=>x!==r.id));});
@@ -827,7 +828,8 @@ const val=(id,v)=>{const e=$(id);if(e)e.value=(v===null||v===undefined)?"":(type
 function prevWith(fn){const me=slug($("f-foreman").value||sget("raport2-foreman")||"");const cur=$("f-date").value+shift;
   const c=list().filter(x=>fn(x).length&&(x.date+x.shift)<cur).sort((a,b)=>(b.date+b.shift).localeCompare(a.date+a.shift));
   return c.find(x=>slug(x.foreman)===me)||c[0];}
-function loadForm(){
+function fillForemen(){const d=$("foreman-list");if(!d)return;d.innerHTML="";Array.from(new Set(list().map(r=>(r.foreman||"").trim()).filter(Boolean))).sort().forEach(n=>{const o=document.createElement("option");o.value=n;d.appendChild(o);});}
+function loadForm(){fillForemen();
   const r=reports[docId()];
   $("f-works").innerHTML="";
   if(r){Object.keys(r.works||{}).forEach(c=>{const x=WORKS.find(w=>w.c===c);if(x&&!isAuto(x))addWork({c:c,v:r.works[c]});});
@@ -878,7 +880,8 @@ function validate(o){
   return e;
 }
 let warnAck="";
-function softWarn(o){const w=[];const cum=cumWorks(list().filter(r=>r.date<=o.date&&r.id!==o.id).concat([o]));
+function softWarn(o){const w=[];
+  {const same=list().filter(r=>r.date===o.date&&r.shift===o.shift&&r.id!==o.id);if(same.length)w.push("За эту смену уже есть рапорт: "+same.map(r=>r.foreman).join(", ")+". Если это тот же прораб — впишите ФИО точно так же (выберите из подсказки), тогда рапорт заменится. Если это второй прораб на объекте — просто сохраните ещё раз.");}const cum=cumWorks(list().filter(r=>r.date<=o.date&&r.id!==o.id).concat([o]));
   WORKS.filter(x=>x.t&&!isAuto(x)&&typeof o.works[x.c]==="number").forEach(x=>{const v=o.works[x.c];
     if(String(x.u).trim()!=="%"&&cum[x.k]>=x.t*0.999&&v>x.t*0.03)w.push("«"+x.n+"»: "+fmt(v)+" "+x.u+" за смену — работа закрывается на 100%. Это объём за смену, а не остаток?");
     else if(String(x.u).trim()!=="%"&&v>x.t*0.25)w.push("«"+x.n+"»: "+fmt(v)+" "+x.u+" за смену — это "+fmt(v/x.t*100,0)+"% всего объёма по проекту.");});
