@@ -765,6 +765,7 @@ function rowHint(r){
   const D=$("f-date").value,me=docId();const done=cumWorks(list().filter(q=>q.date<=D&&q.id!==me))[x.k]||0;
   h.textContent="По бюджету "+(x.t?fmt(x.t)+" "+x.u:"не задан")+" · было выполнено "+fmt(done)+" "+x.u+(x.t?" ("+fmt(done/x.t*100,1)+"%)":"");
   if(x.t&&done>x.t)h.className="wh bad";
+  if(r.dataset.auto==="1"&&r.dataset.m==="d")h.textContent+=" · число меньше итога — считаю как объём за смену";
   const qv=num(r.querySelector(".wq").value);
   if(r.dataset.m==="t"&&qv!==null){const d=qv-done;h.textContent+=d<0?" · ВСЕГО меньше, чем уже было — проверьте":d===0?" · за смену: 0 (итог не изменился)":" · за смену получится: "+fmt(d)+" "+x.u;if(d<0)h.className="wh bad";}
 }
@@ -776,10 +777,13 @@ function addWork(d){d=d||{};
   add("","— выберите работу —");manual().forEach(x=>add(x.c,x.c+" · "+x.n+", "+x.u));add("__other","Другая работа (нет в бюджете)…");
   const q=r.querySelector(".wq"),on=r.querySelector(".won"),ou=r.querySelector(".wou");
   const wm=r.querySelector(".wm"),setM=m=>{r.dataset.m=m;wm.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.m===m)));q.placeholder=m==="t"?"всего":"0";rowHint(r);};
-  wm.querySelectorAll("button").forEach(b=>b.onclick=()=>{setM(b.dataset.m);dirty=true;});
+  wm.querySelectorAll("button").forEach(b=>b.onclick=()=>{r.dataset.auto="";setM(b.dataset.m);dirty=true;});
   const upd=()=>{const o=sel.value==="__other";on.hidden=!o;ou.hidden=!o;wm.hidden=o||!sel.value;const x=WORKS.find(w=>w.c===sel.value);if(!r.dataset.touched)setM(x&&String(x.u).trim()==="%"?"t":"d");rowHint(r);};
   sel.onchange=()=>{upd();dirty=true;};
   q.addEventListener("input",()=>{r.dataset.touched="1";rowHint(r);});
+  q.addEventListener("change",()=>{if(r.dataset.m!=="t")return;const x=WORKS.find(w=>w.c===sel.value),v=num(q.value);if(!x||v===null)return;
+    const D=$("f-date").value,me=docId();const done=cumWorks(list().filter(z=>z.date<=D&&z.id!==me))[x.k]||0;
+    if(v<done&&(!x.t||done+v<=x.t*1.0001)){setM("d");r.dataset.auto="1";rowHint(r);}});
   if(d.other){sel.value="__other";on.value=d.n||"";ou.value=d.u||"";}else sel.value=d.c&&manual().some(x=>x.c===d.c)?d.c:"";
   q.value=d.v!=null?String(d.v).replace(".",","):"";if(d.v!=null)r.dataset.touched="1";
   r.querySelector("button.del").onclick=()=>{r.remove();dirty=true;if(!$("f-works").children.length)addWork();};
@@ -796,7 +800,8 @@ function readWorks(){
     if(!c){if(v!==null)bad.push("работа "+n+": выберите вид работ");return;}
     if(v===null){bad.push("работа "+n+": объём");return;}
     let dv=v;if(r.dataset.m==="t"){const x=WORKS.find(w=>w.c===c);const D=$("f-date").value,me=docId();const done=cumWorks(list().filter(q=>q.date<=D&&q.id!==me))[x.k]||0;dv=Math.round((v-done)*1000)/1000;
-      if(dv<0){bad.push("работа "+n+" («"+x.n+"»): всего "+fmt(v)+" меньше, чем уже было ("+fmt(done)+")");return;}if(dv===0)return;}
+      if(dv<0&&(!x.t||done+v<=x.t*1.0001))dv=v;
+      else if(dv<0){bad.push("работа "+n+" («"+x.n+"»): всего "+fmt(v)+" меньше, чем уже было ("+fmt(done)+")");return;}if(dv===0)return;}
     works[c]=(works[c]||0)+dv;
   });
   return {works:works,extra:extra,bad:bad};
