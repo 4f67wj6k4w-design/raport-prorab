@@ -353,7 +353,11 @@ function digestFrom_(cfgs, reports, date, page) {
 
   const G = '#2E671F';
   H.push('<div style="font-family:Arial,Helvetica,sans-serif;max-width:720px;color:#1d1d1b">');
-  H.push('<div style="background:' + G + ';color:#fff;padding:14px 16px;border-radius:8px 8px 0 0"><div style="font-size:12px;opacity:.85">ГК «КРАШМАШ» · рапорты прорабов</div><div style="font-size:20px;font-weight:bold">Сводка по объектам за ' + ru(date) + '</div></div>');
+  H.push('<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:' + G + ';border-radius:8px 8px 0 0"><tr><td style="padding:16px 18px;color:#ffffff;font-family:Arial,Helvetica,sans-serif">' +
+    '<div style="font-size:26px;line-height:30px;font-weight:bold;letter-spacing:.5px;color:#ffffff">ГК «КРАШМАШ»</div>' +
+    '<div style="font-size:19px;line-height:24px;font-weight:bold;color:#ffffff;margin-top:6px">Сводка по объектам за ' + ru(date) + '</div>' +
+    '<div style="font-size:13px;line-height:18px;color:#dfe9da;margin-top:4px">Рапорты прорабов · ' + okN + ' из ' + objs.length + ' объектов сдали рапорт</div>' +
+    '</td></tr></table>');
   H.push('<table style="width:100%;border-collapse:collapse;background:#f3f5f1;font-size:14px"><tr>' +
     [['Рапортов', okN + ' из ' + objs.length], ['Людей', ppl], [vol || !ton ? 'Вывоз, м³' : '', f(vol)], ['Простои/ремонт, ч', f(dtH)]].map(function (k) {
       return '<td style="padding:10px 12px"><div style="color:#666;font-size:12px">' + esc(k[0]) + '</div><div style="font-size:18px;font-weight:bold">' + esc(k[1]) + '</div></td>';
