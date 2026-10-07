@@ -215,7 +215,7 @@ table.ww tr.sep td{border-top:2px solid var(--line)}
   <section class="card">
     <div class="dnav">
       <button type="button" class="btn" id="d-prev" aria-label="Предыдущий день">‹</button>
-      <div class="dlab" id="d-lab">…</div>
+      <div class="dlab" id="d-lab">&nbsp;</div>
       <button type="button" class="btn" id="d-next" aria-label="Следующий день">›</button>
     </div>
   </section>
@@ -270,7 +270,7 @@ const todayISO=()=>iso(new Date());
 function status(t,cls){const s=$("status");s.hidden=!t;s.className="banner"+(cls?" "+cls:"");s.textContent=t||"";}
 async function load(quiet){
   if(!db){status("Откройте панель по ссылке из письма или от администратора (в ней адрес базы и ключ).","bad");$("list").innerHTML="";return;}
-  if(!quiet)$("list").innerHTML='<div class="empty">Загрузка…</div>';
+  if(!quiet){$("list").innerHTML='<div class="empty">Загрузка данных…</div>';const dd=date||addD(todayISO(),-1);$("d-lab").innerHTML="";$("d-lab").appendChild(document.createTextNode("за "+ru(dd)));$("d-lab").appendChild(el("small",null,"загрузка…"));}
   try{const q={k:db.k,a:"exec"};if(date)q.date=date;
     const r=await fetch(db.u+(db.u.includes("?")?"&":"?")+new URLSearchParams(q),{redirect:"follow"});const j=await r.json();
     if(!j.ok)throw new Error(j.error==="action"||j.error==="key"?"доступ закрыт или скрипт базы не обновлён (нужна новая версия развертывания)":(j.error||"ошибка"));
