@@ -249,6 +249,7 @@ function dailyDigest() {
   const d = buildDigest_(date);
   if (DIGEST_TO) {
     MailApp.sendEmail({ to: DIGEST_TO, subject: d.subject, body: d.text, htmlBody: d.html, name: 'Рапорты прорабов' });
+    mark_('dailyDigest');
   }
   if (TG_BOT_TOKEN && TG_CHAT_IDS) {
     const parts = splitText_(d.text, 3900);
@@ -719,6 +720,7 @@ function execMorning() {
   const y = new Date(); y.setDate(y.getDate() - 1);
   const d = execMailFrom_(execModel_(Utilities.formatDate(y, TZ, 'yyyy-MM-dd')), EXEC_PAGE);
   MailApp.sendEmail({ to: EXEC_TO, subject: d.subject, body: d.text, htmlBody: d.html, name: 'ГК КРАШМАШ — объекты' });
+  mark_('execMorning');
 }
 
 /** Проверка: отправить письмо светофора за вчера только первому адресу (себе). */
@@ -743,4 +745,93 @@ function rebuildDetails() {
     saveReport_(r, cfgBy[r.pid]); done++;
   });
   Logger.log('Дописано рапортов: ' + done);
+}
+
+// =====================================================================
+// СТОРОЖ И РЕЗЕРВНАЯ КОПИЯ
+// =====================================================================
+// Кому письма сторожа (только вам). Пусто — первый адрес из DIGEST_TO.
+const GUARD_TO = '';
+// Папка на Google Диске для копий и сколько последних копий хранить.
+const BACKUP_FOLDER = 'Рапорт прораба — резервные копии';
+const BACKUP_KEEP = 8;
+
+function guardTo_() { return String(GUARD_TO || DIGEST_TO).split(',')[0].trim(); }
+function mark_(name) { PropertiesService.getScriptProperties().setProperty('ok_' + name, Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm')); }
+function lastOk_(name) { return PropertiesService.getScriptProperties().getProperty('ok_' + name) || ''; }
+
+/** Запустить ОДИН раз вручную: включает сторожа (каждый день ~21:30) и копию (каждое воскресенье ~3:00),
+ *  сразу делает первую копию и присылает письмо «Сторож включён». */
+function setupGuard() {
+  ScriptApp.getProjectTriggers().forEach(function (t) { const h = t.getHandlerFunction(); if (h === 'watchdog' || h === 'backupWeekly') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('watchdog').timeBased().atHour(21).nearMinute(30).everyDays(1).inTimezone(TZ).create();
+  ScriptApp.newTrigger('backupWeekly').timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(3).inTimezone(TZ).create();
+  const f = backup_();
+  const probs = guardCheck_(true);
+  MailApp.sendEmail({ to: guardTo_(), name: 'Рапорт прораба — сторож', subject: 'Сторож и резервная копия включены',
+    body: 'Каждый день около 21:30 система проверяет себя. Если что-то не так — придёт письмо «ВНИМАНИЕ». Если всё в порядке — писем не будет.\n' +
+      'Каждое воскресенье ночью сохраняется копия таблицы в папку Google Диска «' + BACKUP_FOLDER + '» (хранятся последние ' + BACKUP_KEEP + ').\n\n' +
+      'Первая копия: ' + f.getName() + '\n' + f.getUrl() + '\n\nПроверка сейчас: ' + (probs.length ? '\n— ' + probs.join('\n— ') : 'всё в порядке.') });
+}
+
+/** Копия таблицы в папку Диска; старые копии сверх BACKUP_KEEP — в корзину Диска (восстановимы 30 дней). */
+function backup_() {
+  const it = DriveApp.getFoldersByName(BACKUP_FOLDER);
+  const folder = it.hasNext() ? it.next() : DriveApp.createFolder(BACKUP_FOLDER);
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const f = DriveApp.getFileById(ss.getId()).makeCopy('Рапорты — копия ' + Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH.mm'), folder);
+  const files = []; const fi = folder.getFiles(); while (fi.hasNext()) files.push(fi.next());
+  files.sort(function (a, b) { return b.getDateCreated() - a.getDateCreated(); });
+  files.slice(BACKUP_KEEP).forEach(function (x) { x.setTrashed(true); });
+  mark_('backup');
+  return f;
+}
+
+function backupWeekly() {
+  try { const f = backup_(); }
+  catch (e) { MailApp.sendEmail({ to: guardTo_(), name: 'Рапорт прораба — сторож', subject: 'ВНИМАНИЕ: резервная копия не сохранилась', body: 'Ошибка: ' + e + '\n\nЗапустите в редакторе скрипта функцию setupGuard или пришлите это письмо Claude.' }); }
+}
+
+/** Ежедневная проверка (~21:30). Письмо приходит только если есть проблемы. */
+function watchdog() {
+  const probs = guardCheck_(false);
+  if (!probs.length) return;
+  const today = Utilities.formatDate(new Date(), TZ, 'dd.MM.yyyy');
+  MailApp.sendEmail({ to: guardTo_(), name: 'Рапорт прораба — сторож', subject: 'ВНИМАНИЕ: рапорты прорабов — проверка за ' + today,
+    body: 'Сторож нашёл проблемы:\n\n— ' + probs.join('\n— ') +
+      '\n\nЧто делать: откройте таблицу и редактор скрипта (Расширения → Apps Script). Если не понятно — перешлите это письмо Claude.' +
+      (DIRECTOR_PAGE ? '\n\nКабинет: ' + DIRECTOR_PAGE : '') });
+}
+
+function guardCheck_(initial) {
+  const probs = [];
+  const now = new Date(), today = Utilities.formatDate(now, TZ, 'yyyy-MM-dd'), dow = Number(Utilities.formatDate(now, TZ, 'u'));
+  // 1. Расписание на месте
+  const need = { dailyDigest: 'сводка в 20:00 (setupDigest)', watchdog: 'сторож (setupGuard)', backupWeekly: 'резервная копия (setupGuard)' };
+  if (EXEC_TO) need.execMorning = 'письмо руководству в 8:00 (setupExec)';
+  const have = {}; ScriptApp.getProjectTriggers().forEach(function (t) { have[t.getHandlerFunction()] = 1; });
+  Object.keys(need).forEach(function (h) { if (!have[h]) probs.push('Нет расписания: ' + need[h] + '. Запустите функцию в скобках один раз.'); });
+  // 2. Данные читаются и считаются
+  let all = null;
+  try { all = readAll_(); } catch (e) { probs.push('Не читается таблица: ' + e); }
+  if (all) {
+    if (!all.cfgs.length) probs.push('На листе «Объекты» нет ни одного объекта.');
+    try { digestFrom_(all.cfgs, all.reports, today, DIRECTOR_PAGE); } catch (e) { probs.push('Ошибка при сборке сводки: ' + e); }
+    try { execFrom_(all.cfgs, all.reports, today, today); } catch (e) { probs.push('Ошибка в расчёте светофора: ' + e); }
+    // 3. Рапорты идут
+    const td = all.reports.filter(function (r) { return r && r.date === today; });
+    if (!initial && !td.length && dow !== 7) probs.push('За сегодня не пришло ни одного рапорта. Возможно, у прорабов не открывается форма или не работает база.');
+    const lastRec = all.reports.reduce(function (m, r) { return r && r.savedAt && r.savedAt > m ? r.savedAt : m; }, '');
+    if (lastRec && (now - new Date(lastRec)) > 3 * 864e5) probs.push('Новых рапортов нет больше 3 дней (последний сохранён ' + Utilities.formatDate(new Date(lastRec), TZ, 'dd.MM.yyyy HH:mm') + ').');
+  }
+  // 4. Письма ушли
+  if (!initial) {
+    if (DIGEST_TO && lastOk_('dailyDigest').slice(0, 10) !== today) probs.push('Сводка в 20:00 сегодня не ушла (последняя: ' + (lastOk_('dailyDigest') || 'нет данных') + ').');
+    if (EXEC_TO && lastOk_('execMorning').slice(0, 10) !== today) probs.push('Письмо руководству в 8:00 сегодня не ушло (последнее: ' + (lastOk_('execMorning') || 'нет данных') + ').');
+  }
+  // 5. Копия свежая, квота писем есть
+  const b = lastOk_('backup');
+  if (!b || (now - new Date(b.slice(0, 10) + 'T12:00:00')) > 9 * 864e5) probs.push('Резервной копии больше 9 дней (последняя: ' + (b || 'не было') + ').');
+  try { if (MailApp.getRemainingDailyQuota() < 10) probs.push('Почти закончился дневной лимит писем Google.'); } catch (e) {}
+  return probs;
 }
