@@ -30,7 +30,7 @@ const SHEETS = {
   H: ['Вывоз',    ['ID', 'Код объекта', 'Объект', 'Дата', 'Смена', 'Прораб', 'Перевозчик', 'Материал', 'Рейсов', 'м³', 'т']],
   P: ['Люди',     ['ID', 'Код объекта', 'Объект', 'Дата', 'Смена', 'Прораб', 'Организация', 'Людей']],
   M: ['Техника',  ['ID', 'Код объекта', 'Объект', 'Дата', 'Смена', 'Прораб', 'Техника', 'Кол-во', 'Моточасы']],
-  D: ['Простои',  ['ID', 'Код объекта', 'Объект', 'Дата', 'Смена', 'Прораб', 'Что стояло', 'Часы', 'Причина', 'По чьей вине']],
+  D: ['Простои',  ['ID', 'Код объекта', 'Объект', 'Дата', 'Смена', 'Прораб', 'Что стояло', 'Часы', 'Причина', 'По чьей вине', 'Вид']],
   O: ['Объекты',  ['Код объекта', 'Объект', 'Обновлено', 'Настройки JSON']]
 };
 
@@ -119,7 +119,7 @@ function saveReport_(r, cfg) {
   (r.subs || []).forEach(function (x) { ppl.push(base.concat([x.n || '', x.p || 0])); });
   put('P', ppl);
   put('M', (r.mach || []).map(function (m) { return base.concat([m.n || '', m.q || 0, m.h == null ? '' : m.h]); }));
-  put('D', (r.downtime || []).map(function (d) { return base.concat([d.what || '', d.h || 0, d.why || '', d.fault || '']); }));
+  put('D', (r.downtime || []).map(function (d) { return base.concat([d.what || '', d.h || 0, d.why || '', d.fault || '', d.k || 'Простой']); }));
 }
 
 function doGet(e) {
@@ -316,15 +316,15 @@ function digestFrom_(cfgs, reports, date, page) {
     const mk = Object.keys(mm);
     if (mk.length) b.lines.push(['m', 'Техника: ' + mk.map(function (k) { const m = mm[k]; return m.n + (m.q > 1 ? ' ×' + m.q : '') + (m.hh ? ' — ' + f(m.h) + ' м/ч' : ''); }).join('; ')]);
     // простои
-    const dts = []; day.forEach(function (r) { (r.downtime || []).forEach(function (d) { dtH += +d.h || 0; dts.push((d.what || '') + ' — ' + f(d.h) + ' ч, ' + (d.why || '') + ' (вина: ' + (d.fault || '?') + ')'); }); });
-    dts.forEach(function (s) { b.lines.push(['d', 'Простой: ' + s, true]); });
+    const dts = []; day.forEach(function (r) { (r.downtime || []).forEach(function (d) { dtH += +d.h || 0; dts.push((d.k || 'Простой') + ': ' + (d.what || '') + ' — ' + f(d.h) + ' ч' + (d.why ? ', ' + d.why : '') + (d.fault ? ' (вина: ' + d.fault + ')' : '')); }); });
+    dts.forEach(function (s) { b.lines.push(['d', s, true]); });
     day.forEach(function (r) { if (r.other) b.lines.push(['n', 'Примечание: ' + r.other]); });
     return b;
   });
 
   const subject = 'Сводка по объектам за ' + ru(date) + ' — рапортов ' + okN + ' из ' + objs.length;
   T.push(subject.toUpperCase());
-  T.push('Людей на объектах: ' + ppl + ' · вывезено/продано: ' + f(vol) + ' м³' + (ton ? ' (' + f(ton) + ' т)' : '') + ' · простои: ' + f(dtH) + ' ч');
+  T.push('Людей на объектах: ' + ppl + ' · вывезено/продано: ' + f(vol) + ' м³' + (ton ? ' (' + f(ton) + ' т)' : '') + ' · простои и ремонт: ' + f(dtH) + ' ч');
   if (missing.length) T.push('Нет рапорта: ' + missing.join('; '));
   blocks.forEach(function (b) {
     T.push(''); T.push((b.ok ? '■ ' : '□ ') + b.name);
@@ -339,7 +339,7 @@ function digestFrom_(cfgs, reports, date, page) {
   H.push('<div style="font-family:Arial,Helvetica,sans-serif;max-width:720px;color:#1d1d1b">');
   H.push('<div style="background:' + G + ';color:#fff;padding:14px 16px;border-radius:8px 8px 0 0"><div style="font-size:12px;opacity:.85">ГК «КРАШМАШ» · рапорты прорабов</div><div style="font-size:20px;font-weight:bold">Сводка по объектам за ' + ru(date) + '</div></div>');
   H.push('<table style="width:100%;border-collapse:collapse;background:#f3f5f1;font-size:14px"><tr>' +
-    [['Рапортов', okN + ' из ' + objs.length], ['Людей', ppl], [vol || !ton ? 'Вывоз, м³' : '', f(vol)], ['Простои, ч', f(dtH)]].map(function (k) {
+    [['Рапортов', okN + ' из ' + objs.length], ['Людей', ppl], [vol || !ton ? 'Вывоз, м³' : '', f(vol)], ['Простои/ремонт, ч', f(dtH)]].map(function (k) {
       return '<td style="padding:10px 12px"><div style="color:#666;font-size:12px">' + esc(k[0]) + '</div><div style="font-size:18px;font-weight:bold">' + esc(k[1]) + '</div></td>';
     }).join('') + '</tr></table>');
   if (missing.length) H.push('<div style="background:#fdecea;color:#8a1f17;padding:10px 12px;font-size:14px"><b>Нет рапорта:</b> ' + esc(missing.join('; ')) + '</div>');
@@ -407,7 +407,7 @@ function reportText_(c, r, cumAll, f) {
   (r.subs || []).forEach(function (x) { pp.push((x.n || '') + ' ' + (x.p != null ? x.p : '?')); tot += +x.p || 0; });
   L.push('Люди: ' + (pp.length ? pp.join(', ') + ' — всего ' + tot : 'нет данных'));
   if ((r.mach || []).length) L.push('Техника: ' + r.mach.map(function (m) { return m.n + ' ' + (m.q || 1) + (m.h != null ? ' (' + f(m.h) + ' м/ч)' : ''); }).join(', '));
-  (r.downtime || []).forEach(function (d) { L.push('Простой: ' + (d.what || '') + ' — ' + f(d.h) + ' ч — ' + (d.why || '') + ' (вина: ' + (d.fault || '?') + ')'); });
+  (r.downtime || []).forEach(function (d) { L.push((d.k || 'Простой') + ': ' + (d.what || '') + ' — ' + f(d.h) + ' ч' + (d.why ? ' — ' + d.why : '') + (d.fault ? ' (вина: ' + d.fault + ')' : '')); });
   if (r.other) L.push('Примечание: ' + r.other);
   return L.join('\n');
 }

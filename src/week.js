@@ -91,7 +91,7 @@
       ["Техника", f(machTotal) + " маш.-ч", Object.keys(units).length + " ед. в рапортах", ""],
       ["Люди", manDays ? f(manDays, 0) + " чел.-см." : "не указаны", manDays && repDays.length ? "в среднем " + f(manDays / repDays.length) + " чел./смену" : "", ""],
     ];
-    if (dtH) kpi.push(["Простои", f(dtH) + " ч", dts.length + " случ.", "bad"]);
+    if (dtH) kpi.push(["Простои и ремонт", f(dtH) + " ч", dts.length + " случ.", "bad"]);
 
     // ================= HTML =================
     const H = [];
@@ -175,7 +175,7 @@
       H.push("</tbody></table></div></section>");
     }
 
-    if (dts.length) H.push('<section class="wk-card"><h2>Простои — ' + f(dtH) + ' ч</h2><ul class="wk-list">' + dts.map(x => "<li><b>" + ru(x.d) + "</b> " + esc(x.what || "") + " — " + f(x.h) + " ч · " + esc(x.why || "") + ' <span class="mut">(вина: ' + esc(x.fault || "?") + ")</span></li>").join("") + "</ul></section>");
+    if (dts.length) H.push('<section class="wk-card"><h2>Простои и ремонт — ' + f(dtH) + ' ч</h2><ul class="wk-list">' + dts.map(x => "<li><b>" + ru(x.d) + "</b> " + esc(x.k || "Простой") + ": " + esc(x.what || "") + " — " + f(x.h) + " ч" + (x.why ? " · " + esc(x.why) : "") + (x.fault ? ' <span class="mut">(вина: ' + esc(x.fault) + ")</span>" : "") + "</li>").join("") + "</ul></section>");
     if (notes.length) H.push('<section class="wk-card"><h2>Примечания прорабов</h2><ul class="wk-list">' + notes.map(x => "<li><b>" + ru(x.d) + "</b> " + esc(x.t) + "</li>").join("") + "</ul></section>");
 
     H.push('<p class="wk-foot">Собрано автоматически из рапортов прорабов' + (opts.built ? " · " + esc(opts.built) : "") + ". Дни без рапорта не приравниваются к нулю.</p></div>");
