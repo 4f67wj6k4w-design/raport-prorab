@@ -180,11 +180,17 @@ details.how p{margin:8px 0 0;line-height:1.4}
 .cg{display:grid;gap:18px}
 @media (min-width:760px){.cg{grid-template-columns:1fr 1fr}}
 .tip{position:fixed;z-index:50;pointer-events:none;background:var(--fg);color:var(--bg);font-size:12px;padding:5px 8px;border-radius:6px;white-space:nowrap;transform:translate(-50%,-110%)}
-table.ww{width:100%;border-collapse:collapse;font-size:14px}
-table.ww th{font-size:12px;color:var(--muted);font-weight:500;text-align:right;padding:4px 6px;border-bottom:1px solid var(--line)}
+.ch .cap{margin-top:4px;font-size:13px;line-height:1.35;background:var(--sunk);border-radius:6px;padding:6px 8px;min-height:20px}
+.ch .cap b{font-family:var(--f-num);font-weight:600}
+.ch .cap .d{color:var(--muted)}
+.wwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.ww{width:100%;border-collapse:collapse;font-size:14px;table-layout:fixed}
+table.ww col.c0{width:37%}table.ww col.c1,table.ww col.c2{width:22%}table.ww col.c3{width:19%}
+@media (max-width:480px){table.ww{font-size:12.5px}table.ww td,table.ww th{padding:5px 3px!important}table.ww td:last-child{font-size:11px;letter-spacing:-.2px}}
+table.ww th{font-size:12px;color:var(--muted);font-weight:500;text-align:right;padding:4px 6px;border-bottom:1px solid var(--line);white-space:normal;word-break:break-word}
 table.ww th:first-child{text-align:left}
 table.ww td{padding:6px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--f-num);white-space:nowrap}
-table.ww td:first-child{text-align:left;font-family:var(--f-ui);white-space:normal}
+table.ww td:first-child{text-align:left;font-family:var(--f-ui);white-space:normal;word-break:break-word;hyphens:auto}
 table.ww td small{color:var(--muted);font-family:var(--f-ui)}
 table.ww tr.sep td{border-top:2px solid var(--line)}
 .up{color:var(--ok)}.dn{color:var(--bad)}.eq{color:var(--muted)}
@@ -320,22 +326,33 @@ function charts(o){const C=$("o-charts");C.innerHTML="";if(!o.series){C.appendCh
   const k=win(o),D=M.dates.slice(k),S=o.series,cut=a=>a.slice(k);
   if(S.pct){const plan=(o.due&&o.start)?D.map(d=>{const a=(new Date(d)-new Date(o.start))/864e5+1,b=(new Date(o.due)-new Date(o.start))/864e5+1;return Math.max(0,Math.min(100,a/b*100));}):null;
     C.appendChild(line("Выполнение плана объекта, %",plan?"сплошная — факт, пунктир — равномерный график до срока":"накопительно, по работам с объёмом по проекту",D,cut(S.pct),plan,"%"));}
-  o.works.filter(w=>w.act>0).slice(0,4).forEach(w=>C.appendChild(bars(w.n+", "+w.u,"объём за день"+(w.t?" · план "+fmt(w.t)+", выполнено "+fmt(w.pct,1)+"%":""),D,cut(w.d),w.u,o.first)));
-  C.appendChild(bars("Люди на объекте","свои + субподрядчики, чел. в день; точка — рапорта нет",D,cut(S.people),"чел.",o.first));
-  C.appendChild(bars("Техника, машино-часы","моточасы за день",D,cut(S.mh),"маш.-ч",o.first));
-  if(S.m3.some(x=>x))C.appendChild(bars("Вывоз, м³","за день",D,cut(S.m3),"м³",o.first));
-  if(cut(S.dt).some(x=>x))C.appendChild(bars("Простои и ремонт, ч","без ТО",D,cut(S.dt),"ч",o.first));else{const f=frame("Простои и ремонт, ч","без ТО");f.appendChild(el("div","empty","За период простоев и ремонтов не было"));C.appendChild(f);}}
+  o.works.filter(w=>w.act>0).slice(0,4).forEach(w=>C.appendChild(bars(w.n+", "+w.u,"объём за день"+(w.t?" · план "+fmt(w.t)+", выполнено "+fmt(w.pct,1)+"%":""),D,cut(w.d),w.u,o.first,{cum:w.done,t:w.t})));
+  C.appendChild(bars("Люди на объекте","свои + субподрядчики, чел. в день; точка — рапорта нет",D,cut(S.people),"чел.",o.first,{avg:1}));
+  C.appendChild(bars("Техника, машино-часы","моточасы за день",D,cut(S.mh),"маш.-ч",o.first,{sum:1}));
+  if(S.m3.some(x=>x))C.appendChild(bars("Вывоз, м³","за день",D,cut(S.m3),"м³",o.first,{sum:1}));
+  if(cut(S.dt).some(x=>x))C.appendChild(bars("Простои и ремонт, ч","без ТО",D,cut(S.dt),"ч",o.first,{sum:1}));else{const f=frame("Простои и ремонт, ч","без ТО");f.appendChild(el("div","empty","За период простоев и ремонтов не было"));C.appendChild(f);}}
 function frame(title,sub){const w=el("div","ch");w.appendChild(el("h3",null,title));if(sub)w.appendChild(el("div","sub",sub));return w;}
 function axis(s,W,H,P,mx,D,unit){const ticks=niceTicks(mx);ticks.forEach(t=>{const y=P.t+(H-P.t-P.b)*(1-t/ticks[ticks.length-1]);s.appendChild(sv("line",{x1:P.l,x2:W-P.r,y1:y,y2:y,stroke:"var(--grid)","stroke-width":1}));const tx=sv("text",{x:P.l-6,y:y+4,"text-anchor":"end"});tx.textContent=fmt(t,ticks[1]<1?1:0);s.appendChild(tx);});
   const n=D.length,step=n>20?7:n>10?3:1;D.forEach((d,i)=>{if((n-1-i)%step)return;const tx=sv("text",{x:P.l+(W-P.l-P.r)*(i+.5)/n,y:H-4,"text-anchor":"middle"});tx.textContent=ru5(d);s.appendChild(tx);});
   return ticks[ticks.length-1];}
 function niceTicks(mx){mx=mx||1;const p=Math.pow(10,Math.floor(Math.log10(mx))),f=mx/p,st=(f<=1.5?.5:f<=3?1:f<=6?2:5)*p;const out=[];for(let v=0;v<=mx+st*0.999;v+=st)out.push(+v.toFixed(6));if(out.length<2)out.push(st);return out;}
-function bars(title,sub,D,v,unit,first){const w=frame(title,sub);const W=340,H=150,P={l:40,r:6,t:8,b:20};const s=sv("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":title});
+function bars(title,sub,D,v,unit,first,opt){opt=opt||{};const w=frame(title,sub);const W=340,H=150,P={l:40,r:6,t:8,b:20};const s=sv("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":title});
   const mx=axis(s,W,H,P,Math.max(...v.map(x=>x||0)),D,unit);const n=D.length,bw=(W-P.l-P.r)/n,base=H-P.b;
   v.forEach((x,i)=>{const cx=P.l+i*bw;if(x===null&&first&&D[i]<first)return;if(x===null){s.appendChild(sv("circle",{cx:cx+bw/2,cy:base-2,r:2,fill:"var(--s-n)"}));}
     else if(x>0){const hh=Math.max(2,(base-P.t)*x/mx);s.appendChild(sv("path",{d:rbar(cx+Math.min(1,bw*.15),base-hh,Math.max(1,bw-2*Math.min(1,bw*.15)),hh,Math.min(3,bw/3)),fill:"var(--bar)"}));}
-    const hit=sv("rect",{x:cx,y:P.t,width:bw,height:base-P.t,fill:"transparent"});hit.addEventListener("pointerenter",e=>tip(e,ru(D[i])+": "+(x===null?"рапорта нет":fmt(x)+" "+unit)));hit.addEventListener("pointerleave",untip);hit.addEventListener("pointermove",mvtip);s.appendChild(hit);});
-  s.appendChild(sv("line",{x1:P.l,x2:W-P.r,y1:base,y2:base,stroke:"var(--line)"}));w.appendChild(s);return w;}
+    const hit=sv("rect",{x:cx,y:P.t,width:bw,height:base-P.t,fill:"transparent"});hit.style.cursor="pointer";hit.addEventListener("pointerdown",()=>pick(i));hit.addEventListener("pointerenter",e=>{if(e.pointerType==="mouse")pick(i);});s.appendChild(hit);});
+  const hl=sv("rect",{y:P.t,width:bw,height:base-P.t,fill:"var(--fg)","fill-opacity":.08,visibility:"hidden"});s.insertBefore(hl,s.firstChild);
+  s.appendChild(sv("line",{x1:P.l,x2:W-P.r,y1:base,y2:base,stroke:"var(--line)"}));w.appendChild(s);
+  const cap=el("div","cap");w.appendChild(cap);
+  const per=v.slice(0).filter((x,i)=>!(first&&D[i]<first));const tot=per.reduce((a,x)=>a+(x||0),0),nn=per.filter(x=>x!==null).length;
+  function pick(i,init){const x=v[i];hl.setAttribute("x",P.l+i*bw);hl.setAttribute("visibility",init?"hidden":"visible");cap.innerHTML="";
+    const add=(t,c)=>{const e=el(c?"b":"span",c==="d"?"d":null,t);if(c==="d"){e.className="d";}cap.appendChild(e);};
+    add((init?"Выполнено за ":"За ")+ru(D[i])+": ");add(x===null?"рапорта нет":fmt(x)+" "+unit,"b");
+    if(opt.cum!=null){const after=v.slice(i+1).reduce((a,y)=>a+(y||0),0);const c=opt.cum-after;add(" · всего с начала: ");add(fmt(c)+" "+unit+(opt.t?" из "+fmt(opt.t)+" ("+fmt(c/opt.t*100,1)+"%)":""),"b");}
+    else if(opt.sum){add(" · всего за период: ");add(fmt(tot)+" "+unit,"b");}
+    else if(opt.avg&&nn){add(" · в среднем: ");add(fmt(tot/nn,0)+" "+unit,"b");}
+    if(init){const h=el("span","d"," · нажмите на столбец, чтобы увидеть другой день");h.style.display="block";h.style.fontSize="12px";h.style.color="var(--muted)";cap.appendChild(h);}}
+  pick(D.length-1,true);return w;}
 function rbar(x,y,w,h,r){r=Math.min(r,h,w/2);return "M"+x+","+(y+h)+"V"+(y+r)+"Q"+x+","+y+" "+(x+r)+","+y+"H"+(x+w-r)+"Q"+(x+w)+","+y+" "+(x+w)+","+(y+r)+"V"+(y+h)+"Z";}
 function line(title,sub,D,v,plan,unit){const w=frame(title,sub);const W=340,H=160,P={l:40,r:6,t:8,b:20};const s=sv("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":title});
   const mx=axis(s,W,H,P,100,D,unit);const n=D.length,bw=(W-P.l-P.r)/n,base=H-P.b,X=i=>P.l+(i+.5)*bw,Y=x=>base-(base-P.t)*x/mx;
@@ -345,16 +362,18 @@ function line(title,sub,D,v,plan,unit){const w=frame(title,sub);const W=340,H=16
   const li=v.map((x,i)=>x===null?-1:i).filter(i=>i>=0).pop();if(li!==undefined){s.appendChild(sv("circle",{cx:X(li),cy:Y(v[li]),r:4,fill:"var(--bar)",stroke:"var(--surface)","stroke-width":2}));const tx=sv("text",{x:Math.min(X(li),W-30),y:Y(v[li])-8,"text-anchor":"middle"});tx.style.fill="var(--fg)";tx.style.fontWeight="600";tx.textContent=fmt(v[li],1)+"%";s.appendChild(tx);}
   const cross=sv("line",{y1:P.t,y2:base,stroke:"var(--muted)","stroke-width":1,visibility:"hidden"});s.appendChild(cross);
   D.forEach((d0,i)=>{const hit=sv("rect",{x:P.l+i*bw,y:P.t,width:bw,height:base-P.t,fill:"transparent"});
-    hit.addEventListener("pointerenter",e=>{cross.setAttribute("x1",X(i));cross.setAttribute("x2",X(i));cross.setAttribute("visibility","visible");tip(e,ru(d0)+": "+(v[i]===null?"нет данных":fmt(v[i],1)+"%")+(plan?" · по графику "+fmt(plan[i],0)+"%":""));});
-    hit.addEventListener("pointerleave",()=>{cross.setAttribute("visibility","hidden");untip();});hit.addEventListener("pointermove",mvtip);s.appendChild(hit);});
-  s.appendChild(sv("line",{x1:P.l,x2:W-P.r,y1:base,y2:base,stroke:"var(--line)"}));w.appendChild(s);return w;}
+    hit.style.cursor="pointer";const go=()=>{cross.setAttribute("x1",X(i));cross.setAttribute("x2",X(i));cross.setAttribute("visibility","visible");lcap(i);};hit.addEventListener("pointerdown",go);hit.addEventListener("pointerenter",e=>{if(e.pointerType==="mouse")go();});s.appendChild(hit);});
+  s.appendChild(sv("line",{x1:P.l,x2:W-P.r,y1:base,y2:base,stroke:"var(--line)"}));w.appendChild(s);
+  const cap=el("div","cap");w.appendChild(cap);
+  function lcap(i,init){let j=i;while(j>0&&v[j]===null)j--;cap.innerHTML="";cap.appendChild(el("span",null,(init?"Выполнено на ":"На ")+ru(D[i])+": "));cap.appendChild(el("b",null,v[j]===null?"нет данных":fmt(v[j],1)+"%"));if(plan){cap.appendChild(el("span",null," · по графику "));cap.appendChild(el("b",null,fmt(plan[i],0)+"%"));}}
+  lcap(D.length-1,true);return w;}
 const T=$("tip");function tip(e,t){T.textContent=t;T.hidden=false;mvtip(e);}function mvtip(e){T.style.left=e.clientX+"px";T.style.top=e.clientY+"px";}function untip(){T.hidden=true;}
 function week(o){const W=$("o-week");W.innerHTML="";if(!o.week){W.appendChild(el("div","empty","Нет данных"));return;}
-  const wk=o.week;const tb=el("table","ww");const th=el("thead");const tr=el("tr");["Показатель",ru5(wk.b[0])+"–"+ru5(wk.b[1]),ru5(wk.a[0])+"–"+ru5(wk.a[1]),"Изм."].forEach(x=>tr.appendChild(el("th",null,x)));th.appendChild(tr);tb.appendChild(th);
+  const wk=o.week;const tb=el("table","ww");const cg=el("colgroup");["c0","c1","c2","c3"].forEach(c=>cg.appendChild(el("col",c)));tb.appendChild(cg);const th=el("thead");const tr=el("tr");["Показатель",ru5(wk.b[0])+"–\u200b"+ru5(wk.b[1]),ru5(wk.a[0])+"–\u200b"+ru5(wk.a[1]),"Изм."].forEach(x=>tr.appendChild(el("th",null,x)));th.appendChild(tr);tb.appendChild(th);
   const bd=el("tbody");let sep=false;wk.rows.forEach(r=>{const tr=el("tr",r.s&&!sep?"sep":null);if(r.s)sep=true;const td=el("td",null,r.n+" ");td.appendChild(el("small",null,r.u));tr.appendChild(td);
     tr.appendChild(el("td",null,fmt(r.b)));tr.appendChild(el("td",null,fmt(r.a)));
-    let c="",cls="eq";if(r.b>0){const p=Math.round((r.a/r.b-1)*100);c=(p>0?"▲ +":p<0?"▼ ":"")+p+"%";cls=p===0?"eq":((p>0)!==!!r.bad?"up":"dn");}else if(r.a>0){c="новое";}
-    tr.appendChild(el("td",cls,c));bd.appendChild(tr);});tb.appendChild(bd);W.appendChild(tb);
+    let c="",cls="eq";if(r.b>0){const p=Math.round((r.a/r.b-1)*100);c=(p>0?"▲+":p<0?"▼":"")+p+"%";cls=p===0?"eq":((p>0)!==!!r.bad?"up":"dn");}else if(r.a>0){c="новое";}
+    tr.appendChild(el("td",cls,c));bd.appendChild(tr);});tb.appendChild(bd);const wr=el("div","wwrap");wr.appendChild(tb);W.appendChild(wr);
   if(!wk.full)W.appendChild(el("div","note","Рапорты по объекту идут с "+ru(o.first)+" — полное сравнение недель будет с "+ru(addD(o.first,13))+"."));}
 function worksList(o){const B=$("o-works");B.innerHTML="";const ws=o.works.filter(w=>w.t>0);if(!ws.length){B.appendChild(el("div","empty","В паспорте нет объёмов по проекту"));return;}
   ws.forEach(w=>{const d=el("div","wl");d.appendChild(el("div",null,w.n+", "+w.u));const v=el("div","v");const a=(l,x)=>{const s=el("span",null,l+" ");s.appendChild(el("b",null,x));v.appendChild(s);};
