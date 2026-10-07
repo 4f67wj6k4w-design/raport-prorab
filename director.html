@@ -243,7 +243,7 @@ function render(){
     const full=el("div");full.hidden=!open[o.pid];
     (o.info||[]).forEach(s=>full.appendChild(el("div","ob-s",s)));
     o.works.forEach(w=>full.appendChild(pw(w)));
-    if(o.extra.length){full.appendChild(el("div","grp","Вне бюджета"));o.extra.forEach(x=>full.appendChild(pw({c:"",n:x.n,u:x.u,t:0,done:x.v})));}
+    if(o.extra.length){full.appendChild(el("div","grp","Новые работы объекта"));o.extra.forEach(x=>full.appendChild(pw({c:"",n:x.n,u:x.u,t:0,done:x.v})));}
     b.appendChild(full);
     const btn=el("button","btn small more",open[o.pid]?"Свернуть паспорт":"Весь паспорт объекта");btn.type="button";
     btn.onclick=()=>{open[o.pid]=!open[o.pid];full.hidden=!open[o.pid];btn.textContent=open[o.pid]?"Свернуть паспорт":"Весь паспорт объекта";};

@@ -110,7 +110,7 @@
         const p = x.pct == null ? null : Math.max(0, Math.min(100, x.pct));
         H.push('<tr' + (x.w.ro ? ' class="ro"' : "") + "><td>" + esc(x.w.n) + (x.w.src ? '<small>считается из ' + (String(x.w.src).indexOf("trips:") === 0 ? "рейсов" : String(x.w.src).indexOf("tons:") === 0 ? "тонн" : "раздела «" + esc(haulT) + "»") + "</small>" : "") + "</td><td>" + esc(x.w.u) + '</td><td class="n">' + (x.w.t ? f(x.w.t) : "—") + '</td><td class="n">' + f(x.was) + '</td><td class="n"><b>' + (x.wk ? "+" + f(x.wk) : "0") + '</b></td><td class="n">' + f(x.now) + '</td><td class="n">' + (x.left == null ? "—" : f(x.left)) + "</td><td>" + (p == null ? '<span class="mut">план не задан</span>' : '<div class="wk-bar' + (x.pct > 100.01 ? " over" : "") + '" title="' + f(x.pct) + '%"><i style="width:' + p.toFixed(1) + '%"></i></div><span class="wk-pc">' + f(x.pct) + "%</span>") + "</td></tr>");
       });
-      Object.keys(extra).forEach(k => H.push('<tr class="ex"><td>' + esc(extra[k].n) + "<small>вне бюджета</small></td><td>" + esc(extra[k].u) + '</td><td class="n">—</td><td class="n">—</td><td class="n"><b>+' + f(extra[k].v) + '</b></td><td class="n">—</td><td class="n">—</td><td><span class="mut">доп. работа</span></td></tr>'));
+      Object.keys(extra).forEach(k => H.push('<tr class="ex"><td>' + esc(extra[k].n) + "<small>новая работа</small></td><td>" + esc(extra[k].u) + '</td><td class="n">—</td><td class="n">—</td><td class="n"><b>+' + f(extra[k].v) + '</b></td><td class="n">—</td><td class="n">—</td><td><span class="mut">новая работа</span></td></tr>'));
       H.push("</tbody></table></div></section>");
     }
 

@@ -123,7 +123,7 @@ function saveReport_(r, cfg) {
     const w = works.filter(function (x) { return x.c === code; })[0] || {};
     return base.concat([code, w.n || '', w.u || '', r.works[code], w.t || '']);
   }).concat((r.extra || []).map(function (x) {
-    return base.concat(['вне бюджета', x.n || '', x.u || '', x.v || 0, '']);
+    return base.concat(['новая', x.n || '', x.u || '', x.v || 0, '']);
   })));
   put('H', (r.haul || []).map(function (h) { return base.concat([h.c || '', h.m || '', h.t || 0, h.v || 0, h.w == null ? '' : h.w]); }));
   const ppl = [];
@@ -309,7 +309,7 @@ function digestFrom_(cfgs, reports, date, page) {
       const t = cum.reduce(function (a, r) { const v = r.works && r.works[w.c]; return a + (typeof v === 'number' ? v : 0); }, 0) + (w.d0 || 0);
       b.lines.push(['w', w.n + ': ' + f(s) + ' ' + w.u + ' · с начала ' + f(t) + (w.t ? ' из ' + f(w.t) + ' (' + f(t / w.t * 100, 1) + '%)' : ''), w.t && t > w.t]);
     });
-    day.forEach(function (r) { (r.extra || []).forEach(function (e) { b.lines.push(['w', 'Вне бюджета: ' + e.n + ': ' + f(e.v) + ' ' + e.u]); }); });
+    day.forEach(function (r) { (r.extra || []).forEach(function (e) { b.lines.push(['w', e.n + ': ' + f(e.v) + ' ' + e.u]); }); });
     // вывоз
     const hm = {}; day.forEach(function (r) { (r.haul || []).forEach(function (h) { const k = h.m || '—'; hm[k] = hm[k] || { t: 0, v: 0, w: 0 }; hm[k].t += +h.t || 0; hm[k].v += +h.v || 0; hm[k].w += +h.w || 0; }); });
     const hk = Object.keys(hm);
@@ -416,7 +416,7 @@ function dashFrom_(cfgs, reports, date, days, page) {
 function reportText_(c, r, cumAll, f) {
   const L = [], hl = c.hl || {};
   (c.works || []).forEach(function (w) { const v = r.works && r.works[w.c]; if (typeof v === 'number' && v) L.push('— ' + w.n + ': ' + f(v) + ' ' + w.u); });
-  (r.extra || []).forEach(function (e) { L.push('— вне бюджета: ' + e.n + ': ' + f(e.v) + ' ' + e.u); });
+  (r.extra || []).forEach(function (e) { L.push('— ' + e.n + ': ' + f(e.v) + ' ' + e.u); });
   if (!L.length) L.push('— объёмов нет');
   if ((r.haul || []).length) { L.push((hl.t || 'Вывоз') + ':'); r.haul.forEach(function (h) { L.push('— ' + (h.c || '') + ': ' + (h.m || '') + ' — ' + (h.t != null ? f(h.t, 0) + ' рейс., ' : '') + f(h.v) + ' м³' + (h.w != null ? ' (' + f(h.w) + ' т)' : '')); }); }
   const pp = []; let tot = 0; if (r.people && r.people.own != null) { pp.push('свои ' + r.people.own); tot += +r.people.own || 0; }

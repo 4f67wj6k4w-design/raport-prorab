@@ -398,7 +398,7 @@ td.src small{display:block;color:var(--muted);font-size:11px}
       <div class="hint">Справочно, менять нельзя. «Выполнено» — сумма всех рапортов плюс выполненное до начала рапортов.</div>
     </section>
     <section class="card" id="p-extra-card" hidden>
-      <h2>Работы вне бюджета <span>с начала</span></h2>
+      <h2>Новые работы объекта <span>с начала</span></h2>
       <div class="tablewrap"><table id="p-extra"><thead><tr><th>Работа</th><th>Ед.</th><th>Выполнено</th></tr></thead><tbody></tbody></table></div>
     </section>
   </div>
@@ -760,9 +760,14 @@ function buildForm(){
   h.hidden=!au.length;const hl=au.filter(x=>!isMachSrc(x)&&!/^в т\.ч\./i.test(x.n)).map(x=>x.n.replace(/ — всего.*$/i,"")),ml=au.filter(isMachSrc).length?["моточасы техники"]:[];
   h.textContent=au.length?"Не вносите здесь — посчитается само: "+[hl.length?hl.join(", ")+" (из раздела «"+HL.t+"»)":"",ml.length?"моточасы (из раздела «Техника»)":""].filter(Boolean).join("; ")+".":"";
 }
+const xKey=(n,u)=>nrm(n)+"|"+nrm(u);
+function usedExtras(){const m={},pw=new Set(WORKS.map(w=>xKey(w.n,w.u)));list().forEach(r=>(r.extra||[]).forEach(e=>{const k=xKey(e.n,e.u);if(!m[k]&&!pw.has(k))m[k]={n:e.n,u:e.u};}));return Object.values(m).sort((a,b)=>a.n.localeCompare(b.n,"ru"));}
+function extraDone(n,u,D,me){return list().filter(q=>q.date<=D&&q.id!==me).reduce((a,q)=>a+(q.extra||[]).filter(e=>xKey(e.n,e.u)===xKey(n,u)).reduce((s,e)=>s+(+e.v||0),0),0);}
 function rowHint(r){
   const h=r.querySelector(".wh");const c=r.querySelector("select").value;h.className="wh";
-  if(c==="__other"){h.textContent="Работа вне бюджета — впишите наименование и единицу (м³, м², т, шт…).";return;}
+  if(c==="__other"){h.textContent="Новая работа — впишите название и единицу (м³, м², т, шт…). В следующий раз она будет в списке.";return;}
+  if(c.startsWith("__x:")){const [n,u]=c.slice(4).split("\u0001");const done=extraDone(n,u,$("f-date").value,docId());h.textContent="Было выполнено "+fmt(done)+" "+u;
+    const qv=num(r.querySelector(".wq").value);if(r.dataset.m==="t"&&qv!==null){const d=qv-done;h.textContent+=d<0?" · ВСЕГО меньше, чем уже было — проверьте":d===0?" · за смену: 0":" · за смену получится: "+fmt(d)+" "+u;if(d<0)h.className="wh bad";}return;}
   const x=WORKS.find(w=>w.c===c);if(!x){h.textContent="";return;}
   const D=$("f-date").value,me=docId();const done=cumWorks(list().filter(q=>q.date<=D&&q.id!==me))[x.k]||0;
   h.textContent="По бюджету "+(x.t?fmt(x.t)+" "+x.u:"не задан")+" · было выполнено "+fmt(done)+" "+x.u+(x.t?" ("+fmt(done/x.t*100,1)+"%)":"");
@@ -776,7 +781,7 @@ function addWork(d){d=d||{};
   r.innerHTML='<select aria-label="Работа"></select><input class="wq" inputmode="decimal" placeholder="0" aria-label="Объём"><button type="button" class="btn del" aria-label="Удалить строку">×</button><input type="text" class="won" placeholder="Что сделано" hidden><input type="text" class="wou" placeholder="ед.: м³, м², т, шт" list="unit-list" hidden><div class="wm"><button type="button" data-m="d" aria-pressed="true">за смену</button><button type="button" data-m="t" aria-pressed="false">всего на сегодня</button></div><div class="wh"></div>';
   const sel=r.querySelector("select");
   const add=(v,t)=>{const o=document.createElement("option");o.value=v;o.textContent=t;sel.appendChild(o);};
-  add("","— выберите работу —");manual().forEach(x=>add(x.c,x.c+" · "+x.n+", "+x.u));add("__other","Другая работа (нет в бюджете)…");
+  add("","— выберите работу —");manual().forEach(x=>add(x.c,x.c+" · "+x.n+", "+x.u));usedExtras().forEach(e=>add("__x:"+e.n+"\u0001"+e.u,e.n+", "+e.u));add("__other","+ Новая работа (вписать название)…");
   const q=r.querySelector(".wq"),on=r.querySelector(".won"),ou=r.querySelector(".wou");
   const wm=r.querySelector(".wm"),setM=m=>{r.dataset.m=m;wm.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.m===m)));q.placeholder=m==="t"?"всего":"0";rowHint(r);};
   wm.querySelectorAll("button").forEach(b=>b.onclick=()=>{r.dataset.auto="";setM(b.dataset.m);dirty=true;});
@@ -786,7 +791,7 @@ function addWork(d){d=d||{};
   q.addEventListener("change",()=>{if(r.dataset.m!=="t")return;const x=WORKS.find(w=>w.c===sel.value),v=num(q.value);if(!x||v===null)return;
     const D=$("f-date").value,me=docId();const done=cumWorks(list().filter(z=>z.date<=D&&z.id!==me))[x.k]||0;
     if(v<done&&(!x.t||done+v<=x.t*1.0001)){setM("d");r.dataset.auto="1";rowHint(r);}});
-  if(d.other){sel.value="__other";on.value=d.n||"";ou.value=d.u||"";}else sel.value=d.c&&manual().some(x=>x.c===d.c)?d.c:"";
+  if(d.other){const xv="__x:"+d.n+"\u0001"+d.u;if([...sel.options].some(o=>o.value===xv))sel.value=xv;else{sel.value="__other";on.value=d.n||"";ou.value=d.u||"";}}else sel.value=d.c&&manual().some(x=>x.c===d.c)?d.c:"";
   q.value=d.v!=null?String(d.v).replace(".",","):"";if(d.v!=null)r.dataset.touched="1";
   r.querySelector("button.del").onclick=()=>{r.remove();dirty=true;if(!$("f-works").children.length)addWork();};
   $("f-works").appendChild(r);upd();return r;
@@ -799,6 +804,9 @@ function readWorks(){
       if(!nm&&v===null)return;if(!nm)bad.push("работа "+n+": наименование");if(v===null)bad.push("работа "+n+": объём");
       if(nm&&!u)bad.push("работа "+n+" («"+nm+"»): единица измерения (м³, м², т, шт…)");
       if(nm&&u&&v!==null)extra.push({n:nm,u:u,v:v});return;}
+    if(c.startsWith("__x:")){const [nm,u]=c.slice(4).split("\u0001");if(v===null){bad.push("работа "+n+" («"+nm+"»): объём");return;}
+      let dv=v;if(r.dataset.m==="t"){const done=extraDone(nm,u,$("f-date").value,docId());dv=Math.round((v-done)*1000)/1000;if(dv<0)dv=v;if(dv===0)return;}
+      const ex=extra.find(e=>xKey(e.n,e.u)===xKey(nm,u));if(ex)ex.v+=dv;else extra.push({n:nm,u:u,v:dv});return;}
     if(!c){if(v!==null)bad.push("работа "+n+": выберите вид работ");return;}
     if(v===null){bad.push("работа "+n+": объём");return;}
     let dv=v;if(r.dataset.m==="t"){const x=WORKS.find(w=>w.c===c);const D=$("f-date").value,me=docId();const done=cumWorks(list().filter(q=>q.date<=D&&q.id!==me))[x.k]||0;dv=Math.round((v-done)*1000)/1000;
@@ -912,9 +920,9 @@ function shiftText(o){
   L.push(ruDate(o.date)+", "+(o.shift==="D"?"дневная":"ночная")+" смена");L.push((C.hl&&C.hl.t?"Мастер":"Прораб")+": "+o.foreman);L.push("");
   // работы: ручные + авто с планом (остальное видно в разделе вывоза и технике)
   const done=WORKS.filter(x=>o.works[x.c]&&!isMachSrc(x)&&(!isAuto(x)||x.t));
-  if(o.idle){L.push("РАБОТ НЕ БЫЛО");}else{L.push("ВЫПОЛНЕНО ЗА СМЕНУ");if(!done.length)L.push("• объёмов нет");}
+  if(o.idle){L.push("РАБОТ НЕ БЫЛО");}else{L.push("ВЫПОЛНЕНО ЗА СМЕНУ");if(!done.length&&!(o.extra||[]).length)L.push("• объёмов нет");}
   done.forEach(x=>{L.push("• "+x.n+" — "+fmt(o.works[x.c])+" "+x.u);L.push("   с начала "+fmt(cum[x.k])+(x.t?" из "+fmt(x.t)+" "+x.u+" ("+fmt(cum[x.k]/x.t*100,1)+"%)":" "+x.u));});
-  if((o.extra||[]).length){L.push("");L.push("ДОП. РАБОТЫ (нет в бюджете)");o.extra.forEach(e=>L.push("• "+e.n+" — "+fmt(e.v)+" "+e.u));}
+  if(!o.idle)(o.extra||[]).forEach(e=>{const t=extraDone(e.n,e.u,o.date,o.id)+(+e.v||0);L.push("• "+e.n+" — "+fmt(e.v)+" "+e.u);L.push("   с начала "+fmt(t)+" "+e.u);});
   if(o.haul.length){const tt=o.haul.reduce((a,h)=>a+(h.t||0),0),tv=o.haul.reduce((a,h)=>a+(h.v||0),0),tw=o.haul.reduce((a,h)=>a+(h.w||0),0);
     L.push("");L.push(HL.t.toUpperCase()+": "+(tt?fmt(tt,0)+" "+plur(tt,"рейс","рейса","рейсов")+", ":"")+fmt(tv)+" м³"+(HL.tn&&tw?" / "+fmt(tw)+" т":""));
     o.haul.forEach(h=>L.push("• "+h.m+": "+(h.c||"—")+" — "+(h.t!=null?fmt(h.t,0)+" "+plur(h.t,"рейс","рейса","рейсов")+", ":"")+fmt(h.v)+" м³"+(HL.tn&&h.w!=null?" / "+fmt(h.w)+" т":"")));}
@@ -1014,7 +1022,7 @@ function dayText(D,P,sd,sm,sc,pd,pn){
   (pd||[]).forEach(r=>L.push("Люди, день ("+r.foreman+"): "+pp(r)));(pn||[]).forEach(r=>L.push("Люди, ночь ("+r.foreman+"): "+pp(r)));L.push("");
   L.push("Выполнено (сутки / месяц / с начала):");
   WORKS.forEach(x=>{if(sc[x.k]>0)L.push("— "+x.n+": "+fmt(sd[x.k])+" / "+fmt(sm[x.k])+" / "+fmt(sc[x.k])+" "+x.u+(x.t?" из "+fmt(x.t)+" ("+fmt(sc[x.k]/x.t*100,1)+"%)":""));});
-  P.day.forEach(r=>(r.extra||[]).forEach(e=>L.push("— вне бюджета: "+e.n+": "+fmt(e.v)+" "+e.u+" ("+r.foreman+")")));
+  P.day.forEach(r=>(r.extra||[]).forEach(e=>L.push("— "+e.n+": "+fmt(e.v)+" "+e.u+" ("+r.foreman+")")));
   const dts=[];P.day.forEach(r=>(r.downtime||[]).forEach(d=>dts.push((d.k||"Простой")+": "+(d.what||"")+" — "+fmt(d.h)+" ч"+(d.fault?" (вина: "+d.fault+")":""))));
   if(!$("c-dt").hidden){L.push("");L.push("Простои: "+(dts.length?"":"нет"));dts.forEach(s=>L.push("— "+s));}
   return L.join("\n");
