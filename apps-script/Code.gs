@@ -455,6 +455,7 @@ function reportText_(c, r, cumAll, f) {
 function onOpen() {
   SpreadsheetApp.getUi().createMenu('Рапорты')
     .addItem('Удалить выделенный рапорт', 'menuDeleteReport')
+    .addItem('Отчёт по вывозу за период…', 'menuHaulReport')
     .addToUi();
 }
 function menuDeleteReport() {
@@ -682,7 +683,9 @@ function execMailFrom_(m, page) {
   const ru = function (s) { return s.slice(8, 10) + '.' + s.slice(5, 7) + '.' + s.slice(0, 4); };
   const col = { r: '#d03b3b', y: '#e09a00', g: '#0ca30c', n: '#9aa898' };
   const lab = { r: 'КРАСНЫЙ', y: 'ЖЁЛТЫЙ', g: 'ЗЕЛЁНЫЙ', n: 'нет данных' };
-  const dot = function (l) { return '<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + col[l] + ';vertical-align:-2px"></span>'; };
+  // Эмодзи вместо CSS-кружков: Outlook не рисует border-radius/inline-block, а эмодзи показывает везде.
+  const emo = { r: '🔴', y: '🟡', g: '🟢', n: '⚪' };
+  const dot = function (l) { return '<span style="font-size:15px;line-height:1">' + emo[l] + '</span>'; };
   const rows = m.objects.map(function (o) {
     const bad = o.reasons.filter(function (x) { return x.l === 'r' || x.l === 'y'; });
     const show = bad.length ? bad : o.reasons.filter(function (x) { return x.k === 'due' && x.t; });
@@ -693,12 +696,13 @@ function execMailFrom_(m, page) {
   }).join('');
   const c = m.counts;
   const html = '<div style="font-family:Arial,sans-serif;color:#18221a;max-width:640px">' +
-    '<table style="width:100%;border-collapse:collapse;background:#2E671F;color:#fff"><tr><td style="padding:16px 18px">' +
+    '<table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#2E671F;color:#fff"><tr><td bgcolor="#2E671F" style="padding:16px 18px;color:#ffffff">' +
     '<div style="font-size:26px;font-weight:700;letter-spacing:.02em">ГК «КРАШМАШ»</div>' +
     '<div style="font-size:19px;margin-top:4px">Светофор по объектам за ' + ru(m.date) + '</div>' +
     '<div style="font-size:14px;margin-top:6px;opacity:.9">' + dot('r') + ' ' + c.r + ' &nbsp; ' + dot('y') + ' ' + c.y + ' &nbsp; ' + dot('g') + ' ' + c.g + (c.n ? ' &nbsp; ' + dot('n') + ' ' + c.n : '') + '</div>' +
     '</td></tr></table><table style="width:100%;border-collapse:collapse">' + rows + '</table>' +
-    (page ? '<p style="margin:16px 0"><a href="' + esc(page) + '" style="background:#2E671F;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Открыть панель с графиками</a></p>' : '') +
+    (page ? '<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:16px 0"><tr><td bgcolor="#2E671F" style="background:#2E671F;border-radius:8px;padding:11px 18px">' +
+      '<a href="' + esc(page) + '" style="color:#ffffff;text-decoration:none;font-weight:bold;font-size:15px;font-family:Arial,sans-serif">Открыть панель с графиками &rarr;</a></td></tr></table>' : '') +
     '<p style="font-size:12px;color:#5a6758">Красный — нет рапортов 2 дня, простои от ' + EXEC_RULES.dtRed + ' ч за неделю, темп упал втрое, срок истёк или прогноз позже срока. Жёлтый — нет рапорта за день, простои от ' + EXEC_RULES.dtYellow + ' ч или по вине заказчика, темп упал на треть, прогноз впритык к сроку.</p></div>';
   const text = 'ГК «КРАШМАШ» — светофор по объектам за ' + ru(m.date) + '\nКрасных: ' + c.r + ', жёлтых: ' + c.y + ', зелёных: ' + c.g + '\n\n' +
     m.objects.map(function (o) { return '[' + lab[o.light] + '] ' + o.short + (o.pct !== null ? ' — ' + Math.round(o.pct) + '%' : '') + '\n' + o.reasons.filter(function (x) { return x.t && x.l !== 'g' && x.l !== 'n'; }).map(function (x) { return '  — ' + x.t; }).join('\n'); }).join('\n') +
@@ -809,6 +813,7 @@ function guardCheck_(initial) {
   // 1. Расписание на месте
   const need = { dailyDigest: 'сводка в 20:00 (setupDigest)', watchdog: 'сторож (setupGuard)', backupWeekly: 'резервная копия (setupGuard)' };
   if (EXEC_TO) need.execMorning = 'письмо руководству в 8:00 (setupExec)';
+  need.haulWeekly = 'отчёт по вывозу за неделю (setupHaulReports)'; need.haulMonthly = 'отчёт по вывозу за месяц (setupHaulReports)';
   const have = {}; ScriptApp.getProjectTriggers().forEach(function (t) { have[t.getHandlerFunction()] = 1; });
   Object.keys(need).forEach(function (h) { if (!have[h]) probs.push('Нет расписания: ' + need[h] + '. Запустите функцию в скобках один раз.'); });
   // 2. Данные читаются и считаются
@@ -834,4 +839,175 @@ function guardCheck_(initial) {
   if (!b || (now - new Date(b.slice(0, 10) + 'T12:00:00')) > 9 * 864e5) probs.push('Резервной копии больше 9 дней (последняя: ' + (b || 'не было') + ').');
   try { if (MailApp.getRemainingDailyQuota() < 10) probs.push('Почти закончился дневной лимит писем Google.'); } catch (e) {}
   return probs;
+}
+
+// =====================================================================
+// ОТЧЁТ ПО ВЫВОЗУ — неделя (пн 9:00, за прошлую неделю) и месяц (1-го числа 9:00, за прошлый месяц)
+// =====================================================================
+// Кому отчёт (через запятую). Пусто — только вам (адрес сторожа).
+const HAUL_TO = '';
+const HAUL_FOLDER = 'Рапорт прораба — отчёты по вывозу';
+
+function haulTo_() { return HAUL_TO || guardTo_(); }
+function hf_(x, d) { if (x === null || x === undefined || x === '') return ''; const k = Math.pow(10, d === undefined ? 1 : d); const v = Math.round(x * k) / k; const s = String(Math.abs(v)).split('.'); s[0] = s[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' '); return (v < 0 ? '−' : '') + s.join(','); }
+function he_(s) { return String(s === null || s === undefined ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+function addDays_(iso, n) { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); }
+function ruD_(iso) { return iso.slice(8, 10) + '.' + iso.slice(5, 7) + '.' + iso.slice(0, 4); }
+
+/** Строки вывоза одного рапорта. Если строк вывоза нет (старые рапорты), берём «вывозные» работы паспорта. */
+function haulLines_(r, c) {
+  if (r.haul && r.haul.length) return r.haul.map(function (h) { return { m: String(h.m || 'Без названия').trim(), c: String(h.c || '').trim(), t: +h.t || 0, v: +h.v || 0, w: +h.w || 0 }; });
+  const out = [];
+  ((c && c.works) || []).forEach(function (w) {
+    const src = String(w.src || ''); if (!src || src.indexOf('|') >= 0 || /^(mach|trips):/.test(src)) return;
+    const v = +(r.works || {})[w.c] || 0; if (v > 0) out.push({ m: src, c: '', t: 0, v: String(w.u).indexOf('т') === 0 ? 0 : v, w: String(w.u).indexOf('т') === 0 ? v : 0 });
+  });
+  return out;
+}
+
+/** Чистая функция: модель отчёта за период [d1; d2] и сравнение с предыдущим периодом той же длины. */
+function haulFrom_(cfgs, reports, d1, d2) {
+  const len = Math.round((new Date(d2) - new Date(d1)) / 864e5) + 1, p2 = addDays_(d1, -1), p1 = addDays_(d1, -len);
+  const cfgBy = {}; cfgs.forEach(function (c) { cfgBy[c.pid] = c; });
+  const Z = function () { return { t: 0, v: 0, w: 0 }; }, add = function (a, h) { a.t += h.t; a.v += h.v; a.w += h.w; };
+  const key = function (s) { return String(s).toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim(); };
+  const objs = {}, all = { tot: Z(), prev: Z(), mat: {}, car: {} }, detail = [];
+  const obj = function (pid) {
+    if (!objs[pid]) { const c = cfgBy[pid] || {}; objs[pid] = { pid: pid, name: c.name || pid, label: (c.hl && c.hl.t) || 'Вывоз', sep: !!(c.hl && c.hl.t), tot: Z(), prev: Z(), mat: {}, rows: {}, days: {} }; }
+    return objs[pid];
+  };
+  reports.forEach(function (r) {
+    if (!r || !r.date || !r.pid) return;
+    const inCur = r.date >= d1 && r.date <= d2, inPrev = r.date >= p1 && r.date <= p2;
+    if (!inCur && !inPrev) return;
+    const ls = haulLines_(r, cfgBy[r.pid]); if (!ls.length) return;
+    const o = obj(r.pid);
+    ls.forEach(function (h) {
+      if (inPrev) { add(o.prev, h); if (!o.sep) add(all.prev, h); return; }
+      add(o.tot, h); o.days[r.date] = 1;
+      const mk = key(h.m), rk = mk + '|' + key(h.c);
+      if (!o.mat[mk]) o.mat[mk] = Object.assign({ m: h.m }, Z()); add(o.mat[mk], h);
+      if (!o.rows[rk]) o.rows[rk] = Object.assign({ m: h.m, c: h.c || '—' }, Z()); add(o.rows[rk], h);
+      if (!o.sep) {
+        add(all.tot, h);
+        if (!all.mat[mk]) all.mat[mk] = Object.assign({ m: h.m }, Z()); add(all.mat[mk], h);
+        const ck = key(h.c || '—'); if (!all.car[ck]) all.car[ck] = Object.assign({ c: h.c || 'Перевозчик не указан' }, Z()); add(all.car[ck], h);
+      }
+      detail.push([r.date, o.name, o.label, h.m, h.c || '', h.t || '', h.v || '', h.w || '', r.foreman || '']);
+    });
+  });
+  const byV = function (a, b) { return (b.v + b.w) - (a.v + a.w); }, vals = function (m) { return Object.keys(m).map(function (k) { return m[k]; }).sort(byV); };
+  const list = Object.keys(objs).map(function (k) { const o = objs[k]; o.mat = vals(o.mat); o.rows = vals(o.rows); o.days = Object.keys(o.days).length; return o; })
+    .filter(function (o) { return o.tot.v || o.tot.w || o.tot.t || o.prev.v || o.prev.w; })
+    .sort(function (a, b) { return (a.sep - b.sep) || byV(a.tot, b.tot); });
+  detail.sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : String(a[1]).localeCompare(String(b[1])); });
+  return { d1: d1, d2: d2, p1: p1, p2: p2, objects: list, all: { tot: all.tot, prev: all.prev, mat: vals(all.mat), car: vals(all.car) }, detail: detail };
+}
+
+function haulMail_(M, kind) {
+  const per = ruD_(M.d1) + ' – ' + ruD_(M.d2), prevPer = ruD_(M.p1) + ' – ' + ruD_(M.p2);
+  const ch = function (a, b) { if (!b) return a ? 'новое' : ''; const p = Math.round((a / b - 1) * 100); return (p > 0 ? '+' : '') + p + '%'; };
+  const T = 'style="border-collapse:collapse;font:13px Arial,sans-serif;margin:4px 0 14px"', th = 'style="text-align:left;padding:4px 8px;border-bottom:2px solid #2E671F;background:#eef3ec"', thr = 'style="text-align:right;padding:4px 8px;border-bottom:2px solid #2E671F;background:#eef3ec"', td = 'style="padding:4px 8px;border-bottom:1px solid #ddd"', tdr = 'style="padding:4px 8px;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap"';
+  const tbl = function (head, rows) { return '<table ' + T + '><tr>' + head.map(function (h, i) { return '<th ' + (i ? thr : th) + '>' + he_(h) + '</th>'; }).join('') + '</tr>' + rows.map(function (r) { return '<tr>' + r.map(function (x, i) { return '<td ' + (i ? tdr : td) + '>' + x + '</td>'; }).join('') + '</tr>'; }).join('') + '</table>'; };
+  const b = function (s) { return '<b>' + s + '</b>'; }, z = function (x, d) { return x ? hf_(x, d) : ''; };
+  const A = M.all, main = M.objects.filter(function (o) { return !o.sep; }), sep = M.objects.filter(function (o) { return o.sep; });
+  const title = (kind === 'month' ? 'Вывоз за месяц' : kind === 'week' ? 'Вывоз за неделю' : 'Вывоз за период') + ': ' + per;
+  let h = '<div style="font:14px Arial,sans-serif;color:#222;max-width:820px">';
+  h += '<div style="background:#2E671F;color:#fff;padding:10px 14px;border-radius:6px 6px 0 0"><div style="font-size:12px;opacity:.9">ГК КРАШМАШ · рапорты прорабов</div><div style="font-size:18px;font-weight:bold">' + he_(title) + '</div></div>';
+  h += '<div style="padding:10px 2px">';
+  h += '<p style="font-size:16px;margin:6px 0">Всего вывезено со всех объектов: ' + b(hf_(A.tot.v) + ' м³') + (A.tot.t ? ' · ' + b(hf_(A.tot.t, 0) + ' рейс.') : '') + (A.tot.w ? ' · ' + b(hf_(A.tot.w) + ' т') : '') +
+    '<br><span style="color:#666;font-size:13px">предыдущий период (' + prevPer + '): ' + hf_(A.prev.v) + ' м³ · изменение ' + (ch(A.tot.v, A.prev.v) || '—') + '</span></p>';
+  h += '<h3 style="font-size:15px;margin:14px 0 4px">По объектам</h3>';
+  h += tbl(['Объект', 'м³', 'рейсов', 'т', 'пред. период, м³', 'изм.', 'дней с вывозом'], main.map(function (o) { return [he_(o.name), b(hf_(o.tot.v)), z(o.tot.t, 0), z(o.tot.w), hf_(o.prev.v), ch(o.tot.v, o.prev.v), o.days]; })
+    .concat([[b('Итого'), b(hf_(A.tot.v)), b(z(A.tot.t, 0)), b(z(A.tot.w)), b(hf_(A.prev.v)), b(ch(A.tot.v, A.prev.v)), '']]));
+  h += '<h3 style="font-size:15px;margin:14px 0 4px">По видам материала — все объекты</h3>';
+  h += tbl(['Материал', 'м³', 'рейсов', 'т'], A.mat.map(function (x) { return [he_(x.m), b(hf_(x.v)), z(x.t, 0), z(x.w)]; }));
+  h += '<h3 style="font-size:15px;margin:14px 0 4px">По перевозчикам — все объекты</h3>';
+  h += tbl(['Перевозчик', 'м³', 'рейсов', 'т'], A.car.map(function (x) { return [he_(x.c), b(hf_(x.v)), z(x.t, 0), z(x.w)]; }));
+  h += '<h3 style="font-size:15px;margin:18px 0 4px">Детально по каждому объекту</h3>';
+  main.concat(sep).forEach(function (o) {
+    h += '<div style="margin:10px 0 2px;font-weight:bold">' + he_(o.name) + (o.sep ? ' <span style="font-weight:normal;color:#666">(' + he_(o.label.toLowerCase()) + ', в общий вывоз не входит)</span>' : '') + '</div>';
+    h += '<div style="color:#666;font-size:13px">' + he_(o.label) + ': ' + hf_(o.tot.v) + ' м³' + (o.tot.t ? ', ' + hf_(o.tot.t, 0) + ' рейс.' : '') + (o.tot.w ? ', ' + hf_(o.tot.w) + ' т' : '') + '</div>';
+    h += o.rows.length ? tbl(['Материал', (o.sep ? 'Покупатель' : 'Перевозчик'), 'м³', 'рейсов', 'т'], o.rows.map(function (x) { return [he_(x.m), he_(x.c), b(hf_(x.v)), z(x.t, 0), z(x.w)]; })) : '<div style="color:#666;font-size:13px;margin-bottom:10px">За период данных нет</div>';
+  });
+  h += '<p style="color:#666;font-size:12px">Источник — рапорты прорабов. Во вложении Excel: итоги, по объектам и построчно по дням (для сверки с перевозчиками).</p></div></div>';
+  let t = title + '\n\nВсего со всех объектов: ' + hf_(A.tot.v) + ' м³, ' + hf_(A.tot.t, 0) + ' рейс. (пред. период ' + hf_(A.prev.v) + ' м³, ' + (ch(A.tot.v, A.prev.v) || '—') + ')\n\nПо объектам:\n';
+  main.forEach(function (o) { t += '• ' + o.name + ' — ' + hf_(o.tot.v) + ' м³' + (o.tot.t ? ', ' + hf_(o.tot.t, 0) + ' рейс.' : '') + '\n'; });
+  sep.forEach(function (o) { t += '\n' + o.name + ' (' + o.label.toLowerCase() + '): ' + hf_(o.tot.v) + ' м³' + (o.tot.w ? ', ' + hf_(o.tot.w) + ' т' : '') + '\n'; });
+  return { subject: title, html: h, text: t };
+}
+
+/** Таблица-отчёт в папке Диска (остаётся там как архив) + её Excel-копия для вложения. */
+function haulSheet_(M, title) {
+  const it = DriveApp.getFoldersByName(HAUL_FOLDER); const folder = it.hasNext() ? it.next() : DriveApp.createFolder(HAUL_FOLDER);
+  const ss = SpreadsheetApp.create(title);
+  DriveApp.getFileById(ss.getId()).moveTo(folder);
+  const put = function (sh, rows, widths) { if (!rows.length) return; sh.getRange(1, 1, rows.length, rows[0].length).setValues(rows); sh.getRange(1, 1, 1, rows[0].length).setFontWeight('bold').setBackground('#eef3ec'); sh.setFrozenRows(1); (widths || []).forEach(function (w, i) { sh.setColumnWidth(i + 1, w); }); };
+  const s1 = ss.getSheets()[0]; s1.setName('Итого');
+  const A = M.all, main = M.objects.filter(function (o) { return !o.sep; });
+  const r1 = [['Объект', 'м³', 'рейсов', 'т', 'пред. период, м³', 'дней с вывозом']];
+  main.forEach(function (o) { r1.push([o.name, o.tot.v, o.tot.t, o.tot.w, o.prev.v, o.days]); });
+  r1.push(['ИТОГО все объекты', A.tot.v, A.tot.t, A.tot.w, A.prev.v, '']);
+  r1.push(['', '', '', '', '', '']); r1.push(['Материал (все объекты)', 'м³', 'рейсов', 'т', '', '']);
+  A.mat.forEach(function (x) { r1.push([x.m, x.v, x.t, x.w, '', '']); });
+  r1.push(['', '', '', '', '', '']); r1.push(['Перевозчик (все объекты)', 'м³', 'рейсов', 'т', '', '']);
+  A.car.forEach(function (x) { r1.push([x.c, x.v, x.t, x.w, '', '']); });
+  put(s1, r1, [420, 90, 80, 80, 130, 120]);
+  const r2 = [['Объект', 'Вид', 'Материал', 'Перевозчик / покупатель', 'м³', 'рейсов', 'т']];
+  M.objects.forEach(function (o) { o.rows.forEach(function (x) { r2.push([o.name, o.label, x.m, x.c, x.v, x.t, x.w]); }); });
+  put(ss.insertSheet('По объектам'), r2, [380, 80, 260, 200, 80, 70, 70]);
+  const r3 = [['Дата', 'Объект', 'Вид', 'Материал', 'Перевозчик / покупатель', 'Рейсов', 'м³', 'т', 'Прораб']].concat(M.detail.map(function (d) { return [ruD_(d[0])].concat(d.slice(1)); }));
+  put(ss.insertSheet('По дням'), r3, [90, 340, 80, 240, 200, 70, 80, 70, 160]);
+  SpreadsheetApp.flush();
+  let blob = null;
+  try {
+    blob = UrlFetchApp.fetch('https://docs.google.com/spreadsheets/d/' + ss.getId() + '/export?format=xlsx', { headers: { Authorization: 'Bearer ' + ScriptApp.getOAuthToken() }, muteHttpExceptions: true }).getBlob().setName(title.replace(/[\\/:*?"<>|]/g, '-') + '.xlsx');
+  } catch (e) { blob = null; }
+  return { url: ss.getUrl(), blob: blob };
+}
+
+function sendHaul_(d1, d2, kind, to) {
+  const all = readAll_();
+  const M = haulFrom_(all.cfgs, all.reports, d1, d2);
+  const m = haulMail_(M, kind);
+  let f = null; try { f = haulSheet_(M, 'Вывоз ' + ruD_(d1) + '–' + ruD_(d2)); } catch (e) { f = null; }
+  const html = m.html + (f ? '<p style="font:13px Arial,sans-serif">Таблица на Google Диске: <a href="' + f.url + '">открыть</a></p>' : '');
+  const opt = { to: to || haulTo_(), subject: m.subject, body: m.text + (f ? '\nТаблица: ' + f.url : ''), htmlBody: html, name: 'ГК КРАШМАШ — вывоз' };
+  if (f && f.blob) opt.attachments = [f.blob];
+  MailApp.sendEmail(opt);
+  return m.subject;
+}
+
+/** Понедельник ~9:00: за прошлую неделю (пн–вс). */
+function haulWeekly() {
+  const today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd'), dow = Number(Utilities.formatDate(new Date(), TZ, 'u'));
+  const mon = addDays_(today, -(dow - 1) - 7);
+  sendHaul_(mon, addDays_(mon, 6), 'week'); mark_('haulWeekly');
+}
+/** 1-го числа ~9:00: за прошлый месяц. */
+function haulMonthly() {
+  const today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
+  const first = today.slice(0, 8) + '01', last = addDays_(first, -1);
+  sendHaul_(last.slice(0, 8) + '01', last, 'month'); mark_('haulMonthly');
+}
+
+/** Запустить ОДИН раз вручную: включает отчёты по вывозу и сразу присылает отчёт за прошлую неделю. */
+function setupHaulReports() {
+  ScriptApp.getProjectTriggers().forEach(function (t) { const h = t.getHandlerFunction(); if (h === 'haulWeekly' || h === 'haulMonthly') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('haulWeekly').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(9).inTimezone(TZ).create();
+  ScriptApp.newTrigger('haulMonthly').timeBased().onMonthDay(1).atHour(9).inTimezone(TZ).create();
+  haulWeekly();
+}
+
+/** Меню таблицы: отчёт за любой период себе на почту. */
+function menuHaulReport() {
+  const ui = SpreadsheetApp.getUi();
+  const r = ui.prompt('Отчёт по вывозу', 'Период в формате 01.10.2026-07.10.2026 (или одна дата):', ui.ButtonSet.OK_CANCEL);
+  if (r.getSelectedButton() !== ui.Button.OK) return;
+  const m = String(r.getResponseText()).match(/(\d{2})\.(\d{2})\.(\d{4})(?:\s*[-–—]\s*(\d{2})\.(\d{2})\.(\d{4}))?/);
+  if (!m) { ui.alert('Не понял даты. Пример: 01.10.2026-07.10.2026'); return; }
+  const d1 = m[3] + '-' + m[2] + '-' + m[1], d2 = m[4] ? m[6] + '-' + m[5] + '-' + m[4] : d1;
+  if (d2 < d1) { ui.alert('Вторая дата раньше первой.'); return; }
+  sendHaul_(d1, d2, 'period', guardTo_());
+  ui.alert('Отчёт отправлен на ' + guardTo_() + '. Таблица сохранена в папку Диска «' + HAUL_FOLDER + '».');
 }
