@@ -63,6 +63,20 @@ function toDate_(iso) {
   try { return Utilities.parseDate(String(iso), TZ, 'yyyy-MM-dd'); } catch (e) { return iso; }
 }
 
+/** Выполнено с начала по работе на дату d. «Выполнено ранее» (w.d0) — по состоянию на c.d0date:
+ *  рапорты до этой даты включительно — только история, к итогу не прибавляются (иначе двойной счёт). */
+function cumAt_(c, rs, code, d) {
+  const d0 = (((c.works || []).filter(function (w) { return w.c === code; })[0]) || {}).d0 || 0, dd = c.d0date || '';
+  let t = +d0 || 0;
+  rs.forEach(function (r) {
+    const v = r.works && r.works[code]; if (typeof v !== 'number') return;
+    if (!dd) { if (r.date <= d) t += v; }
+    else if (r.date > dd && r.date <= d) t += v;
+    else if (r.date <= dd && r.date > d) t -= v;
+  });
+  return t;
+}
+
 function deleteById_(sh, id) {
   const n = sh.getLastRow();
   if (n < 2) return null;
@@ -310,7 +324,7 @@ function digestFrom_(cfgs, reports, date, page) {
       const s = day.reduce(function (a, r) { const v = r.works && r.works[w.c]; return a + (typeof v === 'number' ? v : 0); }, 0);
       if (!s) return;
       if (String(w.src || '').indexOf('mach:') === 0 && !w.t) return; // моточасы без плана — видны в строке «Техника»
-      const t = cum.reduce(function (a, r) { const v = r.works && r.works[w.c]; return a + (typeof v === 'number' ? v : 0); }, 0) + (w.d0 || 0);
+      const t = cumAt_(c, rs, w.c, date);
       b.lines.push(['w', w.n + ': ' + f(s) + ' ' + w.u + ' · с начала ' + f(t) + (w.t ? ' из ' + f(w.t) + ' (' + f(t / w.t * 100, 1) + '%)' : ''), w.t && t > w.t]);
     });
     day.forEach(function (r) { (r.extra || []).forEach(function (e) { b.lines.push(['w', e.n + ': ' + f(e.v) + ' ' + e.u]); }); });
@@ -406,7 +420,7 @@ function dashFrom_(cfgs, reports, date, days, page) {
     const machSrc = function (w) { return String(w.src || '').indexOf('mach:') === 0; };
     objects.push({
       pid: pid, name: c.name || pid, title: c.title || '', info: c.info || [], d0date: c.d0date || '',
-      works: (c.works || []).map(function (w) { return { c: w.c, n: w.n, u: w.u, t: w.t || 0, done: Math.round(((cum[w.c] || 0) + (w.d0 || 0)) * 1000) / 1000, auto: !!w.src, ro: !!w.ro }; }),
+      works: (c.works || []).map(function (w) { return { c: w.c, n: w.n, u: w.u, t: w.t || 0, done: Math.round(cumAt_(c, byPid[pid] || [], w.c, date) * 1000) / 1000, auto: !!w.src, ro: !!w.ro }; }),
       extra: Object.keys(ex).map(function (k) { return ex[k]; }),
       last: last ? { date: last.date, shift: last.shift, foreman: last.foreman || '' } : null,
       today: rs.some(function (r) { return r.date === date; }),
@@ -552,9 +566,9 @@ function execFrom_(cfgs, reports, date, today) {
 
     // --- % выполнения объекта на дату
     const doneBy = function (w, d) {
-      return (+w.d0 || 0) + sum(all.filter(function (r) { return r.date <= d; }).map(function (r) { const v = r.works && r.works[w.c]; return typeof v === 'number' ? v : 0; }));
+      return cumAt_(c, byPid[pid] || [], w.c, d);
     };
-    const pctOn = function (d) { return prog.length ? sum(prog.map(function (w) { return Math.min(1, doneBy(w, d) / w.t); })) / prog.length * 100 : null; };
+    const pctOn = function (d) { return prog.length ? sum(prog.map(function (w) { return Math.max(0, Math.min(1, doneBy(w, d) / w.t)); })) / prog.length * 100 : null; };
     const pct = pctOn(date);
     S.pct = prog.length ? dates.map(function (d) { return d < first ? null : Math.round(pctOn(d) * 10) / 10; }) : null;
 

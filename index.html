@@ -836,7 +836,7 @@ function addDt(d){d=d||{};const r=document.createElement("div");r.className="dt"
   const i=r.querySelectorAll("input");i[0].value=d.what||"";i[1].value=d.h!=null?String(d.h).replace(".",","):"";i[2].value=d.why||"";sel.value=d.fault||"";
   r.querySelector("button").onclick=()=>{r.remove();dirty=true;};$("f-dt").appendChild(r);}
 function readHaul(){const a=[];document.querySelectorAll("#f-haul .haul").forEach(row=>{const i=row.querySelectorAll("input");const c=i[0].value.trim(),m=row.querySelector("select").value,t=num(i[1].value),v=num(i[2].value),w=i[3]?num(i[3].value):null;if(t!==null||v!==null||w!==null){const o={c:c,m:m,t:t,v:v};if(HL.tn)o.w=w;a.push(o);}});return a;}
-function cumWorks(rs){const o=sumWorks(rs);WORKS.forEach(x=>{if(x.d0)o[x.k]+=x.d0;});return o;}
+function cumWorks(rs){const dd=C&&C.d0date;const o=sumWorks(dd?rs.filter(r=>r.date>dd):rs);WORKS.forEach(x=>{if(x.d0)o[x.k]+=x.d0;});return o;}// рапорты до даты «выполнено ранее» включительно уже учтены в d0 — только история
 function sumWorks(rs){const o={};WORKS.forEach(x=>o[x.k]=0);rs.forEach(r=>{WORKS.forEach(x=>{const v=r.works&&r.works[x.c];if(typeof v==="number")o[x.k]+=v;});});return o;}
 function updProg(){
   document.querySelectorAll("#f-works .wrow").forEach(rowHint);
