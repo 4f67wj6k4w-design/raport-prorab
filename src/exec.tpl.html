@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2E671F">
+<meta name="robots" content="noindex">
+<title>Объекты ГК КРАШМАШ</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+[hidden]{display:none!important}
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px)}
+{{CSS}}
+:root{--s-r:#d03b3b;--s-y:#fab219;--s-g:#0ca30c;--s-n:#9aa898;--bar:#2E671F;--bar2:#9cb894;--grid:#dfe5dc}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bar:#7fc06a;--bar2:#3f5a39;--grid:#2c362d}}
+:root[data-theme="dark"]{--bar:#7fc06a;--bar2:#3f5a39;--grid:#2c362d}
+.wrap{max-width:980px}
+.dnav{display:grid;grid-template-columns:48px 1fr 48px;gap:8px;align-items:center}
+.dnav .btn{min-height:44px;padding:0;font-size:20px}
+.dlab{text-align:center;font-weight:600}
+.dlab small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.sum{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.sum div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 8px;text-align:center}
+.sum b{display:block;font:600 28px/1.1 var(--f-num)}
+.sum span{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
+.lamp{flex:none;display:inline-grid;place-items:center;border-radius:50%;color:#fff;font:700 14px/1 var(--f-ui);width:18px;height:18px}
+.lamp.big{width:44px;height:44px;font-size:24px;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 0%,var(--surface))}
+.lamp.sm{width:12px;height:12px;font-size:0}
+.l-r{background:var(--s-r)}.l-y{background:var(--s-y);color:#3a2a00}.l-g{background:var(--s-g)}.l-n{background:var(--s-n)}
+.grid{display:grid;gap:12px;margin-top:12px}
+@media (min-width:860px){.grid{grid-template-columns:1fr 1fr}}
+.oc{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--s-n);border-radius:var(--r);padding:12px 14px;cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%;display:block}
+.oc:hover{border-color:var(--muted)}
+.oc.r{border-left-color:var(--s-r)}.oc.y{border-left-color:var(--s-y)}.oc.g{border-left-color:var(--s-g)}
+.oc-h{display:flex;gap:12px;align-items:flex-start}
+.oc-h .t{min-width:0;flex:1}
+.oc-h b{font-size:17px;line-height:1.25;display:block}
+.oc-h .k{font-size:12px;color:var(--muted);margin-top:2px}
+.oc-h .lab{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.rs{list-style:none;margin:8px 0 0;padding:0;font-size:14px}
+.rs li{display:flex;gap:8px;align-items:flex-start;padding:3px 0;line-height:1.3}
+.rs li .lamp{margin-top:2px}
+.rs li.dim{color:var(--muted)}
+.kp{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font-size:13px;color:var(--muted)}
+.kp b{font-family:var(--f-num);font-weight:600;color:var(--fg)}
+.pbar{height:6px;background:var(--sunk);border-radius:3px;margin-top:8px;overflow:hidden}
+.pbar i{display:block;height:100%;background:var(--bar);border-radius:3px}
+.chip{display:inline-block;font-size:11px;padding:2px 7px;border-radius:999px;background:var(--sunk);color:var(--muted);margin-top:6px}
+.chip.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,var(--surface))}
+.spark{display:block;width:100%;height:34px;margin-top:8px}
+.oc>.k{font-size:11px;color:var(--muted);margin-top:2px}
+details.how{margin-top:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 14px;font-size:14px}
+details.how summary{cursor:pointer;font-weight:600}
+details.how p{margin:8px 0 0;line-height:1.4}
+.back{display:inline-flex;align-items:center;gap:6px;margin-top:12px}
+.dh{display:flex;gap:14px;align-items:center}
+.dh h2{font-size:20px!important;letter-spacing:0!important;text-transform:none!important;color:var(--fg)!important;margin:0!important;display:block!important}
+.dh .k{font-size:13px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+@media (min-width:600px){.tiles{grid-template-columns:repeat(4,1fr)}}
+.tile{background:var(--sunk);border-radius:8px;padding:8px 10px}
+.tile span{font-size:12px;color:var(--muted);display:block}
+.tile b{font:600 20px/1.2 var(--f-num)}
+.tile small{font-size:12px;color:var(--muted)}
+.ch{margin-top:6px}
+.ch h3{font-size:14px;margin:0 0 2px;font-weight:600}
+.ch .sub{font-size:12px;color:var(--muted);margin-bottom:4px}
+.ch svg{display:block;width:100%;height:auto;overflow:visible}
+.ch svg text{font:11px var(--f-ui);fill:var(--muted)}
+.cg{display:grid;gap:18px}
+@media (min-width:760px){.cg{grid-template-columns:1fr 1fr}}
+.tip{position:fixed;z-index:50;pointer-events:none;background:var(--fg);color:var(--bg);font-size:12px;padding:5px 8px;border-radius:6px;white-space:nowrap;transform:translate(-50%,-110%)}
+table.ww{width:100%;border-collapse:collapse;font-size:14px}
+table.ww th{font-size:12px;color:var(--muted);font-weight:500;text-align:right;padding:4px 6px;border-bottom:1px solid var(--line)}
+table.ww th:first-child{text-align:left}
+table.ww td{padding:6px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--f-num);white-space:nowrap}
+table.ww td:first-child{text-align:left;font-family:var(--f-ui);white-space:normal}
+table.ww td small{color:var(--muted);font-family:var(--f-ui)}
+table.ww tr.sep td{border-top:2px solid var(--line)}
+.up{color:var(--ok)}.dn{color:var(--bad)}.eq{color:var(--muted)}
+.wl{padding:7px 0;border-top:1px dashed var(--line);font-size:14px}
+.wl:first-child{border-top:0}
+.wl .v{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:12px;color:var(--muted);margin-top:2px}
+.wl .v b{font-family:var(--f-num);font-weight:600;color:var(--fg)}
+.wl .pbar{height:5px;margin-top:4px}
+.note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4}
+.foot{margin-top:18px;text-align:center;font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brandrow" style="padding-bottom:10px">
+      <div class="ttl"><div class="obj">Руководство ГК</div><h1 style="margin-bottom:0">Объекты: светофор</h1></div>
+      <img src="{{LOGO}}" alt="Группа компаний КРАШМАШ" width="120" height="48">
+    </div>
+  </header>
+  <div id="status" class="banner" hidden></div>
+  <section class="card">
+    <div class="dnav">
+      <button type="button" class="btn" id="d-prev" aria-label="Предыдущий день">‹</button>
+      <div class="dlab" id="d-lab">…</div>
+      <button type="button" class="btn" id="d-next" aria-label="Следующий день">›</button>
+    </div>
+  </section>
+
+  <div id="v-list">
+    <div class="sum" id="sum"></div>
+    <details class="how"><summary>Как считается светофор</summary>
+      <p>Объект горит по худшему из четырёх признаков за выбранный день.</p>
+      <p><span class="lamp sm l-r"></span> <b>Красный:</b> нет рапортов 2 дня подряд; простои и ремонт техники от 24 ч за 7 дней; объём за неделю меньше трети прошлой недели; срок по договору истёк или прогноз окончания позже срока; отставание от равномерного графика от 15 п.п.</p>
+      <p><span class="lamp sm l-y"></span> <b>Жёлтый:</b> нет рапорта за день; простои от 8 ч за 7 дней или любой простой по вине заказчика/генподрядчика; объём за неделю меньше 2/3 прошлой недели; прогноз окончания ближе 7 дней к сроку; отставание от графика от 5 п.п.</p>
+      <p><span class="lamp sm l-g"></span> <b>Зелёный:</b> рапорт сдан, простоев мало, темп не упал, по срокам успеваем.</p>
+      <p><span class="lamp sm l-n"></span> <b>Серый:</b> данных пока мало (сравнение недель — после 2 недель рапортов; прогноз — после 3 дней; без срока в паспорте прогноз не сравнивается со сроком).</p>
+      <p>«% выполнения» — среднее по работам паспорта, у которых задан объём по проекту (без машино-часов, мобилизации и строк «в т.ч.»).</p>
+    </details>
+    <div class="grid" id="list"><div class="empty">Загрузка…</div></div>
+  </div>
+
+  <div id="v-obj" hidden>
+    <button type="button" class="btn small back" id="back">‹ Все объекты</button>
+    <section class="card"><div class="dh" id="o-head"></div><ul class="rs" id="o-rs"></ul></section>
+    <section class="card"><h2 id="o-date"></h2><div class="tiles" id="o-tiles"></div></section>
+    <section class="card"><h2>Графики</h2><div class="cg" id="o-charts"></div></section>
+    <section class="card"><h2>Неделя к неделе</h2><div id="o-week"></div></section>
+    <section class="card"><h2>Работы по паспорту</h2><div id="o-works"></div></section>
+  </div>
+  <div class="foot" id="foot">Данные из рапортов прорабов. Пока страница открыта, она обновляется каждые 10 минут.</div>
+</div>
+<div class="tip" id="tip" hidden></div>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const sget=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const sset=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
+const iso=d=>{d=new Date(d);d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);};
+const addD=(s,n)=>{const d=new Date(s+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
+const ru=s=>s?s.slice(8,10)+"."+s.slice(5,7)+"."+s.slice(0,4):"";
+const ru5=s=>s?s.slice(8,10)+"."+s.slice(5,7):"";
+const fmt=(v,d)=>{if(v===null||v===undefined||v===""||isNaN(v))return "—";return Number(v).toLocaleString("ru-RU",{maximumFractionDigits:d===undefined?1:d});};
+const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;};
+const SVG="http://www.w3.org/2000/svg";
+const sv=(tag,a)=>{const e=document.createElementNS(SVG,tag);for(const k in a)e.setAttribute(k,a[k]);return e;};
+const LAB={r:"Красный",y:"Жёлтый",g:"Зелёный",n:"Нет данных"},ICO={r:"✕",y:"!",g:"✓",n:"–"};
+const lamp=(l,cls)=>{const s=el("span","lamp l-"+l+(cls?" "+cls:""),cls==="sm"?"":ICO[l]);s.setAttribute("role","img");s.setAttribute("aria-label",LAB[l]);s.title=LAB[l];return s;};
+const h=new URLSearchParams(location.hash.slice(1));
+let db=null;
+if(h.get("u")&&h.get("k")){db={u:h.get("u"),k:h.get("k")};sset("raport2-exec",JSON.stringify(db));}
+else{try{db=JSON.parse(sget("raport2-exec")||"null");}catch(e){}}
+const keep=()=>{if(!db)return;try{history.replaceState(null,"",location.pathname+"#u="+encodeURIComponent(db.u)+"&k="+encodeURIComponent(db.k)+(cur?"&o="+encodeURIComponent(cur):""));}catch(e){}};
+let M=null,date=null,cur=h.get("o")||null;
+const todayISO=()=>iso(new Date());
+function status(t,cls){const s=$("status");s.hidden=!t;s.className="banner"+(cls?" "+cls:"");s.textContent=t||"";}
+async function load(quiet){
+  if(!db){status("Откройте панель по ссылке из письма или от администратора (в ней адрес базы и ключ).","bad");$("list").innerHTML="";return;}
+  if(!quiet)$("list").innerHTML='<div class="empty">Загрузка…</div>';
+  try{const q={k:db.k,a:"exec"};if(date)q.date=date;
+    const r=await fetch(db.u+(db.u.includes("?")?"&":"?")+new URLSearchParams(q),{redirect:"follow"});const j=await r.json();
+    if(!j.ok)throw new Error(j.error==="action"||j.error==="key"?"доступ закрыт или скрипт базы не обновлён (нужна новая версия развертывания)":(j.error||"ошибка"));
+    M=j;date=j.date;status("");render();}
+  catch(e){status("Не удалось загрузить: "+(e.message||"нет связи"),"bad");}
+}
+function dateLab(){const t=todayISO();$("d-lab").innerHTML="";$("d-lab").appendChild(document.createTextNode("за "+ru(date)));
+  $("d-lab").appendChild(el("small",null,date===t?"сегодня — рапорты ещё поступают":date===addD(t,-1)?"вчера · обновлено "+new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}):""));
+  $("d-next").disabled=date>=t;}
+function render(){dateLab();const o=cur&&M.objects.find(x=>x.pid===cur);if(o)showObj(o);else{cur=null;keep();showList();}}
+
+/* ---------- список ---------- */
+function showList(){$("v-list").hidden=false;$("v-obj").hidden=true;
+  const s=$("sum");s.innerHTML="";["r","y","g","n"].forEach(l=>{const d=el("div");const b=el("b",null,String(M.counts[l]||0));const sp=el("span");sp.appendChild(lamp(l,"sm"));sp.appendChild(document.createTextNode(LAB[l]));d.appendChild(b);d.appendChild(sp);s.appendChild(d);});
+  const L=$("list");L.innerHTML="";if(!M.objects.length){L.appendChild(el("div","empty","Объектов с рапортами нет"));return;}
+  M.objects.forEach(o=>L.appendChild(card(o)));}
+function card(o){
+  const b=el("button","oc "+o.light);b.type="button";b.onclick=()=>{cur=o.pid;keep();showObj(o);scrollTo(0,0);};
+  const hd=el("div","oc-h");hd.appendChild(lamp(o.light,"big"));const t=el("div","t");t.appendChild(el("b",null,o.short));
+  if(o.kind)t.appendChild(el("div","k",o.kind));t.appendChild(el("div","lab",LAB[o.light]));hd.appendChild(t);b.appendChild(hd);
+  const bad=o.reasons.filter(x=>x.l==="r"||x.l==="y");const ul=el("ul","rs");
+  (bad.length?bad:[{l:o.light==="n"?"n":"g",t:o.light==="n"?(o.reasons[0]||{}).t||"Данных мало":"Замечаний нет"}]).forEach(x=>{const li=el("li");li.appendChild(lamp(x.l,"sm"));li.appendChild(el("span",null,x.t));ul.appendChild(li);});
+  b.appendChild(ul);
+  if(o.pct!==null){const p=el("div","pbar");const i=el("i");i.style.width=Math.min(100,o.pct)+"%";p.appendChild(i);b.appendChild(p);}
+  const kp=el("div","kp");const add=(l,v)=>{const s=el("span",null,l+" ");s.appendChild(el("b",null,v));kp.appendChild(s);};
+  if(o.pct!==null)add("выполнено",fmt(o.pct,0)+"%");
+  if(o.day){if(o.day.people!=null)add("людей",fmt(o.day.people,0));if(o.day.mach)add("техники",fmt(o.day.mach,0));if(o.day.m3)add("вывоз",fmt(o.day.m3,0)+" м³");}
+  if(o.due)add("срок",ru(o.due));
+  if(kp.children.length)b.appendChild(kp);
+  if(o.series){b.appendChild(spark(o));b.appendChild(el("div","k","люди на объекте за 14 дней"));}
+  const ch=el("span","chip"+(o.today?" ok":""),o.today?"Сегодня рапорт есть":"Сегодня рапорта пока нет");b.appendChild(ch);
+  return b;}
+function spark(o){const v=o.series.people.slice(-14),dd=M.dates.slice(-14),n=v.length,mx=Math.max(1,...v.map(x=>x||0));const W=300,H=34;
+  const s=sv("svg",{viewBox:"0 0 "+W+" "+H,class:"spark",preserveAspectRatio:"none",role:"img","aria-label":"Люди на объекте за 14 дней"});const bw=W/n;
+  v.forEach((x,i)=>{if(x===null&&o.first&&dd[i]<o.first)return;if(x===null){s.appendChild(sv("rect",{x:i*bw+bw/2-1.5,y:H-3,width:3,height:3,rx:1.5,fill:"var(--s-n)"}));return;}
+    const hh=Math.max(2,x/mx*(H-4));s.appendChild(sv("rect",{x:i*bw+1,y:H-hh,width:Math.max(1,bw-2),height:hh,rx:2,fill:"var(--bar2)"}));});
+  return s;}
+
+/* ---------- объект ---------- */
+function showObj(o){$("v-list").hidden=true;$("v-obj").hidden=false;
+  const H=$("o-head");H.innerHTML="";H.appendChild(lamp(o.light,"big"));const t=el("div");const h2=el("h2",null,o.short);t.appendChild(h2);t.appendChild(el("div","k",LAB[o.light]+(o.kind?" · "+o.kind:"")));H.appendChild(t);
+  const ul=$("o-rs");ul.innerHTML="";o.reasons.forEach(x=>{const li=el("li",x.l==="n"?"dim":null);li.appendChild(lamp(x.l,"sm"));li.appendChild(el("span",null,x.t));ul.appendChild(li);});
+  if(o.last){const li=el("li","dim");li.appendChild(el("span",null,"Последний рапорт: "+ru(o.last.date)+(o.last.foreman?", "+o.last.foreman:"")+(o.today?" · сегодня рапорт есть":"")));ul.appendChild(li);}
+  $("o-date").textContent="Показатели за "+ru(date);
+  const T=$("o-tiles");T.innerHTML="";const tile=(l,v,sm)=>{const d=el("div","tile");d.appendChild(el("span",null,l));d.appendChild(el("b",null,v));if(sm)d.appendChild(el("small",null," "+sm));T.appendChild(d);};
+  if(o.pct!==null)tile("Выполнено по плану",fmt(o.pct,1)+"%");
+  if(o.day){tile("Людей",fmt(o.day.people,0));tile("Техники",fmt(o.day.mach,0),o.day.mh?fmt(o.day.mh,0)+" маш.-ч":"");tile("Вывоз",fmt(o.day.m3,0),"м³"+(o.day.trips?" · "+fmt(o.day.trips,0)+" рейс.":""));tile("Простои/ремонт",fmt(o.day.dt||0,1),"ч");}
+  if(o.due)tile("Срок по договору",ru(o.due));if(o.forecast)tile("Прогноз окончания",ru(o.forecast));
+  if(!T.children.length)T.appendChild(el("div","empty","Рапортов по объекту ещё не было"));
+  charts(o);week(o);worksList(o);}
+function win(o){if(!o.series)return 0;const first=o.first||M.dates[0];const k=M.dates.indexOf(first);const need=Math.max(14,M.dates.length-Math.max(0,k));return Math.max(0,M.dates.length-Math.min(M.dates.length,need));}
+function charts(o){const C=$("o-charts");C.innerHTML="";if(!o.series){C.appendChild(el("div","empty","Графики появятся после первых рапортов"));return;}
+  const k=win(o),D=M.dates.slice(k),S=o.series,cut=a=>a.slice(k);
+  if(S.pct){const plan=(o.due&&o.start)?D.map(d=>{const a=(new Date(d)-new Date(o.start))/864e5+1,b=(new Date(o.due)-new Date(o.start))/864e5+1;return Math.max(0,Math.min(100,a/b*100));}):null;
+    C.appendChild(line("Выполнение плана объекта, %",plan?"сплошная — факт, пунктир — равномерный график до срока":"накопительно, по работам с объёмом по проекту",D,cut(S.pct),plan,"%"));}
+  o.works.filter(w=>w.act>0).slice(0,4).forEach(w=>C.appendChild(bars(w.n+", "+w.u,"объём за день"+(w.t?" · план "+fmt(w.t)+", выполнено "+fmt(w.pct,1)+"%":""),D,cut(w.d),w.u,o.first)));
+  C.appendChild(bars("Люди на объекте","свои + субподрядчики, чел. в день; точка — рапорта нет",D,cut(S.people),"чел.",o.first));
+  C.appendChild(bars("Техника, машино-часы","моточасы за день",D,cut(S.mh),"маш.-ч",o.first));
+  if(S.m3.some(x=>x))C.appendChild(bars("Вывоз, м³","за день",D,cut(S.m3),"м³",o.first));
+  if(cut(S.dt).some(x=>x))C.appendChild(bars("Простои и ремонт, ч","без ТО",D,cut(S.dt),"ч",o.first));else{const f=frame("Простои и ремонт, ч","без ТО");f.appendChild(el("div","empty","За период простоев и ремонтов не было"));C.appendChild(f);}}
+function frame(title,sub){const w=el("div","ch");w.appendChild(el("h3",null,title));if(sub)w.appendChild(el("div","sub",sub));return w;}
+function axis(s,W,H,P,mx,D,unit){const ticks=niceTicks(mx);ticks.forEach(t=>{const y=P.t+(H-P.t-P.b)*(1-t/ticks[ticks.length-1]);s.appendChild(sv("line",{x1:P.l,x2:W-P.r,y1:y,y2:y,stroke:"var(--grid)","stroke-width":1}));const tx=sv("text",{x:P.l-6,y:y+4,"text-anchor":"end"});tx.textContent=fmt(t,ticks[1]<1?1:0);s.appendChild(tx);});
+  const n=D.length,step=n>20?7:n>10?3:1;D.forEach((d,i)=>{if((n-1-i)%step)return;const tx=sv("text",{x:P.l+(W-P.l-P.r)*(i+.5)/n,y:H-4,"text-anchor":"middle"});tx.textContent=ru5(d);s.appendChild(tx);});
+  return ticks[ticks.length-1];}
+function niceTicks(mx){mx=mx||1;const p=Math.pow(10,Math.floor(Math.log10(mx))),f=mx/p,st=(f<=1.5?.5:f<=3?1:f<=6?2:5)*p;const out=[];for(let v=0;v<=mx+st*0.999;v+=st)out.push(+v.toFixed(6));if(out.length<2)out.push(st);return out;}
+function bars(title,sub,D,v,unit,first){const w=frame(title,sub);const W=340,H=150,P={l:40,r:6,t:8,b:20};const s=sv("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":title});
+  const mx=axis(s,W,H,P,Math.max(...v.map(x=>x||0)),D,unit);const n=D.length,bw=(W-P.l-P.r)/n,base=H-P.b;
+  v.forEach((x,i)=>{const cx=P.l+i*bw;if(x===null&&first&&D[i]<first)return;if(x===null){s.appendChild(sv("circle",{cx:cx+bw/2,cy:base-2,r:2,fill:"var(--s-n)"}));}
+    else if(x>0){const hh=Math.max(2,(base-P.t)*x/mx);s.appendChild(sv("path",{d:rbar(cx+Math.min(1,bw*.15),base-hh,Math.max(1,bw-2*Math.min(1,bw*.15)),hh,Math.min(3,bw/3)),fill:"var(--bar)"}));}
+    const hit=sv("rect",{x:cx,y:P.t,width:bw,height:base-P.t,fill:"transparent"});hit.addEventListener("pointerenter",e=>tip(e,ru(D[i])+": "+(x===null?"рапорта нет":fmt(x)+" "+unit)));hit.addEventListener("pointerleave",untip);hit.addEventListener("pointermove",mvtip);s.appendChild(hit);});
+  s.appendChild(sv("line",{x1:P.l,x2:W-P.r,y1:base,y2:base,stroke:"var(--line)"}));w.appendChild(s);return w;}
+function rbar(x,y,w,h,r){r=Math.min(r,h,w/2);return "M"+x+","+(y+h)+"V"+(y+r)+"Q"+x+","+y+" "+(x+r)+","+y+"H"+(x+w-r)+"Q"+(x+w)+","+y+" "+(x+w)+","+(y+r)+"V"+(y+h)+"Z";}
+function line(title,sub,D,v,plan,unit){const w=frame(title,sub);const W=340,H=160,P={l:40,r:6,t:8,b:20};const s=sv("svg",{viewBox:"0 0 "+W+" "+H,role:"img","aria-label":title});
+  const mx=axis(s,W,H,P,100,D,unit);const n=D.length,bw=(W-P.l-P.r)/n,base=H-P.b,X=i=>P.l+(i+.5)*bw,Y=x=>base-(base-P.t)*x/mx;
+  if(plan){let d="";plan.forEach((x,i)=>{d+=(i?"L":"M")+X(i)+","+Y(x);});s.appendChild(sv("path",{d:d,fill:"none",stroke:"var(--muted)","stroke-width":1.5,"stroke-dasharray":"4 4"}));}
+  let d="",started=false;v.forEach((x,i)=>{if(x===null)return;d+=(started?"L":"M")+X(i)+","+Y(x);started=true;});
+  s.appendChild(sv("path",{d:d,fill:"none",stroke:"var(--bar)","stroke-width":2,"stroke-linejoin":"round"}));
+  const li=v.map((x,i)=>x===null?-1:i).filter(i=>i>=0).pop();if(li!==undefined){s.appendChild(sv("circle",{cx:X(li),cy:Y(v[li]),r:4,fill:"var(--bar)",stroke:"var(--surface)","stroke-width":2}));const tx=sv("text",{x:Math.min(X(li),W-30),y:Y(v[li])-8,"text-anchor":"middle"});tx.style.fill="var(--fg)";tx.style.fontWeight="600";tx.textContent=fmt(v[li],1)+"%";s.appendChild(tx);}
+  const cross=sv("line",{y1:P.t,y2:base,stroke:"var(--muted)","stroke-width":1,visibility:"hidden"});s.appendChild(cross);
+  D.forEach((d0,i)=>{const hit=sv("rect",{x:P.l+i*bw,y:P.t,width:bw,height:base-P.t,fill:"transparent"});
+    hit.addEventListener("pointerenter",e=>{cross.setAttribute("x1",X(i));cross.setAttribute("x2",X(i));cross.setAttribute("visibility","visible");tip(e,ru(d0)+": "+(v[i]===null?"нет данных":fmt(v[i],1)+"%")+(plan?" · по графику "+fmt(plan[i],0)+"%":""));});
+    hit.addEventListener("pointerleave",()=>{cross.setAttribute("visibility","hidden");untip();});hit.addEventListener("pointermove",mvtip);s.appendChild(hit);});
+  s.appendChild(sv("line",{x1:P.l,x2:W-P.r,y1:base,y2:base,stroke:"var(--line)"}));w.appendChild(s);return w;}
+const T=$("tip");function tip(e,t){T.textContent=t;T.hidden=false;mvtip(e);}function mvtip(e){T.style.left=e.clientX+"px";T.style.top=e.clientY+"px";}function untip(){T.hidden=true;}
+function week(o){const W=$("o-week");W.innerHTML="";if(!o.week){W.appendChild(el("div","empty","Нет данных"));return;}
+  const wk=o.week;const tb=el("table","ww");const th=el("thead");const tr=el("tr");["Показатель",ru5(wk.b[0])+"–"+ru5(wk.b[1]),ru5(wk.a[0])+"–"+ru5(wk.a[1]),"Изм."].forEach(x=>tr.appendChild(el("th",null,x)));th.appendChild(tr);tb.appendChild(th);
+  const bd=el("tbody");let sep=false;wk.rows.forEach(r=>{const tr=el("tr",r.s&&!sep?"sep":null);if(r.s)sep=true;const td=el("td",null,r.n+" ");td.appendChild(el("small",null,r.u));tr.appendChild(td);
+    tr.appendChild(el("td",null,fmt(r.b)));tr.appendChild(el("td",null,fmt(r.a)));
+    let c="",cls="eq";if(r.b>0){const p=Math.round((r.a/r.b-1)*100);c=(p>0?"▲ +":p<0?"▼ ":"")+p+"%";cls=p===0?"eq":((p>0)!==!!r.bad?"up":"dn");}else if(r.a>0){c="новое";}
+    tr.appendChild(el("td",cls,c));bd.appendChild(tr);});tb.appendChild(bd);W.appendChild(tb);
+  if(!wk.full)W.appendChild(el("div","note","Рапорты по объекту идут с "+ru(o.first)+" — полное сравнение недель будет с "+ru(addD(o.first,13))+"."));}
+function worksList(o){const B=$("o-works");B.innerHTML="";const ws=o.works.filter(w=>w.t>0);if(!ws.length){B.appendChild(el("div","empty","В паспорте нет объёмов по проекту"));return;}
+  ws.forEach(w=>{const d=el("div","wl");d.appendChild(el("div",null,w.n+", "+w.u));const v=el("div","v");const a=(l,x)=>{const s=el("span",null,l+" ");s.appendChild(el("b",null,x));v.appendChild(s);};
+    a("план",fmt(w.t));a("выполнено",fmt(w.done));a("остаток",fmt(Math.max(0,w.t-w.done)));a("",fmt(w.pct,1)+"%");d.appendChild(v);const p=el("div","pbar");const i=el("i");i.style.width=Math.min(100,w.pct||0)+"%";p.appendChild(i);d.appendChild(p);B.appendChild(d);});}
+
+$("back").onclick=()=>{cur=null;keep();showList();};
+$("d-prev").onclick=()=>{date=addD(date||addD(todayISO(),-1),-1);load();};
+$("d-next").onclick=()=>{if(date<todayISO()){date=addD(date,1);load();}};
+window.addEventListener("popstate",()=>{});
+keep();load();setInterval(()=>{if(!document.hidden)load(true);},600000);
+})();
+</script>
+</body>
+</html>

@@ -137,6 +137,10 @@ function saveReport_(r, cfg) {
 function doGet(e) {
   const p = (e && e.parameter) || {};
   const dir = p.k === DIRECTOR_KEY;
+  if (p.a === 'exec' && (dir || (EXEC_KEY.length >= 24 && p.k === EXEC_KEY))) {
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(p.date || '') ? p.date : Utilities.formatDate(new Date(Date.now() - 864e5), TZ, 'yyyy-MM-dd');
+    return out_(Object.assign({ ok: true }, execModel_(date)));
+  }
   if (!dir && !(p.a === 'list' && isForeman_(p.k, p.pid))) return out_({ ok: false, error: 'key' });
   if (p.a === 'list' && !p.pid) return out_({ ok: false, error: 'pid' });
   if (p.a === 'ping') return out_({ ok: true, time: new Date().toISOString() });
@@ -430,4 +434,281 @@ function reportText_(c, r, cumAll, f) {
   (r.downtime || []).forEach(function (d) { L.push((d.k || 'Простой') + ': ' + (d.what || '') + ' — ' + f(d.h) + ' ч' + (d.why ? ' — ' + d.why : '') + (d.fault ? ' (вина: ' + d.fault + ')' : '')); });
   if (r.other) L.push('Примечание: ' + r.other);
   return L.join('\n');
+}
+
+/** Меню в таблице: «Рапорты → Удалить выделенный рапорт». Удаляет рапорт целиком со всех листов. */
+function onOpen() {
+  SpreadsheetApp.getUi().createMenu('Рапорты')
+    .addItem('Удалить выделенный рапорт', 'menuDeleteReport')
+    .addToUi();
+}
+function menuDeleteReport() {
+  const ui = SpreadsheetApp.getUi();
+  const sh = SpreadsheetApp.getActiveSheet();
+  const keys = ['R', 'W', 'H', 'P', 'M', 'D'].map(function (k) { return SHEETS[k][0]; });
+  const r = sh.getActiveRange().getRow();
+  if (keys.indexOf(sh.getName()) < 0 || r < 2) { ui.alert('Встаньте на строку рапорта (лист «Рапорты», «Работы», «Техника» и т.п.) и выберите пункт меню ещё раз.'); return; }
+  const v = sh.getRange(r, 1, 1, 6).getValues()[0];
+  const id = String(v[0]), pid = String(v[1]);
+  if (!id || !pid) { ui.alert('В этой строке нет рапорта.'); return; }
+  const ans = ui.alert('Удалить рапорт?', 'Объект: ' + v[2] + '\nДата: ' + Utilities.formatDate(new Date(v[3]), TZ, 'dd.MM.yyyy') + ', смена: ' + v[4] + '\nПрораб: ' + v[5] + '\n\nРапорт удалится со всех листов (работы, вывоз, люди, техника, простои).', ui.ButtonSet.YES_NO);
+  if (ans !== ui.Button.YES) return;
+  ui.alert(deleteReport_(id, pid) ? 'Рапорт удалён.' : 'Рапорт не найден на листе «Рапорты».');
+}
+
+// =====================================================================
+// ПАНЕЛЬ РУКОВОДСТВА ГК — светофор по объектам, графики, неделя к неделе, письмо в 8:00
+// =====================================================================
+// Ключ панели руководства: видит только светофор и графики (не рапорты и не настройки).
+const EXEC_KEY = 'ВСТАВЬТЕ_КЛЮЧ_РУКОВОДСТВА';
+// Кому утреннее письмо со светофором (через запятую). Пусто — письмо не отправляется.
+const EXEC_TO = '';
+// Ссылка на панель руководства (подставляется в письмо).
+const EXEC_PAGE = '';
+// Пороги светофора
+const EXEC_RULES = {
+  dtYellow: 8,      // простои+ремонт за 7 дней, ч — жёлтый
+  dtRed: 24,        // … — красный
+  paceYellow: 0.67, // объём за неделю меньше 2/3 прошлой недели — жёлтый
+  paceRed: 0.34,    // … меньше 1/3 — красный
+  dueWarnDays: 7,   // прогноз окончания ближе 7 дней к сроку — жёлтый
+  lagYellow: 5,     // отставание от равномерного графика, п.п. — жёлтый
+  lagRed: 15        // … — красный
+};
+
+/** Работа участвует в «% выполнения объекта»: есть план, не техника, не «в т.ч.», не справочно. */
+function execProgressWork_(w) {
+  if (!w || !(+w.t > 0) || w.ro) return false;
+  const u = String(w.u || '').trim().toLowerCase(), n = String(w.n || '').trim().toLowerCase();
+  if (u.indexOf('маш') === 0) return false;
+  if (/^мч/i.test(String(w.c || ''))) return false;
+  if (/^(в т\.ч\.|работа|мобилизац|демобилизац|доставка быто|бытовк|пожарн)/.test(n)) return false;
+  return true;
+}
+
+/** Срок из паспорта: cfg.due / cfg.start или строка «Сроки…: 01.09.2026 – 12.11.2026». */
+function execDue_(c) {
+  const iso = function (s) { const m = /(\d{2})\.(\d{2})\.(\d{4})/.exec(s || ''); return m ? m[3] + '-' + m[2] + '-' + m[1] : null; };
+  let start = c.start || null, due = c.due || null;
+  (c.info || []).forEach(function (s) {
+    if (due || !/срок/i.test(s)) return;
+    const m = /(\d{2}\.\d{2}\.\d{4})\s*[–—-]\s*(\d{2}\.\d{2}\.\d{4})/.exec(s);
+    if (m) { start = start || iso(m[1]); due = iso(m[2]); }
+    else { const m2 = /до\s*(\d{2}\.\d{2}\.\d{4})/.exec(s); if (m2) due = iso(m2[1]); }
+  });
+  return { start: start, due: due };
+}
+
+/** Чистая функция: настройки объектов + рапорты → модель панели руководства на дату date (обычно вчера). */
+function execFrom_(cfgs, reports, date, today) {
+  const R = EXEC_RULES;
+  const add = function (iso, n) { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  const diff = function (a, b) { return Math.round((new Date(a + 'T12:00:00Z') - new Date(b + 'T12:00:00Z')) / 864e5); };
+  const ru = function (s) { return s ? s.slice(8, 10) + '.' + s.slice(5, 7) : ''; };
+  const ruY = function (s) { return s ? s.slice(8, 10) + '.' + s.slice(5, 7) + '.' + s.slice(0, 4) : ''; };
+  const f = function (v, d) { const k = Math.pow(10, d == null ? 1 : d); return String(Math.round(v * k) / k).replace('.', ','); };
+  const nrm = function (s) { return String(s || '').trim().replace(/\s+/g, ' ').toLowerCase(); };
+  const sum = function (a) { return a.reduce(function (x, y) { return x + y; }, 0); };
+  const N = 30, from = add(date, -(N - 1));
+  const dates = []; for (let i = 0; i < N; i++) dates.push(add(from, i));
+  const byPid = {}; reports.forEach(function (r) { if (r && r.pid && r.date) (byPid[r.pid] = byPid[r.pid] || []).push(r); });
+  const cfgBy = {}; cfgs.forEach(function (c) { if (c && c.pid) cfgBy[c.pid] = c; });
+  Object.keys(byPid).forEach(function (p) { if (!cfgBy[p]) cfgBy[p] = { pid: p, name: p, works: [] }; });
+  const rank = { r: 3, y: 2, g: 1, n: 0 };
+
+  const objects = Object.keys(cfgBy).map(function (pid) {
+    const c = cfgBy[pid], all = (byPid[pid] || []).filter(function (r) { return r.date <= date; });
+    if (!all.length) {
+      if (!(c._upd && diff(date, c._upd) <= 14 && c._upd <= date)) return null;
+      const nm = String(c.name || pid);
+      return { pid: pid, name: nm, short: nm.replace(/^г\.\s*Москва,\s*/i, '').split(' — ')[0], kind: nm.split(' — ').slice(1).join(' — '), light: 'n',
+        reasons: [{ k: 'rep', l: 'n', t: 'Рапортов по объекту ещё не было' }], pct: null, due: execDue_(c).due, start: execDue_(c).start, forecast: null, first: null,
+        last: null, today: !!today && (byPid[pid] || []).some(function (r) { return r.date === today; }), day: null, series: null, works: [], week: null, empty: true };
+    }
+    const first = all.reduce(function (a, r) { return r.date < a ? r.date : a; }, all[0].date);
+    const last = all.reduce(function (a, r) { return !a || r.date > a.date || (r.date === a.date && r.shift > a.shift) ? r : a; }, null);
+    if (diff(date, last.date) > 14) return null; // объект не ведётся
+    const on = function (d) { return all.filter(function (r) { return r.date === d; }); };
+    const has = function (d) { return on(d).length > 0; };
+    const works = c.works || [];
+    const prog = works.filter(execProgressWork_);
+    const reasons = [];
+
+    // --- ряды по дням
+    const S = { people: [], mach: [], mh: [], m3: [], trips: [], dt: [], rep: [], idle: [] };
+    dates.forEach(function (d) {
+      const rs = on(d);
+      S.rep.push(rs.length ? 1 : 0);
+      S.idle.push(rs.length && rs.every(function (r) { return r.idle; }) ? 1 : 0);
+      S.people.push(rs.length ? sum(rs.map(function (r) { return ((r.people && +r.people.own) || 0) + sum((r.subs || []).map(function (x) { return +x.p || 0; })); })) : null);
+      const mm = {}; let mh = 0;
+      rs.forEach(function (r) { (r.mach || []).forEach(function (m) { const k = nrm(m.n); mm[k] = Math.max(mm[k] || 0, +m.q || 1); mh += +m.h || 0; }); });
+      S.mach.push(rs.length ? sum(Object.keys(mm).map(function (k) { return mm[k]; })) : null);
+      S.mh.push(rs.length ? mh : null);
+      S.m3.push(rs.length ? sum(rs.map(function (r) { return sum((r.haul || []).map(function (h) { return +h.v || 0; })); })) : null);
+      S.trips.push(rs.length ? sum(rs.map(function (r) { return sum((r.haul || []).map(function (h) { return +h.t || 0; })); })) : null);
+      S.dt.push(rs.length ? sum(rs.map(function (r) { return sum((r.downtime || []).filter(function (x) { return x.k !== 'ТО'; }).map(function (x) { return +x.h || 0; })); })) : null);
+    });
+
+    // --- % выполнения объекта на дату
+    const doneBy = function (w, d) {
+      return (+w.d0 || 0) + sum(all.filter(function (r) { return r.date <= d; }).map(function (r) { const v = r.works && r.works[w.c]; return typeof v === 'number' ? v : 0; }));
+    };
+    const pctOn = function (d) { return prog.length ? sum(prog.map(function (w) { return Math.min(1, doneBy(w, d) / w.t); })) / prog.length * 100 : null; };
+    const pct = pctOn(date);
+    S.pct = prog.length ? dates.map(function (d) { return d < first ? null : Math.round(pctOn(d) * 10) / 10; }) : null;
+
+    // --- 1. Рапорты
+    if (!has(date) && !has(add(date, -1))) reasons.push({ k: 'rep', l: 'r', t: 'Нет рапортов 2 дня и больше — последний ' + ru(last.date) });
+    else if (!has(date)) reasons.push({ k: 'rep', l: 'y', t: 'Нет рапорта за ' + ru(date) });
+    else reasons.push({ k: 'rep', l: 'g', t: on(date).every(function (r) { return r.idle; }) ? 'Рапорт сдан: работ не было' : 'Рапорт сдан' });
+
+    // --- 2. Простои за 7 дней
+    const w1 = all.filter(function (r) { return r.date > add(date, -7); });
+    const dts = []; w1.forEach(function (r) { (r.downtime || []).forEach(function (x) { if (x.k !== 'ТО') dts.push(x); }); });
+    const dtH = sum(dts.map(function (x) { return +x.h || 0; }));
+    const cust = sum(dts.filter(function (x) { return (x.k || 'Простой') === 'Простой' && (x.fault === 'Заказчик' || x.fault === 'Генподрядчик'); }).map(function (x) { return +x.h || 0; }));
+    let dl = dtH >= R.dtRed ? 'r' : dtH >= R.dtYellow ? 'y' : 'g';
+    if (cust > 0 && dl === 'g') dl = 'y';
+    reasons.push({ k: 'dt', l: dl, t: dtH ? 'Простои и ремонт за 7 дней: ' + f(dtH) + ' ч' + (cust ? ' (по вине заказчика/генподрядчика ' + f(cust) + ' ч — основание для продления срока)' : '') : 'Простоев за 7 дней нет' });
+
+    // --- 3. Темп: неделя к неделе
+    const wk = function (a, b) { return all.filter(function (r) { return r.date > add(date, a) && r.date <= add(date, b); }); };
+    const W1 = wk(-7, 0), W0 = wk(-14, -7);
+    const volW = function (rs, code) { return sum(rs.map(function (r) { const v = r.works && r.works[code]; return typeof v === 'number' ? v : 0; })); };
+    const items = works.filter(function (w) { return !w.ro && !/^мч/i.test(String(w.c || '')) && String(w.u || '').toLowerCase().indexOf('маш') !== 0 && !/^в т\.ч\./i.test(String(w.n || '')); })
+      .map(function (w) { return { n: w.n, u: w.u, a: volW(W1, w.c), b: volW(W0, w.c) }; });
+    const extraW = {}; W1.concat(W0).forEach(function (r) { (r.extra || []).forEach(function (e) { const k = e.n + '|' + e.u; extraW[k] = extraW[k] || { n: e.n, u: e.u, a: 0, b: 0 }; extraW[k][r.date > add(date, -7) ? 'a' : 'b'] += +e.v || 0; }); });
+    Object.keys(extraW).forEach(function (k) { items.push(extraW[k]); });
+    const haulA = sum(W1.map(function (r) { return sum((r.haul || []).map(function (h) { return +h.v || 0; })); })), haulB = sum(W0.map(function (r) { return sum((r.haul || []).map(function (h) { return +h.v || 0; })); }));
+    const act = items.filter(function (x) { return x.a + x.b > 0; });
+    if (haulA + haulB > 0 && !act.some(function (x) { return /вывоз/i.test(x.n); })) act.push({ n: 'Вывоз', u: 'м³', a: haulA, b: haulB });
+    if (diff(date, first) < 13) reasons.push({ k: 'pace', l: 'n', t: 'Темп неделя к неделе — после ' + ru(add(first, 13)) + ' (нужно 2 недели рапортов)' });
+    else if (!act.length) reasons.push(pct !== null && pct >= 99.5 ? { k: 'pace', l: 'n', t: 'План выполнен, работ за 2 недели нет' } : { k: 'pace', l: W1.length ? 'y' : 'n', t: 'Объёмов работ за 2 недели нет' });
+    else {
+      const sh = sum(act.map(function (x) { return x.a / (x.a + x.b); })) / act.length;
+      const ratio = sh >= 0.999 ? Infinity : sh / (1 - sh);
+      const pl = ratio < R.paceRed ? 'r' : ratio < R.paceYellow ? 'y' : 'g';
+      const ch = isFinite(ratio) ? Math.round((ratio - 1) * 100) : null;
+      reasons.push({ k: 'pace', l: pl, t: ch === null ? 'Работы начались на этой неделе' : ch <= -5 ? 'Темп упал на ' + (-ch) + '% к прошлой неделе' : ch >= 5 ? 'Темп вырос на ' + ch + '% к прошлой неделе' : 'Темп как на прошлой неделе' });
+    }
+
+    // --- 4. Срок и прогноз окончания
+    const dd = execDue_(c);
+    let forecast = null, still = false;
+    const span = Math.min(7, diff(date, first) + 1);
+    if (pct !== null && pct < 99.5 && span >= 3) {
+      const p0 = pctOn(add(date, -span)), v = (pct - p0) / span;
+      if (v > 0.01) forecast = add(date, Math.ceil((100 - pct) / v)); else still = true;
+    }
+    let due = { k: 'due', l: 'n', t: '' };
+    if (pct !== null && pct >= 99.5) due = { k: 'due', l: 'g', t: 'План выполнен' };
+    else if (dd.due && pct !== null) {
+      if (date > dd.due) due = { k: 'due', l: 'r', t: 'Срок по договору ' + ruY(dd.due) + ' истёк, выполнено ' + f(pct, 0) + '%' };
+      else if (forecast) {
+        const late = diff(forecast, dd.due);
+        due = { k: 'due', l: late > 0 ? 'r' : late > -R.dueWarnDays ? 'y' : 'g', t: 'Прогноз окончания ' + ruY(forecast) + (late > 0 ? ' — позже срока ' + ruY(dd.due) + ' на ' + late + ' дн.' : ', срок ' + ruY(dd.due)) };
+      } else if (dd.start) {
+        const plan = Math.max(0, Math.min(100, (diff(date, dd.start) + 1) / (diff(dd.due, dd.start) + 1) * 100)), lag = plan - pct;
+        due = { k: 'due', l: lag >= R.lagRed ? 'r' : lag >= R.lagYellow ? 'y' : 'g', t: (lag >= R.lagYellow ? 'Отставание от графика ' + f(lag, 0) + ' п.п.' : 'Идём по графику') + ': выполнено ' + f(pct, 0) + '%, по сроку к ' + ru(date) + ' нужно ' + f(plan, 0) + '% (срок ' + ruY(dd.due) + ')' };
+      } else due.t = 'Срок ' + ruY(dd.due) + (still ? ', по работам с объёмом по проекту движения нет — прогноз невозможен' : ', прогноз появится после 3 дней рапортов');
+    } else if (pct === null) due.t = 'Прогноз невозможен: в паспорте нет объёмов по проекту';
+    else due.t = forecast ? 'Прогноз окончания ' + ruY(forecast) + ' (срока в паспорте нет)' : still ? 'Срока в паспорте нет; по работам с объёмом по проекту за неделю движения нет' : 'Срока в паспорте нет; прогноз — после 3 дней рапортов';
+    reasons.push(due);
+
+    const light = reasons.reduce(function (a, x) { return rank[x.l] > rank[a] ? x.l : a; }, 'n');
+
+    // --- работы для графиков: с планом или с объёмами за 30 дней
+    const wlist = works.filter(function (w) { return !w.ro && !/^мч/i.test(String(w.c || '')) && String(w.u || '').toLowerCase().indexOf('маш') !== 0; }).map(function (w) {
+      const d = dates.map(function (x) { const rs = on(x); return rs.length ? sum(rs.map(function (r) { const v = r.works && r.works[w.c]; return typeof v === 'number' ? v : 0; })) : null; });
+      const done = doneBy(w, date);
+      return { c: w.c, n: w.n, u: w.u, t: +w.t || 0, done: Math.round(done * 100) / 100, pct: +w.t > 0 ? Math.round(done / w.t * 1000) / 10 : null, d: d, act: sum(d.map(function (x) { return x || 0; })) };
+    }).filter(function (w) { return w.act > 0 || (w.t > 0 && execProgressWork_(works.filter(function (x) { return x.c === w.c; })[0])); });
+
+    const week = { a: [add(date, -6), date], b: [add(date, -13), add(date, -7)], rows: [] };
+    const avg = function (rs, fn) { const ds = {}; rs.forEach(function (r) { ds[r.date] = (ds[r.date] || 0) + fn(r); }); const k = Object.keys(ds); return k.length ? sum(k.map(function (x) { return ds[x]; })) / k.length : 0; };
+    const ppl = function (r) { return ((r.people && +r.people.own) || 0) + sum((r.subs || []).map(function (x) { return +x.p || 0; })); };
+    items.filter(function (x) { return x.a + x.b > 0; }).forEach(function (x) { week.rows.push({ n: x.n, u: x.u, a: x.a, b: x.b }); });
+    week.rows.push({ n: 'Людей в среднем за день', u: 'чел.', a: Math.round(avg(W1, ppl)), b: Math.round(avg(W0, ppl)), s: 1 });
+    week.rows.push({ n: 'Моточасы техники', u: 'маш.-ч', a: sum(W1.map(function (r) { return sum((r.mach || []).map(function (m) { return +m.h || 0; })); })), b: sum(W0.map(function (r) { return sum((r.mach || []).map(function (m) { return +m.h || 0; })); })), s: 1 });
+    week.rows.push({ n: 'Рейсов вывоза', u: 'рейс.', a: sum(W1.map(function (r) { return sum((r.haul || []).map(function (h) { return +h.t || 0; })); })), b: sum(W0.map(function (r) { return sum((r.haul || []).map(function (h) { return +h.t || 0; })); })), s: 1 });
+    week.rows.push({ n: 'Вывоз', u: 'м³', a: haulA, b: haulB, s: 1 });
+    week.rows.push({ n: 'Простои и ремонт', u: 'ч', a: dtH, b: sum(W0.map(function (r) { return sum((r.downtime || []).filter(function (x) { return x.k !== 'ТО'; }).map(function (x) { return +x.h || 0; })); })), s: 1, bad: 1 });
+    week.rows.push({ n: 'Дней с рапортом', u: 'дн.', a: Object.keys(W1.reduce(function (o, r) { o[r.date] = 1; return o; }, {})).length, b: Object.keys(W0.reduce(function (o, r) { o[r.date] = 1; return o; }, {})).length, s: 1 });
+    week.full = diff(date, first) >= 13;
+
+    const short = String(c.name || pid).replace(/^г\.\s*Москва,\s*/i, '').split(' — ')[0];
+    const kind = String(c.name || '').split(' — ').slice(1).join(' — ');
+    const di = dates.length - 1;
+    return {
+      pid: pid, name: c.name || pid, short: short, kind: kind, light: light, reasons: reasons,
+      pct: pct === null ? null : Math.round(pct * 10) / 10, due: dd.due, start: dd.start, forecast: forecast, first: first,
+      last: { date: last.date, shift: last.shift, foreman: last.foreman || '' },
+      today: !!today && (byPid[pid] || []).some(function (r) { return r.date === today; }),
+      day: { people: S.people[di], mach: S.mach[di], mh: S.mh[di], m3: S.m3[di], trips: S.trips[di], dt: S.dt[di], idle: S.idle[di] },
+      series: S, works: wlist.sort(function (a, b) { return b.act - a.act; }), week: week
+    };
+  }).filter(Boolean).sort(function (a, b) { return rank[b.light] - rank[a.light] || a.short.localeCompare(b.short, 'ru'); });
+
+  const counts = { r: 0, y: 0, g: 0, n: 0 }; objects.forEach(function (o) { counts[o.light]++; });
+  return { date: date, today: today || null, dates: dates, objects: objects, counts: counts };
+}
+
+function execModel_(date) {
+  const all = readAll_();
+  const today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
+  return execFrom_(all.cfgs, all.reports, date, today);
+}
+
+/** HTML утреннего письма руководству. */
+function execMailFrom_(m, page) {
+  const esc = function (s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); };
+  const ru = function (s) { return s.slice(8, 10) + '.' + s.slice(5, 7) + '.' + s.slice(0, 4); };
+  const col = { r: '#d03b3b', y: '#e09a00', g: '#0ca30c', n: '#9aa898' };
+  const lab = { r: 'КРАСНЫЙ', y: 'ЖЁЛТЫЙ', g: 'ЗЕЛЁНЫЙ', n: 'нет данных' };
+  const dot = function (l) { return '<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + col[l] + ';vertical-align:-2px"></span>'; };
+  const rows = m.objects.map(function (o) {
+    const bad = o.reasons.filter(function (x) { return x.l === 'r' || x.l === 'y'; });
+    const show = bad.length ? bad : o.reasons.filter(function (x) { return x.k === 'due' && x.t; });
+    return '<tr><td style="padding:10px 8px;border-top:1px solid #dde3da;vertical-align:top;width:22px">' + dot(o.light) + '</td>' +
+      '<td style="padding:10px 8px;border-top:1px solid #dde3da;vertical-align:top"><b style="font-size:15px">' + esc(o.short) + '</b> <span style="font-size:11px;letter-spacing:.05em;color:' + (o.light === 'y' ? '#8a5a00' : col[o.light]) + '">' + lab[o.light] + '</span>' +
+      (o.pct !== null ? ' <span style="color:#5a6758">· выполнено ' + String(Math.round(o.pct)) + '%</span>' : '') +
+      '<div style="font-size:13px;color:#33402f;margin-top:3px">' + show.map(function (x) { return (x.l === 'r' || x.l === 'y' ? dot(x.l) + ' ' : '') + esc(x.t); }).join('<br>') + '</div></td></tr>';
+  }).join('');
+  const c = m.counts;
+  const html = '<div style="font-family:Arial,sans-serif;color:#18221a;max-width:640px">' +
+    '<table style="width:100%;border-collapse:collapse;background:#2E671F;color:#fff"><tr><td style="padding:16px 18px">' +
+    '<div style="font-size:26px;font-weight:700;letter-spacing:.02em">ГК «КРАШМАШ»</div>' +
+    '<div style="font-size:19px;margin-top:4px">Светофор по объектам за ' + ru(m.date) + '</div>' +
+    '<div style="font-size:14px;margin-top:6px;opacity:.9">' + dot('r') + ' ' + c.r + ' &nbsp; ' + dot('y') + ' ' + c.y + ' &nbsp; ' + dot('g') + ' ' + c.g + (c.n ? ' &nbsp; ' + dot('n') + ' ' + c.n : '') + '</div>' +
+    '</td></tr></table><table style="width:100%;border-collapse:collapse">' + rows + '</table>' +
+    (page ? '<p style="margin:16px 0"><a href="' + esc(page) + '" style="background:#2E671F;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none;font-weight:600">Открыть панель с графиками</a></p>' : '') +
+    '<p style="font-size:12px;color:#5a6758">Красный — нет рапортов 2 дня, простои от ' + EXEC_RULES.dtRed + ' ч за неделю, темп упал втрое, срок истёк или прогноз позже срока. Жёлтый — нет рапорта за день, простои от ' + EXEC_RULES.dtYellow + ' ч или по вине заказчика, темп упал на треть, прогноз впритык к сроку.</p></div>';
+  const text = 'ГК «КРАШМАШ» — светофор по объектам за ' + ru(m.date) + '\nКрасных: ' + c.r + ', жёлтых: ' + c.y + ', зелёных: ' + c.g + '\n\n' +
+    m.objects.map(function (o) { return '[' + lab[o.light] + '] ' + o.short + (o.pct !== null ? ' — ' + Math.round(o.pct) + '%' : '') + '\n' + o.reasons.filter(function (x) { return x.t && x.l !== 'g' && x.l !== 'n'; }).map(function (x) { return '  — ' + x.t; }).join('\n'); }).join('\n') +
+    (page ? '\n\nПанель: ' + page : '');
+  const subject = (c.r ? '🔴 ' + c.r + ' ' : '') + (c.y ? '🟡 ' + c.y + ' ' : '') + '🟢 ' + c.g + ' — объекты ГК КРАШМАШ за ' + ru(m.date);
+  return { subject: subject, html: html, text: text };
+}
+
+/** Запустить один раз вручную: письмо руководству каждый день около 8:00 по Москве. */
+function setupExec() {
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'execMorning') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('execMorning').timeBased().atHour(8).nearMinute(0).everyDays(1).inTimezone(TZ).create();
+  testExecMail();
+}
+
+/** Утреннее письмо: светофор за вчера. */
+function execMorning() {
+  if (!EXEC_TO) return;
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  const d = execMailFrom_(execModel_(Utilities.formatDate(y, TZ, 'yyyy-MM-dd')), EXEC_PAGE);
+  MailApp.sendEmail({ to: EXEC_TO, subject: d.subject, body: d.text, htmlBody: d.html, name: 'ГК КРАШМАШ — объекты' });
+}
+
+/** Проверка: отправить письмо светофора за вчера только первому адресу (себе). */
+function testExecMail() {
+  const y = new Date(); y.setDate(y.getDate() - 1);
+  const d = execMailFrom_(execModel_(Utilities.formatDate(y, TZ, 'yyyy-MM-dd')), EXEC_PAGE);
+  MailApp.sendEmail({ to: String(EXEC_TO || DIGEST_TO).split(',')[0].trim(), subject: '[проверка] ' + d.subject, body: d.text, htmlBody: d.html, name: 'ГК КРАШМАШ — объекты' });
 }
