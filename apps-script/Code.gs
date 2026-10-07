@@ -727,3 +727,20 @@ function testExecMail() {
   const d = execMailFrom_(execModel_(Utilities.formatDate(y, TZ, 'yyyy-MM-dd')), EXEC_PAGE);
   MailApp.sendEmail({ to: String(EXEC_TO || DIGEST_TO).split(',')[0].trim(), subject: '[проверка] ' + d.subject, body: d.text, htmlBody: d.html, name: 'ГК КРАШМАШ — объекты' });
 }
+
+/** Один раз после загрузки истории: дописать листы «Работы», «Вывоз», «Люди», «Техника», «Простои»
+ *  для рапортов, которые есть только на листе «Рапорты» (внесены пакетом). Повторный запуск ничего не дублирует. */
+function rebuildDetails() {
+  const all = readAll_(), cfgBy = {};
+  all.cfgs.forEach(function (c) { cfgBy[c.pid] = c; });
+  const ids = {};
+  ['W', 'H', 'P', 'M', 'D'].forEach(function (k) { const sh = sheet_(k), n = sh.getLastRow(); if (n >= 2) sh.getRange(2, 1, n - 1, 1).getValues().forEach(function (v) { ids[String(v[0])] = 1; }); });
+  let done = 0;
+  all.reports.forEach(function (r) {
+    if (!r || !r.id || ids[r.id]) return;
+    const any = Object.keys(r.works || {}).length || (r.extra || []).length || (r.haul || []).length || (r.subs || []).length || (r.mach || []).length || (r.downtime || []).length || (r.people && r.people.own != null);
+    if (!any) return;
+    saveReport_(r, cfgBy[r.pid]); done++;
+  });
+  Logger.log('Дописано рапортов: ' + done);
+}
