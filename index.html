@@ -888,7 +888,7 @@ function collect(){
 function validate(o){
   const e=(o._bad||[]).slice();if(!o.date)e.push("дата");if(!o.foreman)e.push("ФИО прораба");
   if(o.people.own==null&&!o.subs.length&&!o.idle)e.push("люди на объекте (если никого не было — 0)");
-  o.haul.forEach((h,i)=>{if(!h.c)e.push(HL.t.toLowerCase()+" "+(i+1)+": "+HL.c.toLowerCase());if(HL.tn?(h.v===null&&h.w===null):h.t===null)e.push(HL.t.toLowerCase()+" "+(i+1)+": "+(HL.tn?"м³ или т":"рейсы"));});
+  o.haul.forEach((h,i)=>{if(!h.c)e.push(HL.t.toLowerCase()+" "+(i+1)+": "+HL.c.toLowerCase());if(HL.tn?(h.v===null&&h.w===null):(h.t===null&&h.v===null))e.push(HL.t.toLowerCase()+" "+(i+1)+": "+(HL.tn?"м³ или т":"рейсы или м³"));});
   o.subs.forEach((x,i)=>{if(!x.n)e.push("субподрядчик "+(i+1)+": название");if(x.p===null)e.push("субподрядчик "+(i+1)+": людей");});
   o.mach.forEach((m,i)=>{if(m.q>3&&m.h==null)e.push("техника "+(i+1)+" («"+m.n+"»): в «шт» стоит "+m.q+" — это часы? Перенесите в поле «часы», в «шт» — количество машин");});
   o.downtime.forEach((d,i)=>{const k=(d.k||"Простой").toLowerCase();if(!d.fault&&k==="простой")e.push("простой "+(i+1)+": по чьей вине");if(d.h===null)e.push(k+" "+(i+1)+": часы");if(!d.what)e.push(k+" "+(i+1)+": что стояло");});
