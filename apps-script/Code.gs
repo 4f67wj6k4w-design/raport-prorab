@@ -913,7 +913,9 @@ function haulMail_(M, kind) {
   const A = M.all, main = M.objects.filter(function (o) { return !o.sep; }), sep = M.objects.filter(function (o) { return o.sep; });
   const title = (kind === 'month' ? 'Вывоз за месяц' : kind === 'week' ? 'Вывоз за неделю' : 'Вывоз за период') + ': ' + per;
   let h = '<div style="font:14px Arial,sans-serif;color:#222;max-width:820px">';
-  h += '<div style="background:#2E671F;color:#fff;padding:10px 14px;border-radius:6px 6px 0 0"><div style="font-size:12px;opacity:.9">ГК КРАШМАШ · рапорты прорабов</div><div style="font-size:18px;font-weight:bold">' + he_(title) + '</div></div>';
+  h += '<table width="100%" cellpadding="0" cellspacing="0" style="width:100%;border-collapse:collapse;background:#2E671F"><tr><td bgcolor="#2E671F" style="padding:16px 18px;color:#ffffff;font-family:Arial,sans-serif">' +
+    '<div style="font-size:26px;font-weight:bold;letter-spacing:.02em;color:#ffffff">ГК КРАШМАШ</div>' +
+    '<div style="font-size:19px;margin-top:4px;color:#ffffff">' + he_(title) + '</div></td></tr></table>';
   h += '<div style="padding:10px 2px">';
   h += '<p style="font-size:16px;margin:6px 0">Всего вывезено со всех объектов: ' + b(hf_(A.tot.v) + ' м³') + (A.tot.t ? ' · ' + b(hf_(A.tot.t, 0) + ' рейс.') : '') + (A.tot.w ? ' · ' + b(hf_(A.tot.w) + ' т') : '') +
     '<br><span style="color:#666;font-size:13px">предыдущий период (' + prevPer + '): ' + hf_(A.prev.v) + ' м³ · изменение ' + (ch(A.tot.v, A.prev.v) || '—') + '</span></p>';
