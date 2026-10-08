@@ -813,7 +813,7 @@ function guardCheck_(initial) {
   // 1. Расписание на месте
   const need = { dailyDigest: 'сводка в 20:00 (setupDigest)', watchdog: 'сторож (setupGuard)', backupWeekly: 'резервная копия (setupGuard)' };
   if (EXEC_TO) need.execMorning = 'письмо руководству в 8:00 (setupExec)';
-  need.haulWeekly = 'отчёт по вывозу за неделю (setupHaulReports)'; need.haulMonthly = 'отчёт по вывозу за месяц (setupHaulReports)';
+  if (HAUL_ON) { need.haulWeekly = 'отчёт по вывозу за неделю (setupHaulReports)'; need.haulMonthly = 'отчёт по вывозу за месяц (setupHaulReports)'; }
   const have = {}; ScriptApp.getProjectTriggers().forEach(function (t) { have[t.getHandlerFunction()] = 1; });
   Object.keys(need).forEach(function (h) { if (!have[h]) probs.push('Нет расписания: ' + need[h] + '. Запустите функцию в скобках один раз.'); });
   // 2. Данные читаются и считаются
@@ -847,6 +847,8 @@ function guardCheck_(initial) {
 // Кому отчёт (через запятую). Пусто — только вам (адрес сторожа).
 const HAUL_TO = '';
 const HAUL_FOLDER = 'Рапорт прораба — отчёты по вывозу';
+// Автоотправка отчётов по вывозу (неделя/месяц). false — приостановлено; включить: true + запустить setupHaulReports.
+const HAUL_ON = false;
 
 function haulTo_() { return HAUL_TO || guardTo_(); }
 function hf_(x, d) { if (x === null || x === undefined || x === '') return ''; const k = Math.pow(10, d === undefined ? 1 : d); const v = Math.round(x * k) / k; const s = String(Math.abs(v)).split('.'); s[0] = s[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' '); return (v < 0 ? '−' : '') + s.join(','); }
@@ -985,12 +987,14 @@ function sendHaul_(d1, d2, kind, to) {
 
 /** Понедельник ~9:00: за прошлую неделю (пн–вс). */
 function haulWeekly() {
+  if (!HAUL_ON) return;
   const today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd'), dow = Number(Utilities.formatDate(new Date(), TZ, 'u'));
   const mon = addDays_(today, -(dow - 1) - 7);
   sendHaul_(mon, addDays_(mon, 6), 'week'); mark_('haulWeekly');
 }
 /** 1-го числа ~9:00: за прошлый месяц. */
 function haulMonthly() {
+  if (!HAUL_ON) return;
   const today = Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd');
   const first = today.slice(0, 8) + '01', last = addDays_(first, -1);
   sendHaul_(last.slice(0, 8) + '01', last, 'month'); mark_('haulMonthly');
@@ -998,6 +1002,7 @@ function haulMonthly() {
 
 /** Запустить ОДИН раз вручную: включает отчёты по вывозу и сразу присылает отчёт за прошлую неделю. */
 function setupHaulReports() {
+  if (!HAUL_ON) { Logger.log('Отчёты по вывозу приостановлены: поставьте HAUL_ON = true и запустите снова.'); return; }
   ScriptApp.getProjectTriggers().forEach(function (t) { const h = t.getHandlerFunction(); if (h === 'haulWeekly' || h === 'haulMonthly') ScriptApp.deleteTrigger(t); });
   ScriptApp.newTrigger('haulWeekly').timeBased().onWeekDay(ScriptApp.WeekDay.MONDAY).atHour(9).inTimezone(TZ).create();
   ScriptApp.newTrigger('haulMonthly').timeBased().onMonthDay(1).atHour(9).inTimezone(TZ).create();
@@ -1015,4 +1020,11 @@ function menuHaulReport() {
   if (d2 < d1) { ui.alert('Вторая дата раньше первой.'); return; }
   sendHaul_(d1, d2, 'period', guardTo_());
   ui.alert('Отчёт отправлен на ' + guardTo_() + '. Таблица сохранена в папку Диска «' + HAUL_FOLDER + '».');
+}
+
+/** Запустить ОДИН раз вручную: выключает автоотправку отчётов по вывозу (удаляет расписание). */
+function stopHaulReports() {
+  let n = 0;
+  ScriptApp.getProjectTriggers().forEach(function (t) { const h = t.getHandlerFunction(); if (h === 'haulWeekly' || h === 'haulMonthly') { ScriptApp.deleteTrigger(t); n++; } });
+  Logger.log('Отчёты по вывозу выключены. Удалено расписаний: ' + n);
 }
