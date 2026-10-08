@@ -917,21 +917,24 @@ function haulMail_(M, kind) {
     '<div style="font-size:26px;font-weight:bold;letter-spacing:.02em;color:#ffffff">ГК КРАШМАШ</div>' +
     '<div style="font-size:19px;margin-top:4px;color:#ffffff">' + he_(title) + '</div></td></tr></table>';
   h += '<div style="padding:10px 2px">';
-  h += '<p style="font-size:16px;margin:6px 0">Всего вывезено со всех объектов: ' + b(hf_(A.tot.v) + ' м³') + (A.tot.t ? ' · ' + b(hf_(A.tot.t, 0) + ' рейс.') : '') + (A.tot.w ? ' · ' + b(hf_(A.tot.w) + ' т') : '') +
-    '<br><span style="color:#666;font-size:13px">предыдущий период (' + prevPer + '): ' + hf_(A.prev.v) + ' м³ · изменение ' + (ch(A.tot.v, A.prev.v) || '—') + '</span></p>';
-  h += '<h3 style="font-size:15px;margin:14px 0 4px">По объектам</h3>';
-  h += tbl(['Объект', 'м³', 'рейсов', 'т', 'пред. период, м³', 'изм.', 'дней с вывозом'], main.map(function (o) { return [he_(o.name), b(hf_(o.tot.v)), z(o.tot.t, 0), z(o.tot.w), hf_(o.prev.v), ch(o.tot.v, o.prev.v), o.days]; })
-    .concat([[b('Итого'), b(hf_(A.tot.v)), b(z(A.tot.t, 0)), b(z(A.tot.w)), b(hf_(A.prev.v)), b(ch(A.tot.v, A.prev.v)), '']]));
-  h += '<h3 style="font-size:15px;margin:14px 0 4px">По видам материала — все объекты</h3>';
+  h += '<table width="100%" cellpadding="0" cellspacing="0" style="margin:10px 0 6px"><tr><td style="padding:12px 14px;background:#eef3ec;border-left:6px solid #2E671F;font-family:Arial,sans-serif">' +
+    '<div style="font-size:15px;color:#444">Всего вывезено со всех объектов</div>' +
+    '<div style="font-size:26px;font-weight:bold;color:#1d1d1b;margin-top:2px">' + hf_(A.tot.v) + ' м³' + (A.tot.t ? ' · ' + hf_(A.tot.t, 0) + ' рейс.' : '') + (A.tot.w ? ' · ' + hf_(A.tot.w) + ' т' : '') + '</div>' +
+    '<div style="font-size:13px;color:#666;margin-top:4px">предыдущий период (' + prevPer + '): ' + hf_(A.prev.v) + ' м³ · изменение ' + (ch(A.tot.v, A.prev.v) || '—') + '</div></td></tr></table>';
+  h += '<h3 style="font-size:18px;margin:22px 0 6px;color:#2E671F">По видам материала — все объекты</h3>';
   h += tbl(['Материал', 'м³', 'рейсов', 'т'], A.mat.map(function (x) { return [he_(x.m), b(hf_(x.v)), z(x.t, 0), z(x.w)]; }));
-  h += '<h3 style="font-size:15px;margin:14px 0 4px">По перевозчикам — все объекты</h3>';
-  h += tbl(['Перевозчик', 'м³', 'рейсов', 'т'], A.car.map(function (x) { return [he_(x.c), b(hf_(x.v)), z(x.t, 0), z(x.w)]; }));
-  h += '<h3 style="font-size:15px;margin:18px 0 4px">Детально по каждому объекту</h3>';
+  h += '<h3 style="font-size:18px;margin:26px 0 0;color:#2E671F">По объектам</h3>';
   main.concat(sep).forEach(function (o) {
-    h += '<div style="margin:10px 0 2px;font-weight:bold">' + he_(o.name) + (o.sep ? ' <span style="font-weight:normal;color:#666">(' + he_(o.label.toLowerCase()) + ', в общий вывоз не входит)</span>' : '') + '</div>';
-    h += '<div style="color:#666;font-size:13px">' + he_(o.label) + ': ' + hf_(o.tot.v) + ' м³' + (o.tot.t ? ', ' + hf_(o.tot.t, 0) + ' рейс.' : '') + (o.tot.w ? ', ' + hf_(o.tot.w) + ' т' : '') + '</div>';
+    h += '<table width="100%" cellpadding="0" cellspacing="0" style="margin-top:22px"><tr><td style="padding-top:14px;border-top:3px solid #2E671F;font-family:Arial,sans-serif">';
+    h += '<div style="font-size:19px;font-weight:bold;color:#1d1d1b;line-height:1.3">' + he_(o.name) + '</div>';
+    if (o.sep) h += '<div style="font-size:13px;color:#666">' + he_(o.label.toLowerCase()) + ' — в общий вывоз не входит</div>';
+    h += '<div style="font-size:15px;margin:6px 0 2px">' + he_(o.label) + ': ' + b(hf_(o.tot.v) + ' м³') + (o.tot.t ? ' · ' + b(hf_(o.tot.t, 0) + ' рейс.') : '') + (o.tot.w ? ' · ' + b(hf_(o.tot.w) + ' т') : '') +
+      '<span style="color:#666;font-size:13px"> · пред. период ' + hf_(o.prev.v) + ' м³ (' + (ch(o.tot.v, o.prev.v) || '—') + ') · дней с вывозом: ' + o.days + '</span></div>';
     h += o.rows.length ? tbl(['Материал', (o.sep ? 'Покупатель' : 'Перевозчик'), 'м³', 'рейсов', 'т'], o.rows.map(function (x) { return [he_(x.m), he_(x.c), b(hf_(x.v)), z(x.t, 0), z(x.w)]; })) : '<div style="color:#666;font-size:13px;margin-bottom:10px">За период данных нет</div>';
+    h += '</td></tr></table>';
   });
+  h += '<h3 style="font-size:18px;margin:30px 0 6px;color:#2E671F;border-top:3px solid #2E671F;padding-top:14px">По перевозчикам — все объекты</h3>';
+  h += tbl(['Перевозчик', 'м³', 'рейсов', 'т'], A.car.map(function (x) { return [he_(x.c), b(hf_(x.v)), z(x.t, 0), z(x.w)]; }));
   h += '<p style="color:#666;font-size:12px">Источник — рапорты прорабов. Во вложении Excel: итоги, по объектам и построчно по дням (для сверки с перевозчиками).</p></div></div>';
   let t = title + '\n\nВсего со всех объектов: ' + hf_(A.tot.v) + ' м³, ' + hf_(A.tot.t, 0) + ' рейс. (пред. период ' + hf_(A.prev.v) + ' м³, ' + (ch(A.tot.v, A.prev.v) || '—') + ')\n\nПо объектам:\n';
   main.forEach(function (o) { t += '• ' + o.name + ' — ' + hf_(o.tot.v) + ' м³' + (o.tot.t ? ', ' + hf_(o.tot.t, 0) + ' рейс.' : '') + '\n'; });
