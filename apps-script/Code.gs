@@ -216,7 +216,7 @@ function doPost(e) {
 }
 
 // =====================================================================
-// СВОДКА ДЛЯ РУКОВОДИТЕЛЯ — каждый день в 20:00 (письмо и/или Telegram)
+// СВОДКА ДЛЯ РУКОВОДИТЕЛЯ — каждый день в 21:30 (письмо и/или Telegram)
 // =====================================================================
 // Кому отправлять письмо (через запятую). Пусто — письмо не отправляется.
 const DIGEST_TO = '';
@@ -226,13 +226,13 @@ const TG_CHAT_IDS = '';
 // Ссылка на страницу руководителя (подставляется в письмо).
 const DIRECTOR_PAGE = '';
 
-/** Запустить один раз вручную: создаёт ежедневный запуск в 20:00 по Москве. */
+/** Запустить один раз вручную: создаёт ежедневный запуск в 21:30 по Москве. */
 function setupDigest() {
   ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'dailyDigest') ScriptApp.deleteTrigger(t); });
-  ScriptApp.newTrigger('dailyDigest').timeBased().atHour(20).nearMinute(0).everyDays(1).inTimezone(TZ).create();
+  ScriptApp.newTrigger('dailyDigest').timeBased().atHour(21).nearMinute(30).everyDays(1).inTimezone(TZ).create();
   if (DIGEST_TO) {
     MailApp.sendEmail({ to: DIGEST_TO, name: 'Рапорты прорабов', subject: 'Рассылка сводки включена',
-      body: 'Сводка по объектам будет приходить каждый день около 20:00 по Москве.' + (DIRECTOR_PAGE ? '\nКабинет руководителя: ' + DIRECTOR_PAGE : '') });
+      body: 'Сводка по объектам будет приходить каждый день около 21:30 по Москве.' + (DIRECTOR_PAGE ? '\nКабинет руководителя: ' + DIRECTOR_PAGE : '') });
   }
 }
 
@@ -473,7 +473,7 @@ function menuDeleteReport() {
 }
 
 // =====================================================================
-// ПАНЕЛЬ РУКОВОДСТВА ГК — светофор по объектам, графики, неделя к неделе, письмо в 8:00
+// ПАНЕЛЬ РУКОВОДСТВА ГК — светофор по объектам, графики, неделя к неделе, письмо в 9:30
 // =====================================================================
 // Ключ панели руководства: видит только светофор и графики (не рапорты и не настройки).
 const EXEC_KEY = 'ВСТАВЬТЕ_КЛЮЧ_РУКОВОДСТВА';
@@ -711,10 +711,10 @@ function execMailFrom_(m, page) {
   return { subject: subject, html: html, text: text };
 }
 
-/** Запустить один раз вручную: письмо руководству каждый день около 8:00 по Москве. */
+/** Запустить один раз вручную: письмо руководству каждый день около 9:30 по Москве. */
 function setupExec() {
   ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'execMorning') ScriptApp.deleteTrigger(t); });
-  ScriptApp.newTrigger('execMorning').timeBased().atHour(8).nearMinute(0).everyDays(1).inTimezone(TZ).create();
+  ScriptApp.newTrigger('execMorning').timeBased().atHour(9).nearMinute(30).everyDays(1).inTimezone(TZ).create();
   testExecMail();
 }
 
@@ -764,16 +764,16 @@ function guardTo_() { return String(GUARD_TO || DIGEST_TO).split(',')[0].trim();
 function mark_(name) { PropertiesService.getScriptProperties().setProperty('ok_' + name, Utilities.formatDate(new Date(), TZ, 'yyyy-MM-dd HH:mm')); }
 function lastOk_(name) { return PropertiesService.getScriptProperties().getProperty('ok_' + name) || ''; }
 
-/** Запустить ОДИН раз вручную: включает сторожа (каждый день ~21:30) и копию (каждое воскресенье ~3:00),
+/** Запустить ОДИН раз вручную: включает сторожа (каждый день ~22:45) и копию (каждое воскресенье ~3:00),
  *  сразу делает первую копию и присылает письмо «Сторож включён». */
 function setupGuard() {
   ScriptApp.getProjectTriggers().forEach(function (t) { const h = t.getHandlerFunction(); if (h === 'watchdog' || h === 'backupWeekly') ScriptApp.deleteTrigger(t); });
-  ScriptApp.newTrigger('watchdog').timeBased().atHour(21).nearMinute(30).everyDays(1).inTimezone(TZ).create();
+  ScriptApp.newTrigger('watchdog').timeBased().atHour(22).nearMinute(45).everyDays(1).inTimezone(TZ).create();
   ScriptApp.newTrigger('backupWeekly').timeBased().onWeekDay(ScriptApp.WeekDay.SUNDAY).atHour(3).inTimezone(TZ).create();
   const f = backup_();
   const probs = guardCheck_(true);
   MailApp.sendEmail({ to: guardTo_(), name: 'Рапорт прораба — сторож', subject: 'Сторож и резервная копия включены',
-    body: 'Каждый день около 21:30 система проверяет себя. Если что-то не так — придёт письмо «ВНИМАНИЕ». Если всё в порядке — писем не будет.\n' +
+    body: 'Каждый день около 22:45 система проверяет себя. Если что-то не так — придёт письмо «ВНИМАНИЕ». Если всё в порядке — писем не будет.\n' +
       'Каждое воскресенье ночью сохраняется копия таблицы в папку Google Диска «' + BACKUP_FOLDER + '» (хранятся последние ' + BACKUP_KEEP + ').\n\n' +
       'Первая копия: ' + f.getName() + '\n' + f.getUrl() + '\n\nПроверка сейчас: ' + (probs.length ? '\n— ' + probs.join('\n— ') : 'всё в порядке.') });
 }
@@ -796,7 +796,7 @@ function backupWeekly() {
   catch (e) { MailApp.sendEmail({ to: guardTo_(), name: 'Рапорт прораба — сторож', subject: 'ВНИМАНИЕ: резервная копия не сохранилась', body: 'Ошибка: ' + e + '\n\nЗапустите в редакторе скрипта функцию setupGuard или пришлите это письмо Claude.' }); }
 }
 
-/** Ежедневная проверка (~21:30). Письмо приходит только если есть проблемы. */
+/** Ежедневная проверка (~22:45). Письмо приходит только если есть проблемы. */
 function watchdog() {
   const probs = guardCheck_(false);
   if (!probs.length) return;
@@ -811,8 +811,8 @@ function guardCheck_(initial) {
   const probs = [];
   const now = new Date(), today = Utilities.formatDate(now, TZ, 'yyyy-MM-dd'), dow = Number(Utilities.formatDate(now, TZ, 'u'));
   // 1. Расписание на месте
-  const need = { dailyDigest: 'сводка в 20:00 (setupDigest)', watchdog: 'сторож (setupGuard)', backupWeekly: 'резервная копия (setupGuard)' };
-  if (EXEC_TO) need.execMorning = 'письмо руководству в 8:00 (setupExec)';
+  const need = { dailyDigest: 'сводка в 21:30 (setupDigest)', watchdog: 'сторож (setupGuard)', backupWeekly: 'резервная копия (setupGuard)' };
+  if (EXEC_TO) need.execMorning = 'письмо руководству в 9:30 (setupExec)';
   if (HAUL_ON) { need.haulWeekly = 'отчёт по вывозу за неделю (setupHaulReports)'; need.haulMonthly = 'отчёт по вывозу за месяц (setupHaulReports)'; }
   const have = {}; ScriptApp.getProjectTriggers().forEach(function (t) { have[t.getHandlerFunction()] = 1; });
   Object.keys(need).forEach(function (h) { if (!have[h]) probs.push('Нет расписания: ' + need[h] + '. Запустите функцию в скобках один раз.'); });
@@ -831,8 +831,8 @@ function guardCheck_(initial) {
   }
   // 4. Письма ушли
   if (!initial) {
-    if (DIGEST_TO && lastOk_('dailyDigest').slice(0, 10) !== today) probs.push('Сводка в 20:00 сегодня не ушла (последняя: ' + (lastOk_('dailyDigest') || 'нет данных') + ').');
-    if (EXEC_TO && lastOk_('execMorning').slice(0, 10) !== today) probs.push('Письмо руководству в 8:00 сегодня не ушло (последнее: ' + (lastOk_('execMorning') || 'нет данных') + ').');
+    if (DIGEST_TO && lastOk_('dailyDigest').slice(0, 10) !== today) probs.push('Сводка в 21:30 сегодня не ушла (последняя: ' + (lastOk_('dailyDigest') || 'нет данных') + ').');
+    if (EXEC_TO && lastOk_('execMorning').slice(0, 10) !== today) probs.push('Письмо руководству в 9:30 сегодня не ушло (последнее: ' + (lastOk_('execMorning') || 'нет данных') + ').');
   }
   // 5. Копия свежая, квота писем есть
   const b = lastOk_('backup');
@@ -1027,4 +1027,16 @@ function stopHaulReports() {
   let n = 0;
   ScriptApp.getProjectTriggers().forEach(function (t) { const h = t.getHandlerFunction(); if (h === 'haulWeekly' || h === 'haulMonthly') { ScriptApp.deleteTrigger(t); n++; } });
   Logger.log('Отчёты по вывозу выключены. Удалено расписаний: ' + n);
+}
+
+/** Запустить ОДИН раз вручную: переносит расписание без лишних писем.
+ *  Сводка — 21:30, письмо «Светофор» — 9:30, сторож — 22:45 (после сводки). Google запускает в пределах ±15 минут. */
+function applyNewSchedule() {
+  const want = { dailyDigest: [21, 30], execMorning: [9, 30], watchdog: [22, 45] };
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (want[t.getHandlerFunction()]) ScriptApp.deleteTrigger(t); });
+  Object.keys(want).forEach(function (h) {
+    if (h === 'execMorning' && !EXEC_TO) return;
+    ScriptApp.newTrigger(h).timeBased().atHour(want[h][0]).nearMinute(want[h][1]).everyDays(1).inTimezone(TZ).create();
+  });
+  Logger.log('Готово: сводка 21:30, «Светофор» 9:30, сторож 22:45.');
 }
