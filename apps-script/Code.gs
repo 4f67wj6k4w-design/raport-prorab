@@ -907,7 +907,7 @@ function haulFrom_(cfgs, reports, d1, d2) {
 function haulMail_(M, kind) {
   const per = ruD_(M.d1) + ' – ' + ruD_(M.d2), prevPer = ruD_(M.p1) + ' – ' + ruD_(M.p2);
   const ch = function (a, b) { if (!b) return a ? 'новое' : ''; const p = Math.round((a / b - 1) * 100); return (p > 0 ? '+' : '') + p + '%'; };
-  const T = 'style="border-collapse:collapse;font:13px Arial,sans-serif;margin:4px 0 14px"', th = 'style="text-align:left;padding:4px 8px;border-bottom:2px solid #2E671F;background:#eef3ec"', thr = 'style="text-align:right;padding:4px 8px;border-bottom:2px solid #2E671F;background:#eef3ec"', td = 'style="padding:4px 8px;border-bottom:1px solid #ddd"', tdr = 'style="padding:4px 8px;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap"';
+  const T = 'style="border-collapse:collapse;font:13px Arial,sans-serif;margin:4px 0 14px"', th = 'style="text-align:left;padding:4px 8px;border-bottom:2px solid #2E671F;background:#eef3ec"', thr = 'style="text-align:right;padding:4px 8px;border-bottom:2px solid #2E671F;background:#eef3ec"', td = 'style="padding:3px 8px;border-bottom:1px solid #ddd;line-height:1.2;mso-line-height-rule:exactly"', tdr = 'style="padding:3px 8px;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap;line-height:1.2;mso-line-height-rule:exactly"';
   const tbl = function (head, rows) { return '<table ' + T + '><tr>' + head.map(function (h, i) { return '<th ' + (i ? thr : th) + '>' + he_(h) + '</th>'; }).join('') + '</tr>' + rows.map(function (r) { return '<tr>' + r.map(function (x, i) { return '<td ' + (i ? tdr : td) + '>' + x + '</td>'; }).join('') + '</tr>'; }).join('') + '</table>'; };
   const b = function (s) { return '<b>' + s + '</b>'; }, z = function (x, d) { return x ? hf_(x, d) : ''; };
   const A = M.all, main = M.objects.filter(function (o) { return !o.sep; }), sep = M.objects.filter(function (o) { return o.sep; });
@@ -917,10 +917,10 @@ function haulMail_(M, kind) {
     '<div style="font-size:26px;font-weight:bold;letter-spacing:.02em;color:#ffffff">ГК КРАШМАШ</div>' +
     '<div style="font-size:19px;margin-top:4px;color:#ffffff">' + he_(title) + '</div></td></tr></table>';
   h += '<div style="padding:10px 2px">';
-  h += '<table width="100%" cellpadding="0" cellspacing="0" style="margin:10px 0 6px"><tr><td style="padding:12px 14px;background:#eef3ec;border-left:6px solid #2E671F;font-family:Arial,sans-serif">' +
-    '<div style="font-size:15px;color:#444">Всего вывезено со всех объектов</div>' +
-    '<div style="font-size:26px;font-weight:bold;color:#1d1d1b;margin-top:2px">' + hf_(A.tot.v) + ' м³' + (A.tot.t ? ' · ' + hf_(A.tot.t, 0) + ' рейс.' : '') + (A.tot.w ? ' · ' + hf_(A.tot.w) + ' т' : '') + '</div>' +
-    '<div style="font-size:13px;color:#666;margin-top:4px">предыдущий период (' + prevPer + '): ' + hf_(A.prev.v) + ' м³ · изменение ' + (ch(A.tot.v, A.prev.v) || '—') + '</div></td></tr></table>';
+  h += '<table width="100%" cellpadding="0" cellspacing="0" style="margin:10px 0 6px"><tr><td style="padding:8px 14px;background:#eef3ec;border-left:6px solid #2E671F;font-family:Arial,sans-serif;line-height:1.2;mso-line-height-rule:exactly">' +
+    '<span style="font-size:14px;color:#444;line-height:1.2">Всего вывезено со всех объектов:</span><br>' +
+    '<span style="font-size:24px;font-weight:bold;color:#1d1d1b;line-height:1.2">' + hf_(A.tot.v) + ' м³' + (A.tot.t ? ' · ' + hf_(A.tot.t, 0) + ' рейс.' : '') + (A.tot.w ? ' · ' + hf_(A.tot.w) + ' т' : '') + '</span><br>' +
+    '<span style="font-size:12px;color:#666;line-height:1.2">предыдущий период (' + prevPer + '): ' + hf_(A.prev.v) + ' м³ · изменение ' + (ch(A.tot.v, A.prev.v) || '—') + '</span></td></tr></table>';
   h += '<h3 style="font-size:18px;margin:22px 0 6px;color:#2E671F">По видам материала — все объекты</h3>';
   h += tbl(['Материал', 'м³', 'рейсов', 'т'], A.mat.map(function (x) { return [he_(x.m), b(hf_(x.v)), z(x.t, 0), z(x.w)]; }));
   h += '<h3 style="font-size:18px;margin:26px 0 0;color:#2E671F">По объектам</h3>';
