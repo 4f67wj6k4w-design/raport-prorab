@@ -798,18 +798,35 @@ function validate(o){
   return e;
 }
 let warnAck="";
+function popup(kind,title,text,items,btns){let ov=$("pop");if(!ov){ov=document.createElement("div");ov.id="pop";ov.className="pop";document.body.appendChild(ov);}
+  ov.innerHTML="";const c=document.createElement("div");c.className="popc "+kind;
+  const ic={ok:"✓",warn:"!",bad:"✕",info:"…"}[kind]||"";const h=document.createElement("div");h.className="popi";h.textContent=ic;c.appendChild(h);
+  const t=document.createElement("div");t.className="popt";t.textContent=title;c.appendChild(t);
+  if(text){const d=document.createElement("div");d.className="popx";d.textContent=text;c.appendChild(d);}
+  if(items&&items.length){const ul=document.createElement("ul");items.forEach(x=>{const li=document.createElement("li");li.textContent=x;ul.appendChild(li);});c.appendChild(ul);}
+  if(btns&&btns.length){const bb=document.createElement("div");bb.className="popb";btns.forEach(b=>{const e=document.createElement("button");e.type="button";e.className="btn"+(b.p?" primary":"");e.textContent=b.t;e.onclick=()=>{ov.hidden=true;if(b.f)b.f();};bb.appendChild(e);});c.appendChild(bb);}
+  ov.appendChild(c);ov.hidden=false;try{if(navigator.vibrate&&kind!=="info")navigator.vibrate(kind==="ok"?60:[80,60,80]);}catch(e){}}
 function softWarn(o){const w=[];
   {const same=list().filter(r=>r.date===o.date&&r.shift===o.shift&&r.id!==o.id);if(same.length)w.push("За эту смену уже есть рапорт: "+same.map(r=>r.foreman).join(", ")+". Если это тот же прораб — впишите ФИО точно так же (выберите из подсказки), тогда рапорт заменится. Если это второй прораб на объекте — просто сохраните ещё раз.");}const cum=cumWorks(list().filter(r=>r.date<=o.date&&r.id!==o.id).concat([o]));
   WORKS.filter(x=>x.t&&!isAuto(x)&&typeof o.works[x.c]==="number").forEach(x=>{const v=o.works[x.c];
     if(String(x.u).trim()!=="%"&&cum[x.k]>=x.t*0.999&&v>x.t*0.03)w.push("«"+x.n+"»: "+fmt(v)+" "+x.u+" за смену — работа закрывается на 100%. Это объём за смену, а не остаток?");
     else if(String(x.u).trim()!=="%"&&v>x.t*0.25)w.push("«"+x.n+"»: "+fmt(v)+" "+x.u+" за смену — это "+fmt(v/x.t*100,0)+"% всего объёма по проекту.");});
   return w;}
-function checkForm(){const m=$("save-msg");const o=collect();const e=validate(o);if(e.length){m.textContent="Заполните или исправьте: "+e.join("; ");m.className="msg bad";warnAck="";return null;}
-  {const w=softWarn(o),key=JSON.stringify(w)+JSON.stringify(o.works);if(w.length&&warnAck!==key){warnAck=key;m.textContent="Проверьте: "+w.join(" ")+" Если всё верно — нажмите «Сохранить рапорт» ещё раз.";m.className="msg warnc";return null;}}delete o._bad;o.savedAt=new Date().toISOString();sset("raport2-foreman",o.foreman);return o;}
+function checkForm(ctx){const m=$("save-msg");const o=collect();const e=validate(o);if(e.length){m.textContent="Заполните или исправьте: "+e.join("; ");m.className="msg bad";warnAck="";
+    popup("bad","Рапорт НЕ сохранён","Заполните или исправьте:",e,[{t:"Понятно, исправлю",p:1}]);return null;}
+  {const w=softWarn(o),key=JSON.stringify(w)+JSON.stringify(o.works);if(w.length&&warnAck!==key){warnAck=key;m.textContent="Проверьте: "+w.join(" ")+" Если всё верно — нажмите «Сохранить рапорт» ещё раз.";m.className="msg warnc";
+    popup("warn","Проверьте перед сохранением","Рапорт ещё НЕ сохранён. Посмотрите:",w,ctx==="save"?[{t:"Исправить"},{t:"Всё верно — сохранить",p:1,f:()=>{const o2=checkForm("save");if(o2)persist(o2);}}]:[{t:"Понятно",p:1}]);return null;}}delete o._bad;o.savedAt=new Date().toISOString();sset("raport2-foreman",o.foreman);return o;}
 function persist(o){
   if(renameFrom&&renameFrom!==o.id){o.replaces=renameFrom;delete reports[renameFrom];try{const m=loadLocal();delete m[renameFrom];localStorage.setItem(LKEY,JSON.stringify(m));}catch(e){}setOutbox(outbox().filter(x=>x!==renameFrom));renameFrom=null;loadedId=o.id;}
   const ok=saveLocal(o);reports=loadLocal();if(!ok)reports[o.id]=o;dirty=false;
-  if(C.db){setOutbox(outbox().concat([o.id]));flush().then(()=>{const left=outbox().length;if(linkDead){syncStatus(DEAD_MSG,"bad");return;}syncStatus(left?"Рапорт сохранён на телефоне, в базу отправится при появлении связи (в очереди: "+left+").":"Рапорт записан в базу.",left?"":"okb");}).catch(()=>{});}
+  const when=ruDate(o.date)+", "+(o.shift==="D"?"дневная":"ночная")+" смена";
+  if(C.db){setOutbox(outbox().concat([o.id]));popup("info","Отправляем рапорт…",when,[],[]);
+    flush().then(()=>{const left=outbox().length;
+      if(linkDead){syncStatus(DEAD_MSG,"bad");popup("bad","Ссылка не действует",DEAD_MSG,[],[{t:"Понятно",p:1}]);return;}
+      syncStatus(left?"Рапорт сохранён на телефоне, в базу отправится при появлении связи (в очереди: "+left+").":"Рапорт записан в базу.",left?"":"okb");
+      if(left)popup("warn","Сохранено на телефоне",when+". Связи с базой сейчас нет — рапорт отправится сам, когда появится интернет. Откройте форму ещё раз, когда будет связь.",[],[{t:"Хорошо",p:1}]);
+      else popup("ok","Рапорт сохранён",when+". Рапорт записан в базу — руководитель его видит. Исправить можно в любой момент: откройте ту же дату и сохраните снова.",[],[{t:"Готово",p:1}]);}).catch(()=>{popup("warn","Сохранено на телефоне",when+". Отправится в базу, когда появится связь.",[],[{t:"Хорошо",p:1}]);});}
+  else popup("ok","Рапорт сохранён на телефоне",when+". Не забудьте отправить его в рабочий чат кнопкой внизу формы.",[],[{t:"Готово",p:1}]);
   const m=$("save-msg");m.textContent=(ok?"Сохранено на телефоне: ":"Принято (не сохранилось на телефоне): ")+ruDate(o.date)+", "+(o.shift==="D"?"день":"ночь")+" · "+new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});m.className="msg "+(ok?"ok":"warnc");
   updProg();if(!$("v-sum").hidden)renderSum();if(!$("v-log").hidden)renderLog();
 }
@@ -955,7 +972,8 @@ function bindForm(){
   document.querySelectorAll("#tabs-form button").forEach(b=>b.onclick=()=>show(b.dataset.v));
   $("f-dt-add").onclick=()=>{addDt();dirty=true;};$("f-mach-add").onclick=()=>{addMach();dirty=true;};$("f-sub-add").onclick=()=>{addSub();dirty=true;};$("f-haul-add").onclick=()=>{addHaul();dirty=true;};
   $("f-work-add").onclick=()=>{addWork();dirty=true;};
-  $("save").onclick=()=>{const o=checkForm();if(o)persist(o);};
+  $("save").onclick=()=>{const o=checkForm("save");if(o)persist(o);};
+  window.addEventListener("beforeunload",ev=>{if(dirty){ev.preventDefault();ev.returnValue="";}});
   ["wa","tg","max","copy"].forEach(k=>$("send-"+k).addEventListener("click",e=>sendTo(k,e)));
   $("s-copy").onclick=()=>{const t=$("s-gp").textContent;copyText(t).then(ok=>{$("s-copied").hidden=false;$("s-copied").textContent=ok?"Скопировано":"Выделите текст вручную";setTimeout(()=>$("s-copied").hidden=true,2500);});};
   sync();
