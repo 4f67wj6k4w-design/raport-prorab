@@ -223,6 +223,29 @@ table.ww tr.sep td{border-top:2px solid var(--line)}
 .wd .t{display:flex;justify-content:space-between;gap:8px;font-size:14px;font-weight:600}
 .wd .t i{font-style:normal;color:var(--muted);font-weight:400;font-size:12px;white-space:nowrap}
 .wd svg{display:block;width:100%;height:auto;margin-top:4px}
+
+.wchips{display:flex;gap:6px;overflow-x:auto;padding:12px 0 2px}
+.wchips button{flex:none;display:flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:0 14px;min-height:40px;font:600 14px var(--f-ui);cursor:pointer}
+.wchips button[aria-pressed="true"]{background:var(--brand);color:#fff;border-color:var(--brand)}
+.scr{overflow-x:auto}
+table.wt{width:100%;border-collapse:collapse;font-size:14px}
+.wt th,.wt td{padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.wt th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:600}
+.wt th.n,.wt td.n{text-align:right;font-variant-numeric:tabular-nums}
+.wt td.nm{white-space:normal;min-width:140px}
+.wt tr.tot td{font-weight:700;background:var(--sunk)}
+.wt tr.nd td{color:var(--muted);font-style:italic}
+.wt a{color:var(--accent);font-weight:600}
+.wgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:2px}
+@media (max-width:820px){.wgrid{grid-template-columns:1fr}}
+.wcard{border:1px solid var(--line);border-radius:var(--r);padding:12px;background:var(--surface);min-width:0}
+.wcard h3{margin:0 0 6px;font:600 15px var(--f-ui)}
+.wcard svg{display:block;max-width:100%}
+.lg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);margin-top:4px}
+.lg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.wpb{display:inline-block;width:70px;height:6px;background:var(--sunk);border-radius:99px;overflow:hidden;margin-left:6px;vertical-align:middle}
+.wpb i{display:block;height:100%;background:var(--ok)}
+.wnc{background:var(--sunk);border-left:5px solid var(--brand);padding:10px 12px;border-radius:8px;font-size:14px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -232,9 +255,10 @@ table.ww tr.sep td{border-top:2px solid var(--line)}
       <div class="ttl"><div class="obj">Руководство ГК</div><h1 style="margin-bottom:0">Объекты: светофор</h1></div>
       <img src="data:image/jpeg;base64,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" alt="Группа компаний КРАШМАШ" width="120" height="48">
     </div>
+      <nav class="tabs" id="tabs"><button type="button" data-m="tl" aria-selected="true">Светофор</button><button type="button" data-m="wk" aria-selected="false">Недельный отчёт</button></nav>
   </header>
   <div id="status" class="banner" hidden></div>
-  <section class="card">
+  <section class="card" id="dn">
     <div class="dnav">
       <button type="button" class="btn" id="d-prev" aria-label="Предыдущий день">‹</button>
       <div class="dlab" id="d-lab">&nbsp;</div>
@@ -261,8 +285,16 @@ table.ww tr.sep td{border-top:2px solid var(--line)}
     <section class="card"><h2 id="o-date"></h2><div class="tiles" id="o-tiles"></div></section>
     <section class="card"><h2>Графики</h2><div class="cg" id="o-charts"></div></section>
     <section class="card"><h2>Неделя к неделе</h2><div id="o-week"></div></section>
-    <section class="card"><h2>Неделя: работы и техника</h2><div id="o-wk"></div></section>
     <section class="card"><h2>Работы по паспорту</h2><div id="o-works"></div></section>
+  </div>
+  <div id="v-wk" hidden>
+    <section class="card"><div class="dnav">
+      <button type="button" class="btn" id="w-prev" aria-label="Предыдущая неделя">‹</button>
+      <div class="dlab" id="w-lab">&nbsp;</div>
+      <button type="button" class="btn" id="w-next" aria-label="Следующая неделя">›</button>
+    </div></section>
+    <div class="wchips" id="w-chips"></div>
+    <div id="w-body"></div>
   </div>
   <div class="foot" id="foot">Данные из рапортов прорабов. Пока страница открыта, она обновляется каждые 10 минут.</div>
 </div>
@@ -287,8 +319,8 @@ const h=new URLSearchParams(location.hash.slice(1));
 let db=null;
 if(h.get("u")&&h.get("k")){db={u:h.get("u"),k:h.get("k")};sset("raport2-exec",JSON.stringify(db));}
 else{try{db=JSON.parse(sget("raport2-exec")||"null");}catch(e){}}
-const keep=()=>{if(!db)return;try{history.replaceState(null,"",location.pathname+"#u="+encodeURIComponent(db.u)+"&k="+encodeURIComponent(db.k)+(cur?"&o="+encodeURIComponent(cur):""));}catch(e){}};
-let M=null,date=null,cur=h.get("o")||null;
+const keep=()=>{if(!db)return;try{history.replaceState(null,"",location.pathname+"#u="+encodeURIComponent(db.u)+"&k="+encodeURIComponent(db.k)+(cur&&mode!=="wk"?"&o="+encodeURIComponent(cur):"")+(mode==="wk"?"&m=wk&w="+encodeURIComponent(wcur):""));}catch(e){}};
+let M=null,date=null,cur=h.get("o")||null,mode=h.get("m")==="wk"?"wk":"tl",wcur=h.get("w")||"all";
 const todayISO=()=>iso(new Date());
 function status(t,cls){const s=$("status");s.hidden=!t;s.className="banner"+(cls?" "+cls:"");s.textContent=t||"";}
 async function load(quiet){
@@ -303,7 +335,7 @@ async function load(quiet){
 function dateLab(){const t=todayISO();$("d-lab").innerHTML="";$("d-lab").appendChild(document.createTextNode("за "+ru(date)));
   $("d-lab").appendChild(el("small",null,date===t?"сегодня — рапорты ещё поступают":date===addD(t,-1)?"вчера · обновлено "+new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}):""));
   $("d-next").disabled=date>=t;}
-function render(){dateLab();const o=cur&&M.objects.find(x=>x.pid===cur);if(o)showObj(o);else{cur=null;keep();showList();}}
+function render(){dateLab();if(mode==="wk"){renderWk();return;}$("v-wk").hidden=true;const o=cur&&M.objects.find(x=>x.pid===cur);if(o)showObj(o);else{cur=null;keep();showList();}}
 
 /* ---------- список ---------- */
 function showList(){$("v-list").hidden=false;$("v-obj").hidden=true;
@@ -343,7 +375,7 @@ function showObj(o){$("v-list").hidden=true;$("v-obj").hidden=false;
   if(o.day){tile("Людей",fmt(o.day.people,0));tile("Техники",fmt(o.day.mach,0),o.day.mh?fmt(o.day.mh,0)+" маш.-ч":"");tile("Вывоз",fmt(o.day.m3,0),"м³"+(o.day.trips?" · "+fmt(o.day.trips,0)+" рейс.":""));tile("Простои/ремонт",fmt(o.day.dt||0,1),"ч");}
   if(o.due)tile("Срок по договору",ru(o.due));if(o.forecast)tile("Прогноз окончания",ru(o.forecast));
   if(!T.children.length)T.appendChild(el("div","empty","Рапортов по объекту ещё не было"));
-  charts(o);week(o);weekDetail(o);worksList(o);}
+  charts(o);week(o);worksList(o);}
 function win(o){if(!o.series)return 0;const first=o.first||M.dates[0];const k=M.dates.indexOf(first);const need=Math.max(14,M.dates.length-Math.max(0,k));return Math.max(0,M.dates.length-Math.min(M.dates.length,need));}
 function charts(o){const C=$("o-charts");C.innerHTML="";if(!o.series){C.appendChild(el("div","empty","Графики появятся после первых рапортов"));return;}
   const k=win(o),D=M.dates.slice(k),S=o.series,cut=a=>a.slice(k);
@@ -402,40 +434,178 @@ function worksList(o){const B=$("o-works");B.innerHTML="";const ws=o.works.filte
   ws.forEach(w=>{const d=el("div","wl");d.appendChild(el("div",null,w.n+", "+w.u));const v=el("div","v");const a=(l,x)=>{const s=el("span",null,l+" ");s.appendChild(el("b",null,x));v.appendChild(s);};
     a("план",fmt(w.t));a("выполнено",fmt(w.done));a("остаток",fmt(Math.max(0,w.t-w.done)));a("",fmt(w.pct,1)+"%");d.appendChild(v);const p=el("div","pbar");const i=el("i");i.style.width=Math.min(100,w.pct||0)+"%";p.appendChild(i);d.appendChild(p);B.appendChild(d);});}
 
-const DW7=["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
-const sum7=a=>a.reduce((x,y)=>x+(+y||0),0);
-function mini(v,ds,cv){const W=300,H=96,p=18,bw=W/v.length,mx=Math.max.apply(null,v.concat([1]));const s=sv("svg",{viewBox:"0 0 "+W+" "+H,role:"img"});
-  v.forEach((x,i)=>{const dw=new Date(ds[i]+"T12:00:00Z").getUTCDay(),hh=(H-p-14)*x/mx,X=i*bw+bw*.15;
-    const r=sv("rect",{x:X,y:H-p-hh,width:bw*.7,height:Math.max(hh,0),rx:2});r.style.fill=dw===0?"var(--line)":"var("+cv+")";s.appendChild(r);
-    if(x){const t=sv("text",{x:X+bw*.35,y:H-p-hh-3,"text-anchor":"middle","font-size":10});t.style.fill="var(--fg)";t.textContent=fmt(x);s.appendChild(t);}
-    const l=sv("text",{x:X+bw*.35,y:H-4,"text-anchor":"middle","font-size":10});l.style.fill="var(--muted)";l.textContent=DW7[dw]+" "+ds[i].slice(8,10);s.appendChild(l);});
-  return s;}
-function weekDetail(o){const B=$("o-wk");B.innerHTML="";
-  if(!o.series){B.appendChild(el("div","empty","Рапортов по объекту ещё не было"));return;}
-  const ds=M.dates.slice(-7),ms=o.mach7||[];
-  B.appendChild(el("div","note",ru5(ds[0])+"–"+ru5(ds[6])+". Воскресенье — серым (выходной)."));
+/* ---------- недельный отчёт ---------- */
+const COL=["#2E671F","#367da7","#D97F33","#7a5aa6","#a12c7b","#b3362c"];
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const DWN=["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
+const dow=d=>new Date(d+"T12:00:00Z").getUTCDay();
+const sumA=a=>a.reduce((x,y)=>x+(+y||0),0);
+const nice=mx=>{if(!(mx>0))return 1;const p=Math.pow(10,Math.floor(Math.log10(mx))),n=mx/p;return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p;};
+const R1=x=>Math.round(x*10)/10;
+function wkDays(){const w=dow(date),off=w===0?6:w-1,mon=addD(date,-off),ds=[];for(let i=0;i<7;i++){const d=addD(mon,i);if(d<=date)ds.push(d);}return ds;}
+function txt(s,a,t,fill){const e=sv("text",a);e.style.fill=fill||"var(--fg)";e.textContent=t;s.appendChild(e);return e;}
+function chart(box,o){
+  const W=Math.max(box.clientWidth||320,260),H=300,L=46,R=14,T=28,B=44,pw=W-L-R,ph=H-T-B,n=o.cats.length;
+  const bars=o.bars||[],lines=o.lines||[];let mx=0;bars.concat(lines).forEach(s=>s.v.forEach(x=>{if(x!==null&&x>mx)mx=x;}));
+  const top=nice(mx*1.16),Y=v=>T+ph-ph*v/top,gw=pw/n;
+  const s=sv("svg",{width:W,height:H,viewBox:"0 0 "+W+" "+H,role:"img"});
+  for(let k=0;k<=4;k++){const val=top*k/4,y=Y(val),ln=sv("line",{x1:L,x2:W-R,y1:y,y2:y});ln.style.stroke="var(--line)";s.appendChild(ln);txt(s,{x:L-6,y:y+4,"text-anchor":"end","font-size":11},fmt(val,top<10?1:0),"var(--muted)");}
+  if(o.unit)txt(s,{x:L-6,y:T-12,"text-anchor":"end","font-size":11},o.unit,"var(--muted)");
+  const nb=bars.length;
+  bars.forEach((b,bi)=>{const bw=Math.min(gw*.74/nb,44);b.v.forEach((x,i)=>{const cx=L+gw*i+gw/2,X=cx-bw*nb/2+bw*bi;
+    if(x===null){if(bi===0)txt(s,{x:cx,y:T+ph-5,"text-anchor":"middle","font-size":10},"н/д","var(--muted)");return;}
+    const hh=ph*x/top,r=sv("rect",{x:X,y:T+ph-hh,width:bw,height:Math.max(hh,0),rx:2});r.style.fill=o.cats[i].sun?"#b8c4b4":b.c;s.appendChild(r);
+    if(x>0)txt(s,{x:X+bw/2,y:T+ph-hh-4,"text-anchor":"middle","font-size":nb>2?10:11,"font-weight":600},fmt(x),b.c);});});
+  lines.forEach(l=>{let d="",prev=false;const pts=[];l.v.forEach((x,i)=>{if(x===null){prev=false;return;}const cx=L+gw*i+gw/2,cy=Y(x);d+=(prev?"L":"M")+cx+" "+cy+" ";prev=true;pts.push([cx,cy,x]);});
+    const p=sv("path",{d:d,fill:"none","stroke-width":3,"stroke-linejoin":"round"});p.style.stroke=l.c;s.appendChild(p);
+    pts.forEach(q=>{const c=sv("circle",{cx:q[0],cy:q[1],r:4.5,"stroke-width":2});c.style.fill=l.c;c.style.stroke="var(--surface)";s.appendChild(c);txt(s,{x:q[0],y:q[1]-9,"text-anchor":"middle","font-size":11,"font-weight":600},fmt(q[2]),l.c);});});
+  o.cats.forEach((c,i)=>{const cx=L+gw*i+gw/2,g=c.sun?"var(--muted)":"var(--fg)";txt(s,{x:cx,y:H-B+16,"text-anchor":"middle","font-size":11,"font-weight":600},c.a,g);txt(s,{x:cx,y:H-B+30,"text-anchor":"middle","font-size":10},c.b,"var(--muted)");});
+  box.appendChild(s);
+  const lg=el("div","lg");bars.concat(lines).forEach(x=>{if(!x.name)return;const sp=el("span");const i=el("i");i.style.background=x.c;sp.appendChild(i);sp.appendChild(document.createTextNode(x.name));lg.appendChild(sp);});if(lg.children.length>1||o.legend)box.appendChild(lg);
+}
+function hbar(box,o){
+  const W=Math.max(box.clientWidth||320,260),rows=o.rows,rh=28,L=Math.min(175,Math.round(W*.42)),R=58,T=6,H=rows.length*rh+T+26;
+  let mx=0;rows.forEach(r=>{if(r.v>mx)mx=r.v;});const top=nice(mx*1.08),pw=W-L-R;
+  const s=sv("svg",{width:W,height:H,viewBox:"0 0 "+W+" "+H,role:"img"});
+  for(let k=0;k<=4;k++){const x=L+pw*k/4,ln=sv("line",{x1:x,x2:x,y1:T,y2:H-22});ln.style.stroke="var(--line)";s.appendChild(ln);txt(s,{x:x,y:H-8,"text-anchor":"middle","font-size":10},fmt(top*k/4,top<10?1:0),"var(--muted)");}
+  rows.forEach((r,i)=>{const y=T+i*rh,w=pw*r.v/top;const nm=r.n.length>(L>120?24:18)?r.n.slice(0,(L>120?23:17))+"…":r.n;
+    const t=txt(s,{x:L-8,y:y+rh/2+4,"text-anchor":"end","font-size":12},nm);const tt=sv("title",{});tt.textContent=r.n;t.appendChild(tt);
+    const b=sv("rect",{x:L,y:y+5,width:Math.max(w,0),height:rh-10,rx:3});b.style.fill=o.c;s.appendChild(b);
+    txt(s,{x:L+w+5,y:y+rh/2+4,"font-size":11,"font-weight":600},fmt(r.v)+" ч",o.c);});
+  box.appendChild(s);
+}
+function wcard(parent,title,fn){const c=el("div","wcard");c.appendChild(el("h3",null,title));const b=el("div");c.appendChild(b);parent.appendChild(c);fn(b);return c;}
+function wsec(parent,title){const s=el("section","card");s.appendChild(el("h2",null,title));const b=el("div");s.appendChild(b);parent.appendChild(s);return b;}
+function tbl(head,rows,cls){let h='<div class="scr"><table class="wt"><thead><tr>'+head.map((x,i)=>'<th'+(i?' class="n"':'')+'>'+esc(x)+'</th>').join("")+'</tr></thead><tbody>';
+  rows.forEach(r=>{h+='<tr'+(r.cls?' class="'+r.cls+'"':'')+'>'+r.c.map((x,i)=>'<td class="'+(i?'n':'nm')+'">'+(x&&x.h!==undefined?x.h:esc(x))+'</td>').join("")+'</tr>';});return h+'</tbody></table></div>';}
+function wkInfo(o,ds){
+  const S=o.series,ix=ds.map(d=>M.dates.indexOf(d));
+  const rep=ix.map(i=>!!(S&&i>=0&&S.rep[i]===1));
+  const pick=a=>ix.map((i,k)=>(i>=0&&rep[k])?(+a[i]||0):null);
+  const cats=ds.map(d=>({a:DWN[dow(d)],b:ru5(d),sun:dow(d)===0}));
+  const works=(o.works||[]).map(w=>({w:w,v:ix.map(i=>i<0?null:(w.d||[])[i]===undefined?null:w.d[i])})).filter(x=>sumA(x.v)>0);
+  const machs=(o.machs||[]).map(m=>({n:m.n,v:pick(m.d),wk:R1(sumA(pick(m.d))),tot:m.tot,idle:m.idle||0}));
+  const mt=ds.map((_,k)=>rep[k]?R1(sumA(machs.map(m=>m.v[k]))):null);
+  const hv=ds.map((_,k)=>rep[k]?R1(sumA(((o.haulD||[]).map(h=>h.v[ix[k]])))):null);
+  const ht=ds.map((_,k)=>rep[k]?sumA(((o.haulD||[]).map(h=>h.t[ix[k]]))):null);
+  const ppl=pick(S?S.people:[]);
+  return {ds:ds,ix:ix,rep:rep,cats:cats,works:works,machs:machs,mt:mt,hv:hv,ht:ht,ppl:ppl,nrep:rep.filter(Boolean).length,
+    work:ds.filter((d,k)=>dow(d)!==0||rep[k]).length};
+}
+function cum(a){let c=0;return a.map(x=>{if(x===null)return null;c+=x;return R1(c);});}
+function wkAll(B){
+  const ds=wkDays();
+  const hero=el("section","card");hero.innerHTML='<h2>Все объекты за неделю</h2><div class="wnc">Период '+ru(ds[0])+' – '+ru(ds[ds.length-1])+'. Выберите объект выше — откроется его недельный отчёт с графиками по каждому виду работ и по технике. Дни без рапорта показаны как «н/д», а не как ноль.</div>';B.appendChild(hero);
+  const rows=[];let tv=0,tt=0,tm=0,ti=0;
+  M.objects.forEach(o=>{const I=wkInfo(o,ds);const v=R1(sumA(I.hv)),t=sumA(I.ht),m=R1(sumA(I.mt)),idl=R1(sumA(I.machs.map(x=>x.idle))),pp=I.nrep?Math.round(sumA(I.ppl)/I.nrep):null;
+    tv+=v;tt+=t;tm+=m;ti+=idl;
+    rows.push({c:[{h:'<span class="lamp sm l-'+o.light+'" title="'+LAB[o.light]+'"></span> <a href="#" data-pid="'+esc(o.pid)+'">'+esc(o.short)+'</a>'},I.nrep+" из "+I.work,pp===null?"—":pp,fmt(v,0),fmt(t,0),fmt(m),fmt(idl),o.pct===null?"—":fmt(o.pct,1)+"%"]});});
+  rows.push({cls:"tot",c:["Итого","","",fmt(tv,0),fmt(tt,0),fmt(tm),fmt(ti),""]});
+  const b=wsec(B,"Сводка по объектам");b.innerHTML=tbl(["Объект","Дней с рапортом","Людей, ср.","Вывоз, м³","Рейсов","Моточасы, ч","Простои, ч","Выполнено"],rows);
+  b.querySelectorAll("a[data-pid]").forEach(a=>a.onclick=e=>{e.preventDefault();wcur=a.getAttribute("data-pid");keep();renderWk();window.scrollTo(0,0);});
+  b.appendChild(el("div","note","Выполнено — среднее по работам паспорта с заданным объёмом на "+ru(date)+"."));
+}
+function wkObj(B,o){
+  const ds=wkDays(),I=wkInfo(o,ds),a=ru(ds[0]),z=ru(ds[ds.length-1]);
+  if(!o.series){B.appendChild(el("div","empty","По объекту «"+o.short+"» рапортов ещё не было"));return;}
+  const miss=ds.filter((d,k)=>!I.rep[k]&&dow(d)!==0);
+  /* шапка и показатели */
+  const hs=el("section","card");hs.innerHTML='<h2>Недельный отчёт</h2><div class="dh"><span class="lamp big l-'+o.light+'" title="'+LAB[o.light]+'">'+ICO[o.light]+'</span><div><h2 style="margin:0;text-transform:none;letter-spacing:0;font-size:20px;color:var(--fg)">'+esc(o.short)+'</h2><div class="k">'+esc(o.kind||"")+'</div></div></div><div class="wnc" style="margin-top:10px">Период: <b>'+a+' – '+z+'</b>. Рапорт сдан '+I.nrep+' из '+I.work+' дней'+(miss.length?'; без рапорта: '+miss.map(d=>ru5(d)).join(", ")+' — эти дни не приравнены к нулю.':'.')+(dow(ds[ds.length-1])!==0&&ds.length<6?' Неделя ещё не закончена.':'')+'</div>';
   const T=el("div","tiles");const tile=(l,v,sm)=>{const d=el("div","tile");d.appendChild(el("span",null,l));d.appendChild(el("b",null,v));if(sm)d.appendChild(el("small",null," "+sm));T.appendChild(d);};
-  const tot=ds.map((_,i)=>sum7(ms.map(m=>m.d[i])));
-  tile("Моточасов за неделю",fmt(sum7(tot),1),"маш.-ч");tile("Единиц техники",fmt(ms.length,0));tile("Простой техники",fmt(sum7(ms.map(m=>m.idle)),1),"ч");
-  const ws=(o.works||[]).map(w=>({w:w,v:ds.map((_,i)=>+((w.d||[]).slice(-7)[i])||0)})).filter(x=>sum7(x.v)>0||x.w.t>0);
-  tile("Видов работ в неделе",fmt(ws.filter(x=>sum7(x.v)>0).length,0));B.appendChild(T);
-  B.appendChild(el("div","sub","Виды работ"));
-  if(!ws.length)B.appendChild(el("div","empty","Объёмов работ за неделю нет"));
-  ws.forEach((x,i)=>{const w=x.w,d=el("div","wd"+(i?"":" f"));const t=el("div","t");t.appendChild(el("span",null,w.n));t.appendChild(el("i",null,"за неделю "+fmt(sum7(x.v))+" "+(w.u||"")));d.appendChild(t);
-    if(w.t>0){const v=el("div","v");const a=(l,y)=>{const s=el("span",null,l+" ");s.appendChild(el("b",null,y));v.appendChild(s);};a("план",fmt(w.t));a("выполнено",fmt(w.done));a("остаток",fmt(Math.max(0,w.t-w.done)));a("",fmt(w.pct,1)+"%");v.style.cssText="display:flex;flex-wrap:wrap;gap:2px 12px;font-size:12px;color:var(--muted);margin-top:2px";d.appendChild(v);const p=el("div","pbar");const q=el("i");q.style.width=Math.min(100,w.pct||0)+"%";p.appendChild(q);d.appendChild(p);}
-    else d.appendChild(el("div","note","Объём по проекту в паспорте не задан · выполнено всего "+fmt(w.done)));
-    d.appendChild(mini(x.v,ds,"--accent"));B.appendChild(d);});
-  B.appendChild(el("div","sub","Работа техники"));
-  if(!o.mach7){B.appendChild(el("div","note","Данные по машинам появятся после обновления скрипта базы."));return;}
-  if(!ms.length){B.appendChild(el("div","empty","Техника за неделю не заявлена"));return;}
-  const g=el("div","wd f");const gt=el("div","t");gt.appendChild(el("span",null,"Вся техника объекта"));gt.appendChild(el("i",null,fmt(sum7(tot),1)+" маш.-ч"));g.appendChild(gt);g.appendChild(mini(tot,ds,"--warn"));B.appendChild(g);
-  ms.forEach(m=>{const d=el("div","wd");const t=el("div","t");t.appendChild(el("span",null,m.n));t.appendChild(el("i",null,fmt(m.h,1)+" ч"+(m.idle?" · простой "+fmt(m.idle,1)+" ч":"")));d.appendChild(t);d.appendChild(mini(m.d,ds,"--warn"));B.appendChild(d);});}
+  const hvS=R1(sumA(I.hv)),htS=sumA(I.ht),mS=R1(sumA(I.mt)),mAll=R1(sumA(I.machs.map(m=>m.tot)));
+  tile("Вывоз за неделю",fmt(hvS,0),"м³ · "+fmt(htS,0)+" рейс.");tile("Наработка техники",fmt(mS,1),"ч за неделю");tile("Наработка с начала",fmt(mAll,1),"ч · "+I.machs.length+" ед.");
+  tile("Людей в среднем",I.nrep?fmt(sumA(I.ppl)/I.nrep,0):"—","в рапортный день");
+  hs.appendChild(T);B.appendChild(hs);
+  /* Было → Стало */
+  const sm=[];
+  (o.works||[]).forEach(w=>{const v=ds.map(d=>{const i=M.dates.indexOf(d);return i<0?0:(+(w.d||[])[i]||0);}),wk=sumA(v);if(!(wk>0||w.t>0))return;
+    const end=w.done,beg=end-wk,pc=w.t>0?Math.min(100,end/w.t*100):null;
+    sm.push({c:[w.n+", "+w.u,fmt(beg),{h:"<b>+"+fmt(wk)+"</b>"},fmt(end),w.t>0?fmt(Math.max(0,w.t-end)):"—",pc===null?"—":{h:fmt(pc,1)+'% <span class="wpb"><i style="width:'+pc+'%"></i></span>'}]});});
+  (o.haulD||[]).forEach(h=>{const v=sumA(ds.map(d=>{const i=M.dates.indexOf(d);return i<0?0:h.v[i];}));if(v>0)sm.push({c:["Вывоз: "+h.m+", м³","—",{h:"<b>+"+fmt(v)+"</b>"},"—","—","—"]});});
+  const b1=wsec(B,"Итоги недели («Было → Стало»)");
+  if(sm.length){b1.innerHTML=tbl(["Показатель","Было на "+ru5(addD(ds[0],-1)),"За неделю","Стало на "+ru5(ds[ds.length-1]),"Остаток","Готовность"],sm);b1.appendChild(el("div","note","«Было» = «Стало» минус объём недели. Остаток и готовность — по объёму проекта из паспорта."));}
+  else b1.appendChild(el("div","empty","Объёмов за неделю нет"));
+  /* Детализация по сменам */
+  const aw=I.works;
+  const dr=ds.map((d,k)=>{const r=I.rep[k];return {cls:r?"":"nd",c:[ru5(d),DWN[dow(d)]].concat(aw.map(x=>r?fmt(x.v[k]||0):"н/д")).concat([r?fmt(I.hv[k],0):"н/д",r?fmt(I.ht[k],0):"н/д",r?fmt(I.mt[k]):"н/д",r?"сводка":(dow(d)===0?"выходной":"нет данных")])};});
+  dr.push({cls:"tot",c:["Итого за неделю",""].concat(aw.map(x=>fmt(sumA(x.v)))).concat([fmt(hvS,0),fmt(htS,0),fmt(mS),""])});
+  const b2=wsec(B,"Детализация по сменам");
+  b2.innerHTML=tbl(["Дата","День"].concat(aw.map(x=>x.w.n+", "+x.w.u)).concat(["Вывоз, м³","Рейсов","Техника, ч","Статус"]),dr);
+  /* Графики по видам работ */
+  const gw=wsec(B,"Виды работ: за смену и накопительно");
+  if(!aw.length)gw.appendChild(el("div","empty","Объёмов работ за неделю нет"));
+  const g1=el("div","wgrid");gw.appendChild(g1);
+  aw.forEach((x,i)=>wcard(g1,x.w.n+", "+x.w.u,box=>{
+    const c=COL[i%COL.length],v=ds.map((d,k)=>I.rep[k]?(+x.v[k]||0):null);
+    chart(box,{cats:I.cats,unit:x.w.u,bars:[{name:"За смену",v:v,c:c}],lines:[{name:"Накопительно за неделю",v:cum(v),c:"#1d2a1a"}],legend:true});}));
+  if(aw.length>1){const u0=aw[0].w.u,same=aw.filter(x=>x.w.u===u0);
+    if(same.length>1){const gc=el("div","wgrid");gw.insertBefore(gc,g1);gc.style.gridTemplateColumns="1fr";
+      wcard(gc,"Все виды работ в "+u0+" по дням",box=>chart(box,{cats:I.cats,unit:u0,legend:true,bars:same.map((x,i)=>({name:x.w.n,v:ds.map((d,k)=>I.rep[k]?(+x.v[k]||0):null),c:COL[aw.indexOf(x)%COL.length]}))}));}}
+  /* Вывоз */
+  const hd=(o.haulD||[]).filter(h=>sumA(ds.map(d=>{const i=M.dates.indexOf(d);return i<0?0:h.v[i];}))>0);
+  if(hd.length){const b=wsec(B,"Вывоз");const g=el("div","wgrid");b.appendChild(g);
+    wcard(g,"Вывоз по материалам, м³",box=>chart(box,{cats:I.cats,unit:"м³",legend:true,bars:hd.map((h,i)=>({name:h.m,v:ds.map((d,k)=>I.rep[k]?(+h.v[M.dates.indexOf(d)]||0):null),c:COL[i%COL.length]}))}));
+    wcard(g,"Рейсы и накопление вывоза",box=>chart(box,{cats:I.cats,unit:"рейс. / м³",legend:true,bars:[{name:"Рейсов за смену",v:I.ht,c:COL[2]}],lines:[{name:"Вывоз накопительно, м³",v:cum(I.hv),c:COL[0]}]}));}
+  /* Техника */
+  const tb=wsec(B,"Работа техники");
+  if(!o.machs){tb.appendChild(el("div","note","Данные по машинам появятся после обновления скрипта базы."));}
+  else if(!I.machs.length){tb.appendChild(el("div","empty","Техника за неделю не заявлена"));}
+  else{
+    const gt=el("div","wgrid");tb.appendChild(gt);
+    wcard(gt,"Машино-часы за смену и накопительно",box=>chart(box,{cats:I.cats,unit:"ч",legend:true,bars:[{name:"За смену, ч",v:I.mt,c:"#D97F33"}],lines:[{name:"Накопительно за неделю, ч",v:cum(I.mt),c:COL[0]}]}));
+    wcard(gt,"Загрузка по дням: топ-5 машин",box=>chart(box,{cats:I.cats,unit:"ч",legend:true,bars:I.machs.filter(m=>m.wk>0).slice(0,5).map((m,i)=>({name:m.n,v:m.v,c:COL[i%COL.length]}))}));
+    const ms=I.machs.filter(m=>m.wk>0||m.tot>0);
+    const tr=ms.map(m=>({c:[m.n].concat(m.v.map(x=>x===null?"н/д":fmt(x))).concat([{h:"<b>"+fmt(m.wk)+" ч</b>"},{h:"<b>"+fmt(m.tot)+" ч</b>"}].concat(I.machs.some(q=>q.idle)?[m.idle?fmt(m.idle):"—"]:[]))}));
+    tr.push({cls:"tot",c:["Всего за смену"].concat(I.mt.map(x=>x===null?"н/д":fmt(x))).concat([fmt(mS)+" ч",fmt(mAll)+" ч"]).concat(I.machs.some(q=>q.idle)?[fmt(R1(sumA(I.machs.map(q=>q.idle))))]:[])});
+    const tw=el("div");tw.style.marginTop="14px";tw.innerHTML=tbl(["Техника"].concat(ds.map(d=>DWN[dow(d)]+" "+ru5(d))).concat(["Неделя","С начала"]).concat(I.machs.some(q=>q.idle)?["Простой, ч"]:[]),tr);tb.appendChild(tw);
+    tb.appendChild(el("div","note","«С начала» — все рапорты объекта по "+ru(date)+". Дни без рапорта не приравнены к нулю."));
+    const g2=el("div","wgrid");g2.style.marginTop="14px";tb.appendChild(g2);
+    const byW=ms.slice().sort((p,q)=>q.wk-p.wk),byT=ms.slice().sort((p,q)=>q.tot-p.tot);
+    wcard(g2,"Наработка за неделю по единицам",box=>hbar(box,{rows:byW.map(m=>({n:m.n,v:m.wk})),c:COL[0]}));
+    wcard(g2,"Накопительно с начала работ",box=>hbar(box,{rows:byT.map(m=>({n:m.n,v:m.tot})),c:COL[1]}));
+  }
+  /* Средний темп */
+  const pr=[],nd=Math.max(I.nrep,1);
+  aw.forEach(x=>{const w=x.w,s=sumA(x.v),rem=w.t>0?Math.max(0,w.t-w.done):null;let need="—";
+    if(rem!==null&&o.due&&o.due>date){let c=0;for(let d=addD(date,1);d<=o.due&&c<400;d=addD(d,1))if(dow(d)!==0)c++;if(c>0)need=fmt(rem/c)+" / день";}
+    else if(rem===0)need="выполнено";
+    pr.push({c:[w.n+", "+w.u,{h:"<b>"+fmt(s/nd)+" / день</b>"},rem===null?"—":fmt(rem),need]});});
+  if(I.nrep){pr.push({c:["Вывоз, м³",{h:"<b>"+fmt(hvS/nd,0)+" / день</b>"},"—","—"]});pr.push({c:["Рейсов вывоза",{h:"<b>"+fmt(htS/nd,0)+" / день</b>"},"—","—"]});
+    const mv=I.mt.filter(x=>x!==null);if(mv.length)pr.push({c:["Техника, ч на смену",{h:"<b>"+fmt(mS/nd)+"</b>"},"мин. "+fmt(Math.min.apply(null,mv))+" · макс. "+fmt(Math.max.apply(null,mv)),"—"]});}
+  const bp=wsec(B,"Средний темп");bp.innerHTML=tbl(["Показатель","Факт за неделю","Осталось","Нужный темп до срока"],pr);
+  bp.appendChild(el("div","note","Темп считается по дням с рапортом ("+I.nrep+"). Нужный темп — остаток объёма, делённый на рабочие дни (пн–сб) до срока по договору"+(o.due?" ("+ru(o.due)+")":" (срок в паспорте не задан)")+"."));
+  /* Комментарии */
+  const cm=wsec(B,"Комментарии по темпу"),add=(h,t)=>{const p=el("p","note");p.innerHTML="<b>"+esc(h)+".</b> "+esc(t);cm.appendChild(p);};
+  aw.forEach(x=>{const vv=x.v.map((y,k)=>({y:y,d:ds[k]})).filter(q=>q.y!==null),mxv=vv.reduce((p,q)=>q.y>p.y?q:p,vv[0]),mnv=vv.reduce((p,q)=>q.y<p.y?q:p,vv[0]);
+    add(x.w.n,"за неделю "+fmt(sumA(x.v))+" "+x.w.u+", в среднем "+fmt(sumA(x.v)/nd)+" в день; пик — "+fmt(mxv.y)+" ("+ru5(mxv.d)+"), минимум — "+fmt(mnv.y)+" ("+ru5(mnv.d)+")"+(x.w.t>0?"; готовность "+fmt(x.w.pct,1)+"%, осталось "+fmt(Math.max(0,x.w.t-x.w.done))+" "+x.w.u:"")+".");});
+  if(hvS>0)add("Вывоз","за неделю "+fmt(hvS,0)+" м³ и "+fmt(htS,0)+" рейсов; в среднем "+fmt(hvS/nd,0)+" м³ в день.");
+  if(I.machs.length){const top=I.machs.filter(m=>m.wk>0).slice(0,3),idle0=I.machs.filter(m=>m.wk===0&&m.tot>0);
+    add("Техника","всего "+fmt(mS)+" маш.-ч за неделю, с начала работ "+fmt(mAll)+" ч."+(top.length?" Больше всех отработали: "+top.map(m=>m.n+" — "+fmt(m.wk)+" ч").join("; ")+".":"")+(idle0.length?" Не выходили на неделе: "+idle0.map(m=>m.n).join(", ")+".":""));
+    const ids=I.machs.filter(m=>m.idle>0);if(ids.length)add("Простои","за 30 дней по технике: "+ids.map(m=>m.n+" — "+fmt(m.idle)+" ч").join("; ")+".");}
+  add("Ограничения данных",miss.length?"нет рапорта за "+miss.map(d=>ru5(d)).join(", ")+"; объёмы и часы этих дней не оценивались.":"за все рабочие дни недели рапорты сданы.");
+}
+function renderWk(){
+  $("v-list").hidden=true;$("v-obj").hidden=true;$("v-wk").hidden=false;
+  const ds=wkDays(),t=todayISO();
+  $("w-lab").innerHTML="";$("w-lab").appendChild(document.createTextNode("неделя "+ru5(ds[0])+" – "+ru(addD(ds[0],6))));$("w-lab").appendChild(el("small",null,"пн–сб, воскресенье — выходной (если рапорт сдан — засчитывается)"));
+  $("w-next").disabled=addD(ds[0],7)>t;
+  const C=$("w-chips");C.innerHTML="";
+  const chip=(pid,lab,l)=>{const b=el("button",null);b.type="button";if(l)b.appendChild(lamp(l,"sm"));b.appendChild(document.createTextNode(lab));b.setAttribute("aria-pressed",String(wcur===pid));b.onclick=()=>{wcur=pid;keep();renderWk();};C.appendChild(b);};
+  chip("all","Все объекты");M.objects.forEach(o=>chip(o.pid,o.short,o.light));
+  const B=$("w-body");B.innerHTML="";const o=wcur!=="all"&&M.objects.find(x=>x.pid===wcur);
+  if(o)wkObj(B,o);else{wcur="all";wkAll(B);}
+}
+function setMode(m){mode=m;[].forEach.call(document.querySelectorAll("#tabs button"),b=>b.setAttribute("aria-selected",String(b.dataset.m===m)));$("dn").hidden=(m==="wk");keep();if(M)render();}
 
+$("w-prev").onclick=()=>{date=addD(wkDays()[0],-1);load();};
+$("w-next").onclick=()=>{const n=addD(wkDays()[0],13),t=todayISO();date=n>t?t:n;load();};
+[].forEach.call(document.querySelectorAll("#tabs button"),b=>b.onclick=()=>setMode(b.dataset.m));
+let rz=null;window.addEventListener("resize",()=>{clearTimeout(rz);rz=setTimeout(()=>{if(mode==="wk"&&M)renderWk();},250);});
 $("back").onclick=()=>{cur=null;keep();showList();};
 $("d-prev").onclick=()=>{date=addD(date||addD(todayISO(),-1),-1);load();};
 $("d-next").onclick=()=>{if(date<todayISO()){date=addD(date,1);load();}};
 window.addEventListener("popstate",()=>{});
-keep();load();setInterval(()=>{if(!document.hidden)load(true);},600000);
+setMode(mode);load();setInterval(()=>{if(!document.hidden)load(true);},600000);
 })();
 </script>
 </body>
