@@ -269,7 +269,7 @@ function clone(x){return JSON.parse(JSON.stringify(x))}
 function renderHeader(){
   var m=me();var tabs=tabsFor(m);
   $('#tabs').innerHTML=tabs.length>1?tabs.map(function(t){return '<button class="tab" role="tab" data-act="tab" data-v="'+t[0]+'" aria-selected="'+(st.tab===t[0])+'">'+t[1]+'</button>'}).join(''):'';
-  $('#who').textContent=m?m.name+' · '+ROLE_NAMES[m.kind]:'';
+  $('#who').textContent=m?(m.name.toLowerCase().indexOf(ROLE_NAMES[m.kind])>=0?m.name:m.name+' · '+ROLE_NAMES[m.kind]):'';
 }
 
 /* ---------- foreman ---------- */
