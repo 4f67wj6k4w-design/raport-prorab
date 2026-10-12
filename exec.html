@@ -218,6 +218,11 @@ table.ww tr.sep td{border-top:2px solid var(--line)}
 .wl .pbar{height:5px;margin-top:4px}
 .note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.4}
 .foot{margin-top:18px;text-align:center;font-size:12px;color:var(--muted)}
+.sub{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:16px 0 4px}
+.wd{padding:10px 0;border-top:1px dashed var(--line)}.wd.f{border-top:0}
+.wd .t{display:flex;justify-content:space-between;gap:8px;font-size:14px;font-weight:600}
+.wd .t i{font-style:normal;color:var(--muted);font-weight:400;font-size:12px;white-space:nowrap}
+.wd svg{display:block;width:100%;height:auto;margin-top:4px}
 </style>
 </head>
 <body>
@@ -241,8 +246,8 @@ table.ww tr.sep td{border-top:2px solid var(--line)}
     <div class="sum" id="sum"></div>
     <details class="how"><summary>Как считается светофор</summary>
       <p>Объект горит по худшему из четырёх признаков за выбранный день.</p>
-      <p><span class="lamp sm l-r"></span> <b>Красный:</b> нет рапортов 2 дня подряд; простои и ремонт техники от 24 ч за 7 дней; объём за неделю меньше трети прошлой недели; срок по договору истёк или прогноз окончания позже срока; отставание от равномерного графика от 15 п.п.</p>
-      <p><span class="lamp sm l-y"></span> <b>Жёлтый:</b> нет рапорта за день; простои от 8 ч за 7 дней или любой простой по вине заказчика/генподрядчика; объём за неделю меньше 2/3 прошлой недели; прогноз окончания ближе 7 дней к сроку; отставание от графика от 5 п.п.</p>
+      <p><span class="lamp sm l-r"></span> <b>Красный:</b> нет рапортов 2 рабочих дня подряд (пн–сб; воскресенье — выходной); простои и ремонт техники от 24 ч за 7 дней; объём за неделю меньше трети прошлой недели; срок по договору истёк или прогноз окончания позже срока; отставание от равномерного графика от 15 п.п.</p>
+      <p><span class="lamp sm l-y"></span> <b>Жёлтый:</b> нет рапорта за рабочий день; простои от 8 ч за 7 дней или любой простой по вине заказчика/генподрядчика; объём за неделю меньше 2/3 прошлой недели; прогноз окончания ближе 7 дней к сроку; отставание от графика от 5 п.п.</p>
       <p><span class="lamp sm l-g"></span> <b>Зелёный:</b> рапорт сдан, простоев мало, темп не упал, по срокам успеваем.</p>
       <p><span class="lamp sm l-n"></span> <b>Серый:</b> данных пока мало (сравнение недель — после 2 недель рапортов; прогноз — после 3 дней; без срока в паспорте прогноз не сравнивается со сроком).</p>
       <p>«% выполнения» — среднее по работам паспорта, у которых задан объём по проекту (без машино-часов, мобилизации и строк «в т.ч.»).</p>
@@ -256,6 +261,7 @@ table.ww tr.sep td{border-top:2px solid var(--line)}
     <section class="card"><h2 id="o-date"></h2><div class="tiles" id="o-tiles"></div></section>
     <section class="card"><h2>Графики</h2><div class="cg" id="o-charts"></div></section>
     <section class="card"><h2>Неделя к неделе</h2><div id="o-week"></div></section>
+    <section class="card"><h2>Неделя: работы и техника</h2><div id="o-wk"></div></section>
     <section class="card"><h2>Работы по паспорту</h2><div id="o-works"></div></section>
   </div>
   <div class="foot" id="foot">Данные из рапортов прорабов. Пока страница открыта, она обновляется каждые 10 минут.</div>
@@ -337,7 +343,7 @@ function showObj(o){$("v-list").hidden=true;$("v-obj").hidden=false;
   if(o.day){tile("Людей",fmt(o.day.people,0));tile("Техники",fmt(o.day.mach,0),o.day.mh?fmt(o.day.mh,0)+" маш.-ч":"");tile("Вывоз",fmt(o.day.m3,0),"м³"+(o.day.trips?" · "+fmt(o.day.trips,0)+" рейс.":""));tile("Простои/ремонт",fmt(o.day.dt||0,1),"ч");}
   if(o.due)tile("Срок по договору",ru(o.due));if(o.forecast)tile("Прогноз окончания",ru(o.forecast));
   if(!T.children.length)T.appendChild(el("div","empty","Рапортов по объекту ещё не было"));
-  charts(o);week(o);worksList(o);}
+  charts(o);week(o);weekDetail(o);worksList(o);}
 function win(o){if(!o.series)return 0;const first=o.first||M.dates[0];const k=M.dates.indexOf(first);const need=Math.max(14,M.dates.length-Math.max(0,k));return Math.max(0,M.dates.length-Math.min(M.dates.length,need));}
 function charts(o){const C=$("o-charts");C.innerHTML="";if(!o.series){C.appendChild(el("div","empty","Графики появятся после первых рапортов"));return;}
   const k=win(o),D=M.dates.slice(k),S=o.series,cut=a=>a.slice(k);
@@ -395,6 +401,35 @@ function week(o){const W=$("o-week");W.innerHTML="";if(!o.week){W.appendChild(el
 function worksList(o){const B=$("o-works");B.innerHTML="";const ws=o.works.filter(w=>w.t>0);if(!ws.length){B.appendChild(el("div","empty","В паспорте нет объёмов по проекту"));return;}
   ws.forEach(w=>{const d=el("div","wl");d.appendChild(el("div",null,w.n+", "+w.u));const v=el("div","v");const a=(l,x)=>{const s=el("span",null,l+" ");s.appendChild(el("b",null,x));v.appendChild(s);};
     a("план",fmt(w.t));a("выполнено",fmt(w.done));a("остаток",fmt(Math.max(0,w.t-w.done)));a("",fmt(w.pct,1)+"%");d.appendChild(v);const p=el("div","pbar");const i=el("i");i.style.width=Math.min(100,w.pct||0)+"%";p.appendChild(i);d.appendChild(p);B.appendChild(d);});}
+
+const DW7=["Вс","Пн","Вт","Ср","Чт","Пт","Сб"];
+const sum7=a=>a.reduce((x,y)=>x+(+y||0),0);
+function mini(v,ds,cv){const W=300,H=96,p=18,bw=W/v.length,mx=Math.max.apply(null,v.concat([1]));const s=sv("svg",{viewBox:"0 0 "+W+" "+H,role:"img"});
+  v.forEach((x,i)=>{const dw=new Date(ds[i]+"T12:00:00Z").getUTCDay(),hh=(H-p-14)*x/mx,X=i*bw+bw*.15;
+    const r=sv("rect",{x:X,y:H-p-hh,width:bw*.7,height:Math.max(hh,0),rx:2});r.style.fill=dw===0?"var(--line)":"var("+cv+")";s.appendChild(r);
+    if(x){const t=sv("text",{x:X+bw*.35,y:H-p-hh-3,"text-anchor":"middle","font-size":10});t.style.fill="var(--fg)";t.textContent=fmt(x);s.appendChild(t);}
+    const l=sv("text",{x:X+bw*.35,y:H-4,"text-anchor":"middle","font-size":10});l.style.fill="var(--muted)";l.textContent=DW7[dw]+" "+ds[i].slice(8,10);s.appendChild(l);});
+  return s;}
+function weekDetail(o){const B=$("o-wk");B.innerHTML="";
+  if(!o.series){B.appendChild(el("div","empty","Рапортов по объекту ещё не было"));return;}
+  const ds=M.dates.slice(-7),ms=o.mach7||[];
+  B.appendChild(el("div","note",ru5(ds[0])+"–"+ru5(ds[6])+". Воскресенье — серым (выходной)."));
+  const T=el("div","tiles");const tile=(l,v,sm)=>{const d=el("div","tile");d.appendChild(el("span",null,l));d.appendChild(el("b",null,v));if(sm)d.appendChild(el("small",null," "+sm));T.appendChild(d);};
+  const tot=ds.map((_,i)=>sum7(ms.map(m=>m.d[i])));
+  tile("Моточасов за неделю",fmt(sum7(tot),1),"маш.-ч");tile("Единиц техники",fmt(ms.length,0));tile("Простой техники",fmt(sum7(ms.map(m=>m.idle)),1),"ч");
+  const ws=(o.works||[]).map(w=>({w:w,v:ds.map((_,i)=>+((w.d||[]).slice(-7)[i])||0)})).filter(x=>sum7(x.v)>0||x.w.t>0);
+  tile("Видов работ в неделе",fmt(ws.filter(x=>sum7(x.v)>0).length,0));B.appendChild(T);
+  B.appendChild(el("div","sub","Виды работ"));
+  if(!ws.length)B.appendChild(el("div","empty","Объёмов работ за неделю нет"));
+  ws.forEach((x,i)=>{const w=x.w,d=el("div","wd"+(i?"":" f"));const t=el("div","t");t.appendChild(el("span",null,w.n));t.appendChild(el("i",null,"за неделю "+fmt(sum7(x.v))+" "+(w.u||"")));d.appendChild(t);
+    if(w.t>0){const v=el("div","v");const a=(l,y)=>{const s=el("span",null,l+" ");s.appendChild(el("b",null,y));v.appendChild(s);};a("план",fmt(w.t));a("выполнено",fmt(w.done));a("остаток",fmt(Math.max(0,w.t-w.done)));a("",fmt(w.pct,1)+"%");v.style.cssText="display:flex;flex-wrap:wrap;gap:2px 12px;font-size:12px;color:var(--muted);margin-top:2px";d.appendChild(v);const p=el("div","pbar");const q=el("i");q.style.width=Math.min(100,w.pct||0)+"%";p.appendChild(q);d.appendChild(p);}
+    else d.appendChild(el("div","note","Объём по проекту в паспорте не задан · выполнено всего "+fmt(w.done)));
+    d.appendChild(mini(x.v,ds,"--accent"));B.appendChild(d);});
+  B.appendChild(el("div","sub","Работа техники"));
+  if(!o.mach7){B.appendChild(el("div","note","Данные по машинам появятся после обновления скрипта базы."));return;}
+  if(!ms.length){B.appendChild(el("div","empty","Техника за неделю не заявлена"));return;}
+  const g=el("div","wd f");const gt=el("div","t");gt.appendChild(el("span",null,"Вся техника объекта"));gt.appendChild(el("i",null,fmt(sum7(tot),1)+" маш.-ч"));g.appendChild(gt);g.appendChild(mini(tot,ds,"--warn"));B.appendChild(g);
+  ms.forEach(m=>{const d=el("div","wd");const t=el("div","t");t.appendChild(el("span",null,m.n));t.appendChild(el("i",null,fmt(m.h,1)+" ч"+(m.idle?" · простой "+fmt(m.idle,1)+" ч":"")));d.appendChild(t);d.appendChild(mini(m.d,ds,"--warn"));B.appendChild(d);});}
 
 $("back").onclick=()=>{cur=null;keep();showList();};
 $("d-prev").onclick=()=>{date=addD(date||addD(todayISO(),-1),-1);load();};
