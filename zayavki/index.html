@@ -456,7 +456,7 @@ function renderModal(){
   var it=(r.items||[]).filter(function(x){return x.id===M.iid})[0];
   var need=needOf(it);
   var used=usedBy(r.date,it.id);
-  var h='<div class="modalbg" data-act="closeModal"><div class="modal" role="dialog" aria-modal="true" onclick="event.stopPropagation()">';
+  var h='<div class="modalbg" data-act="closeModal"><div class="modal" role="dialog" aria-modal="true">';
   h+='<div style="display:flex;justify-content:space-between;gap:8px"><div style="min-width:0"><b>'+esc(objShort(r.object))+' · '+short(r.date)+'</b><div class="small muted">'+esc(itemTitle(it))+'</div></div><button class="link" data-act="closeModal" aria-label="Закрыть">закрыть</button></div>';
   if(it.type==='samo'){
     h+='<label class="f" for="mcar">Кто забирает</label><select id="mcar" data-chg="mAgreed" style="width:100%"><option value="">— выберите перевозчика —</option>'+carrierOptions(M.agreed)+'</select>';
@@ -534,7 +534,7 @@ function dayText(day){
 }
 function showText(title,text){
   st.modal=null;
-  $('#modalHost').innerHTML='<div class="modalbg" data-act="closeText"><div class="modal" onclick="event.stopPropagation()"><div style="display:flex;justify-content:space-between"><b>'+esc(title)+'</b><button class="link" data-act="closeText">закрыть</button></div><textarea id="txt" readonly style="margin-top:10px;min-height:240px;font-family:var(--mono);font-size:12px">'+esc(text)+'</textarea><div class="small muted" style="margin-top:6px">Скопируйте и отправьте водителям или перевозчику в MAX.</div><button class="btn pri" style="margin-top:10px;width:100%" data-act="copyTxt">Скопировать</button></div></div>';
+  $('#modalHost').innerHTML='<div class="modalbg" data-act="closeText"><div class="modal"><div style="display:flex;justify-content:space-between"><b>'+esc(title)+'</b><button class="link" data-act="closeText">закрыть</button></div><textarea id="txt" readonly style="margin-top:10px;min-height:240px;font-family:var(--mono);font-size:12px">'+esc(text)+'</textarea><div class="small muted" style="margin-top:6px">Скопируйте и отправьте водителям или перевозчику в MAX.</div><button class="btn pri" style="margin-top:10px;width:100%" data-act="copyTxt">Скопировать</button></div></div>';
 }
 
 /* ---------- director ---------- */
