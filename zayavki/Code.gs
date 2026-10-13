@@ -4,9 +4,12 @@ var SS_ID = '1-mXmQEWOwusEQxlmTbUf6rKzsF9_VPeEdlrvXqus9jg';
 var SPEC = {
   foremen:   {sheet:'Прорабы',      cols:[['id','s'],['name','s'],['objects','csv'],['token','s'],['active','b']]},
   staff:     {sheet:'Сотрудники',   cols:[['id','s'],['name','s'],['role','s'],['title','s'],['token','s']]},
-  objects:   {sheet:'Объекты',      cols:[['id','s'],['name','s'],['short','s']]},
+  objects:   {sheet:'Объекты',      cols:[['id','s'],['name','s'],['short','s'],['dname','s']]},
   carriers:  {sheet:'Перевозчики',  cols:[['id','s'],['name','s']]},
-  fleet:     {sheet:'Машины',       cols:[['id','s'],['name','s'],['model','s'],['kind','s'],['status','s'],['order','n']]},
+  fleet:     {sheet:'Машины',       cols:[['id','s'],['name','s'],['model','s'],['kind','s'],['status','s'],['order','n'],['bort','s'],['cap','n']]},
+  drivers:   {sheet:'Водители',    cols:[['id','s'],['name','s'],['active','b']]},
+  routes:    {sheet:'Маршруты',    cols:[['id','s'],['from','s'],['to','s'],['km','n'],['price','n'],['cargo','s']]},
+  places:    {sheet:'Места',       cols:[['id','s'],['name','s'],['type','s']]},
   requests:  {sheet:'Заявки',       cols:[['id','s'],['date','s'],['object','s'],['foremanId','s'],['foremanName','s'],['items','j'],['comment','s'],['sentAt','s'],['byStaff','s'],['editedAt','n'],['log','j'],['createdAt','n'],['summary','d']]},
   approvals: {sheet:'Утверждения',  cols:[['id','s'],['by','s'],['at','n'],['atStr','s']]}
 };
@@ -80,6 +83,13 @@ function summary_(r) {
     (a.hired || []).forEach(function (h) { p.push(h.carrier + ' × ' + h.count); });
     if (a.agreed) p.push('согласовано ' + a.agreed);
     if (it.note) s += ' (' + it.note + ')';
+    var f = it.fact;
+    if (f) {
+      var v = 0, tr = 0;
+      (f.own || []).forEach(function (o) { v += Number(o.vol) || 0; tr += Number(o.trips) || 0; });
+      (f.hired || []).forEach(function (h) { v += Number(h.vol) || 0; });
+      p.push('ФАКТ ' + Math.round(v * 10) / 10 + ' м³, рейсов Рено ' + tr + (f.dest ? ', ' + f.dest : '') + (f.km ? ', ' + f.km + ' км' : ''));
+    }
     return s + (p.length ? ' → ' + p.join('; ') : ' → не назначено');
   }).join(' | ');
 }
@@ -124,7 +134,7 @@ function allowed_(me, kind, coll, id, data, existing) {
   if (k === 'admin') return true;
   if (k === 'director') return false;
   if (k === 'approver') return coll === 'approvals';
-  if (k === 'dispatcher') return ['requests', 'carriers', 'fleet', 'foremen', 'objects'].indexOf(coll) >= 0;
+  if (k === 'dispatcher') return ['requests', 'carriers', 'fleet', 'foremen', 'objects', 'drivers', 'routes', 'places'].indexOf(coll) >= 0;
   if (k === 'foreman') {
     if (coll !== 'requests') return false;
     if (kind === 'set' && !existing) return data && data.foremanId === me.id;

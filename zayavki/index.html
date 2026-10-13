@@ -64,7 +64,7 @@ label.f{display:block;font-size:13px;color:var(--muted);margin:12px 0 5px;font-w
 .line .assign{color:var(--accent);font-size:13px;overflow-wrap:anywhere}
 .line .assign.none{color:var(--muted)}
 .grid2{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
-.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:16px}.fline{font-size:13px;color:var(--info);margin:-2px 0 6px}.frow{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.3fr) minmax(0,1fr) 62px 62px 74px;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}.frow input{width:100%}.fhead{font-size:12px;color:var(--muted);border-top:0}@media (max-width:700px){.frow{grid-template-columns:1fr 1fr}.fhead{display:none}}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .kpi span{font-size:12px;color:var(--muted);display:block}.kpi b{font-size:24px;font-family:var(--mono);display:block;margin-top:2px}
 .kpi small{font-size:12px;color:var(--muted)}
@@ -128,7 +128,7 @@ th{color:var(--muted);font-weight:500;font-size:12px}
 <script>
 (function(){
 "use strict";
-var S={foremen:[],objects:[],carriers:[],fleet:[],staff:[],requests:[],approvals:[]};
+var S={foremen:[],objects:[],carriers:[],fleet:[],staff:[],requests:[],approvals:[],drivers:[],routes:[],places:[]};
 var ready={};
 var st={tab:'foreman',who:null,day:null,dirDay:null,draft:null,draftForeman:null,modal:null,pending:null,loaded:false};
 var MATERIALS=['Грунт','Замусоренный грунт','Кирпичный бой','Ж/Б бой','Бетон','Строительный мусор','Несортированный мусор','Деревянные отходы','Пескогрунт','Песок','Асфальт','Металлолом','Другое'];
@@ -227,9 +227,134 @@ function dayStats(day){
     var a=it.assigned||{};own+=(a.own||[]).length;(a.hired||[]).forEach(function(h){hired+=(+h.count||0)});
     if(!itemDone(it))missing++;
   })});
-  return {need:need,own:own,hired:hired,missing:missing};
+  var fv=dayFact(day);
+  return {need:need,own:own,hired:hired,missing:missing,factVol:fv.vol};
 }
 function approval(day){return byId(S.approvals,day)}
+
+
+/* ---------- факт вывоза ---------- */
+var KINDS=['Рейсы','По месту','Простой','Ремонт/ТО','Без водителя'];
+var ROUTE_K=2.2;
+function num(x){x=parseFloat(String(x).replace(',','.'));return isFinite(x)?x:0}
+function r1(x){return Math.round(x*100)/100}
+function factOf(it){return it.fact||null}
+function factTotals(it){
+  var f=it.fact;if(!f)return {own:0,hired:0,vol:0,trips:0,km:0};
+  var own=0,hired=0,trips=0;
+  (f.own||[]).forEach(function(o){own+=num(o.vol);if(o.kind==='Рейсы'||!o.kind)trips+=num(o.trips)});
+  (f.hired||[]).forEach(function(h){hired+=num(h.vol);trips+=0});
+  return {own:own,hired:hired,vol:own+hired,trips:trips,km:num(f.km)*trips*ROUTE_K,ownTrips:trips};
+}
+function dayFact(day){
+  var vol=0,own=0,hired=0,trips=0,km=0;
+  dayRequests(day).forEach(function(r){(r.items||[]).forEach(function(it){var t=factTotals(it);vol+=t.vol;own+=t.own;hired+=t.hired;trips+=t.trips;km+=t.km})});
+  return {vol:vol,own:own,hired:hired,trips:trips,km:km};
+}
+function placesFor(){return sortBy((S.places||[]),function(p){return p.type+p.name})}
+function objDName(code){var o=byId(S.objects,code);return o&&o.dname?o.dname:''}
+function findRoute(objCode,dest){
+  var d=objDName(objCode);if(!d||!dest)return null;
+  var list=S.routes||[];for(var i=0;i<list.length;i++)if(list[i].from===d&&list[i].to===dest)return list[i];
+  return null;
+}
+function mapDest(txt){
+  var t=String(txt||'');var pl=S.places||[];
+  var key=/МЭР/i.test(t)?'МЭР':/Рябинов/i.test(t)?'Рябинов':/КПТС/i.test(t)?'КПТС':'';
+  if(!key)return '';
+  for(var i=0;i<pl.length;i++)if(pl[i].name.indexOf(key)>=0)return pl[i].name;
+  return '';
+}
+function factLine(it){
+  var f=it.fact;if(!f)return '';
+  var t=factTotals(it);
+  var p=['вывезено '+r1(t.vol)+' м³'];
+  if(t.own)p.push('Рено '+r1(t.own)+' м³');
+  if(t.hired)p.push('перевозчики '+r1(t.hired)+' м³');
+  if(t.trips)p.push(t.trips+' рейс.');
+  if(f.dest)p.push('→ '+f.dest.replace(/^Полигон /,''));
+  if(f.km)p.push(f.km+' км');
+  return '<div class="fline">'+esc(p.join(' · '))+'</div>';
+}
+function openFact(rid,iid){
+  var r=byId(S.requests,rid);if(!r)return;
+  var it=(r.items||[]).filter(function(x){return x.id===iid})[0];if(!it)return;
+  var f=it.fact?clone(it.fact):null;var a=it.assigned||{};
+  if(!f){
+    f={dest:mapDest(it.dest),km:'',own:[],hired:[],note:''};
+    (a.own||[]).forEach(function(id){f.own.push({id:id,driver:'',kind:'Рейсы',trips:'',hours:'',vol:'',man:false})});
+    (a.hired||[]).forEach(function(h){f.hired.push({carrier:h.carrier,vol:'',trips:''})});
+    if(it.type==='samo'&&a.agreed)f.hired.push({carrier:a.agreed,vol:'',trips:''});
+    if(it.type==='samo'&&!f.hired.length)f.hired.push({carrier:'',vol:'',trips:''});
+  }
+  var rt=findRoute(r.object,f.dest);f.kmAuto=!f.km&&!!rt;if(!f.km&&rt)f.km=rt.km;
+  st.modal={fact:true,rid:rid,iid:iid,f:f};
+  renderModal();
+}
+function ownCap(id){var v=byId(S.fleet,id);return v&&v.cap?num(v.cap):20}
+function recalcFact(){
+  var F=st.modal.f;
+  F.own.forEach(function(o,i){
+    if(o.kind==='Рейсы'&&!o.man)o.vol=o.trips===''?'':r1(num(o.trips)*ownCap(o.id));
+    var e=document.getElementById('fv'+i);if(e&&document.activeElement!==e)e.value=o.vol;
+  });
+  var vo=0,vh=0,tr=0;
+  F.own.forEach(function(o){vo+=num(o.vol);if(o.kind==='Рейсы')tr+=num(o.trips)});
+  F.hired.forEach(function(h){vh+=num(h.vol)});
+  var el=document.getElementById('ftot');
+  if(el)el.innerHTML='Вывезено: <b>'+r1(vo+vh)+' м³</b> (Рено '+r1(vo)+', перевозчики '+r1(vh)+') · рейсов Рено: <b>'+tr+'</b>'+(num(F.km)&&tr?' · пробег ≈ <b>'+Math.round(num(F.km)*tr*ROUTE_K)+' км</b>':'');
+}
+function renderFactModal(){
+  var host=$('#modalHost');var M=st.modal;var F=M.f;
+  var r=byId(S.requests,M.rid);if(!r){st.modal=null;host.innerHTML='';return}
+  var it=(r.items||[]).filter(function(x){return x.id===M.iid})[0];
+  var h='<div class="modalbg" data-act="closeModal"><div class="modal" role="dialog" aria-modal="true" style="max-width:720px">';
+  h+='<div style="display:flex;justify-content:space-between;gap:8px"><div style="min-width:0"><b>Факт вывоза · '+esc(objShort(r.object))+' · '+short(r.date)+'</b><div class="small muted">'+esc(itemTitle(it))+'</div></div><button class="link" data-act="closeModal">закрыть</button></div>';
+  var pl=placesFor();
+  h+='<div style="display:grid;grid-template-columns:minmax(0,1fr) 120px;gap:8px;margin-top:10px"><div><label class="f" for="fdest">Куда (полигон / площадка)</label><select id="fdest" data-chg="fDest" style="width:100%"><option value="">— не выбрано —</option>'+pl.map(function(p){return '<option'+(p.name===F.dest?' selected':'')+'>'+esc(p.name)+'</option>'}).join('')+'</select></div><div><label class="f" for="fkm">км в одну сторону</label><input id="fkm" type="number" step="0.01" min="0" data-inp="fKm" value="'+esc(F.km)+'" style="width:100%"></div></div>';
+  var rt=findRoute(r.object,F.dest);
+  h+='<div class="small muted" style="margin-top:4px">'+(F.dest?(rt?'По справочнику маршрутов: '+rt.km+' км'+(rt.price?', цена '+rt.price+' ₽/м³':''):'Маршрута «'+esc(objDName(r.object)||objShort(r.object))+' → '+esc(F.dest)+'» в справочнике нет. Впишите км, при сохранении маршрут запомнится.'):'Выберите полигон: км подставится по справочнику.')+'</div>';
+  if(it.type!=='samo'){
+    h+='<div style="margin-top:12px"><b>Свои самосвалы</b> <span class="small muted">объём = рейсы × кузов, можно править</span></div>';
+    h+='<div class="frow fhead"><span>Машина</span><span>Водитель</span><span>Вид работы</span><span>Рейсов</span><span>Часов</span><span>Объём, м³</span></div>';
+    F.own.forEach(function(o,i){
+      var v=byId(S.fleet,o.id);
+      h+='<div class="frow"><span><b>'+esc(v?v.name:o.id)+'</b>'+(v&&v.bort?'<div class="small muted">борт '+esc(v.bort)+' · '+esc(v.cap||20)+' м³</div>':'')+'</span>'
+       +'<select data-chg="fOwnDriver" data-i="'+i+'"><option value="">— водитель —</option>'+sortBy((S.drivers||[]).filter(function(d){return d.active!==false||d.name===o.driver}),function(d){return d.name}).map(function(d){return '<option'+(d.name===o.driver?' selected':'')+'>'+esc(d.name)+'</option>'}).join('')+'</select>'
+       +'<select data-chg="fOwnKind" data-i="'+i+'">'+KINDS.map(function(k){return '<option'+(k===o.kind?' selected':'')+'>'+k+'</option>'}).join('')+'</select>'
+       +'<input type="number" min="0" step="1" data-inp="fOwnTrips" data-i="'+i+'" value="'+esc(o.trips)+'" aria-label="Рейсов">'
+       +'<input type="number" min="0" step="0.5" data-inp="fOwnHours" data-i="'+i+'" value="'+esc(o.hours)+'" aria-label="Часов">'
+       +'<input id="fv'+i+'" type="number" min="0" step="0.5" data-inp="fOwnVol" data-i="'+i+'" value="'+esc(o.vol)+'" aria-label="Объём"></div>';
+    });
+    var used={};F.own.forEach(function(o){used[o.id]=1});
+    h+='<div style="margin-top:8px"><select data-chg="fOwnAdd"><option value="">+ добавить машину…</option>'+S.fleet.filter(function(v){return v.kind==='sam'&&!used[v.id]}).map(function(v){return '<option value="'+v.id+'">'+esc(v.name)+(v.bort?' (борт '+esc(v.bort)+')':'')+'</option>'}).join('')+'</select></div>';
+  }
+  h+='<div style="margin-top:14px"><b>Перевозчики</b> <span class="small muted">сколько м³ вывезли</span></div>';
+  F.hired.forEach(function(x,i){
+    h+='<div style="display:grid;grid-template-columns:minmax(0,1fr) 90px 70px auto;gap:6px;margin-top:6px;align-items:center"><select data-chg="fHireCar" data-i="'+i+'">'+carrierOptions(x.carrier)+'</select><input type="number" min="0" step="0.5" data-inp="fHireVol" data-i="'+i+'" value="'+esc(x.vol)+'" placeholder="м³" aria-label="Объём, м³"><input type="number" min="0" data-inp="fHireTrips" data-i="'+i+'" value="'+esc(x.trips)+'" placeholder="рейс." aria-label="Рейсов"><button class="link" data-act="fHireRm" data-v="'+i+'">убрать</button></div>';
+  });
+  h+='<button class="btn sm" style="margin-top:8px" data-act="fHireAdd">+ перевозчик</button>';
+  h+='<label class="f" for="fnote">Примечание</label><textarea id="fnote" data-inp="fNote" placeholder="Например: часть рейсов на другой полигон, простой, расхождение с рапортом прораба">'+esc(F.note||'')+'</textarea>';
+  h+='<div id="ftot" class="note" style="margin-top:10px"></div>';
+  h+='<div style="display:flex;justify-content:space-between;gap:8px;margin-top:14px"><button class="btn" data-act="fClear">Очистить факт</button><button class="btn pri" data-act="fSave">Сохранить факт</button></div>';
+  h+='</div></div>';
+  host.innerHTML=h;recalcFact();
+}
+function saveFact(){
+  var M=st.modal,F=M.f;var r=byId(S.requests,M.rid);if(!r)return;
+  var items=clone(r.items);var it=items.filter(function(x){return x.id===M.iid})[0];
+  var own=F.own.filter(function(o){return o.driver||num(o.trips)||num(o.hours)||num(o.vol)||o.kind!=='Рейсы'}).map(function(o){return {id:o.id,driver:o.driver,kind:o.kind,trips:num(o.trips),hours:num(o.hours),vol:num(o.vol)}});
+  var hired=F.hired.filter(function(h){return h.carrier||num(h.vol)}).map(function(h){return {carrier:h.carrier,vol:num(h.vol),trips:num(h.trips)}});
+  var m=me();
+  var fact={dest:F.dest||'',km:num(F.km)||0,own:own,hired:hired,note:F.note||'',at:nowStr(),by:m?m.name:''};
+  if(!own.length&&!hired.length&&!fact.dest)delete it.fact;else it.fact=fact;
+  var newRoute=F.dest&&fact.km&&objDName(r.object)&&!findRoute(r.object,F.dest);
+  var tot=factTotals(it);
+  upd('requests',r.id,{items:items,log:logLine(r,'факт вывоза: '+r1(tot.vol)+' м³')}).then(function(){
+    if(newRoute)put('routes',newId(),{from:objDName(r.object),to:F.dest,km:fact.km,price:'',cargo:''});
+    st.modal=null;$('#modalHost').innerHTML='';toast('Факт сохранён');
+  });
+}
 
 /* ---------- обмен с сервером ---------- */
 var TOKEN=(new URLSearchParams(location.search)).get('t')||'';
@@ -393,7 +518,7 @@ function renderDispatcher(){
   var stt=dayStats(day);
   var freeOwn=ownSam().filter(function(v){return v.status!=='repair'}).length-ownSam().filter(function(v){return v.status!=='repair'&&usedBy(day)[v.id]}).length;
   var h='<div class="days">'+days.map(function(k){var n=dayRequests(k).length;return '<button class="chip" data-act="dispDay" data-v="'+k+'" aria-pressed="'+(k===day)+'">'+short(k)+'<small>'+n+' '+(n===1?'заявка':'заявок')+'</small></button>'}).join('')+'</div>';
-  h+='<div class="kpis"><div class="kpi"><span>Заявлено машин</span><b>'+stt.need+'</b></div><div class="kpi"><span>Своих назначено</span><b>'+stt.own+'</b><small>свободно ещё '+freeOwn+' Renault</small></div><div class="kpi"><span>Наёмных назначено</span><b>'+stt.hired+'</b></div><div class="kpi"><span>Позиций без машин</span><b style="color:'+(stt.missing?'var(--warn)':'inherit')+'">'+stt.missing+'</b></div></div>';
+  h+='<div class="kpis"><div class="kpi"><span>Заявлено машин</span><b>'+stt.need+'</b></div><div class="kpi"><span>Своих назначено</span><b>'+stt.own+'</b><small>свободно ещё '+freeOwn+' Renault</small></div><div class="kpi"><span>Наёмных назначено</span><b>'+stt.hired+'</b></div><div class="kpi"><span>Вывезено (факт), м³</span><b>'+r1(stt.factVol)+'</b></div><div class="kpi"><span>Позиций без машин</span><b style="color:'+(stt.missing?'var(--warn)':'inherit')+'">'+stt.missing+'</b></div></div>';
   h+=approveBar(day,reqs,m);
   h+='<div class="grid2"><div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap"><h3 style="margin:0">Заявки на '+short(day)+'</h3><button class="btn sm" data-act="dayText">Разнарядка для MAX</button></div>';
   if(!reqs.length)h+='<div class="empty">На этот день заявок нет. Заявки прорабов появятся здесь сразу после отправки.</div>';
@@ -432,8 +557,9 @@ function dispReqHtml(r,can){
     var need=needOf(it);var cnt=assignedCount(it);
     h+='<div class="line"><div>'+esc(itemTitle(it))+'</div><div class="assign'+(itemTouched(it)?'':' none')+'">'+(itemTouched(it)?esc(assignText(it)):'—')+'</div>';
     h+='<div class="num small">'+(it.type==='samo'?(itemDone(it)?'✓':''):cnt+'/'+need)+'</div>';
-    if(can){h+='<button class="btn sm'+(itemDone(it)?'':' pri')+'" data-act="openAssign" data-r="'+r.id+'" data-i="'+it.id+'">'+(itemDone(it)||itemTouched(it)?'Изменить':it.type==='samo'?'Согласовать':'Назначить')+'</button>'}else h+='<span></span>';
+    if(can){h+='<span style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm'+(itemDone(it)?'':' pri')+'" data-act="openAssign" data-r="'+r.id+'" data-i="'+it.id+'">'+(itemDone(it)||itemTouched(it)?'Изменить':it.type==='samo'?'Согласовать':'Назначить')+'</button>'+(it.type==='polivo'?'':'<button class="btn sm'+(it.fact?'':' fact')+'" data-act="openFact" data-r="'+r.id+'" data-i="'+it.id+'">'+(it.fact?'Факт ✓':'Факт')+'</button>')+'</span>'}else h+='<span></span>';
     h+='</div>';
+    if(it.type!=='polivo')h+=factLine(it);
   });
   if(r.comment)h+='<div class="small" style="margin-top:6px"><span class="muted">Комментарий прораба:</span> '+esc(r.comment)+'</div>';
   var lg=(r.log||[]);if(lg.length){var l=lg[lg.length-1];h+='<div class="small muted" style="margin-top:4px">последнее изменение: '+esc(l.who)+', '+esc(l.t)+'</div>'}
@@ -452,6 +578,7 @@ function openAssign(rid,iid){
 function renderModal(){
   var host=$('#modalHost');var M=st.modal;
   if(!M){host.innerHTML='';return}
+  if(M.fact){renderFactModal();return}
   var r=byId(S.requests,M.rid);if(!r){st.modal=null;host.innerHTML='';return}
   var it=(r.items||[]).filter(function(x){return x.id===M.iid})[0];
   var need=needOf(it);
@@ -555,8 +682,23 @@ function renderDirector(){
   h+='<div class="cols2"><div class="card"><h3>Машины по дням</h3><div class="legend"><span><i class="c-own"></i>свои</span><span><i class="c-hire"></i>наёмные</span><span><i class="c-need"></i>не закрыто</span></div>'+trendHtml(days.slice(5,13),day)+'</div>';
   h+='<div class="card"><h3>Куда ушли машины ('+short(day)+')</h3>'+objBars(day)+'</div></div>';
   h+='<div class="cols2" style="margin-top:16px"><div class="card"><h3>Перевозчики</h3>'+carrierBars(day)+'</div><div class="card"><h3>Материалы</h3>'+materialBars(day)+'</div></div>';
+  h+='<div class="card" style="margin-top:16px"><h3>Факт вывоза по объектам ('+short(day)+')</h3>'+factTable(day)+'</div>';
   h+='<div class="card" style="margin-top:16px"><h3>Свой парк на '+short(day)+'</h3>'+fleetTable(day)+'</div>';
   $('#main').innerHTML=h;
+}
+function factTable(day){
+  var m={};
+  dayRequests(day).forEach(function(r){(r.items||[]).forEach(function(it){
+    if(!it.fact)return;var t=factTotals(it);var k=r.object;
+    var x=m[k]||(m[k]={name:objShort(k),own:0,hired:0,trips:0,km:0});
+    x.own+=t.own;x.hired+=t.hired;x.trips+=t.trips;x.km+=t.km;
+  })});
+  var rows=Object.keys(m).map(function(k){return m[k]}).sort(function(a,b){return (b.own+b.hired)-(a.own+a.hired)});
+  if(!rows.length)return '<div class="empty">Факт за этот день ещё не внесён диспетчерами.</div>';
+  var T={own:0,hired:0,trips:0,km:0};
+  var body=rows.map(function(x){T.own+=x.own;T.hired+=x.hired;T.trips+=x.trips;T.km+=x.km;return '<tr><td>'+esc(x.name)+'</td><td class="num">'+r1(x.own)+'</td><td class="num">'+r1(x.hired)+'</td><td class="num"><b>'+r1(x.own+x.hired)+'</b></td><td class="num">'+x.trips+'</td><td class="num">'+Math.round(x.km)+'</td></tr>'}).join('');
+  body+='<tr><td><b>Итого</b></td><td class="num"><b>'+r1(T.own)+'</b></td><td class="num"><b>'+r1(T.hired)+'</b></td><td class="num"><b>'+r1(T.own+T.hired)+'</b></td><td class="num"><b>'+T.trips+'</b></td><td class="num"><b>'+Math.round(T.km)+'</b></td></tr>';
+  return '<div class="table"><table><thead><tr><th>Объект</th><th>Рено, м³</th><th>Перевозчики, м³</th><th>Всего, м³</th><th>Рейсов Рено</th><th>Пробег, км</th></tr></thead><tbody>'+body+'</tbody></table></div>';
 }
 function trendHtml(ds,sel){
   var data=ds.map(function(k){var s=dayStats(k);return {k:k,own:s.own,hired:s.hired,gap:Math.max(0,s.need-s.own-s.hired)}});
@@ -662,6 +804,11 @@ document.addEventListener('click',function(e){
     case 'repair':{var veh=byId(S.fleet,v);if(veh)upd('fleet',v,{status:veh.status==='repair'?'ok':'repair'}).then(function(){toast(veh.status==='repair'?veh.name+' вернулась в работу':veh.name+' в ремонте')});break}
     case 'openAssign':openAssign(b.getAttribute('data-r'),b.getAttribute('data-i'));break;
     case 'closeModal':st.modal=null;renderModal();break;
+    case 'openFact':openFact(b.getAttribute('data-r'),b.getAttribute('data-i'));break;
+    case 'fSave':saveFact();break;
+    case 'fClear':{var Mq=st.modal;var rq=byId(S.requests,Mq.rid);var its=clone(rq.items);var iq=its.filter(function(x){return x.id===Mq.iid})[0];delete iq.fact;upd('requests',rq.id,{items:its}).then(function(){st.modal=null;$('#modalHost').innerHTML='';toast('Факт очищен')});break}
+    case 'fHireAdd':st.modal.f.hired.push({carrier:'',vol:'',trips:''});renderModal();break;
+    case 'fHireRm':st.modal.f.hired.splice(+v,1);renderModal();break;
     case 'mToggle':{var i=st.modal.own.indexOf(v);if(i>=0)st.modal.own.splice(i,1);else st.modal.own.push(v);renderModal();break}
     case 'mAllFree':{var r=byId(S.requests,st.modal.rid);var used=usedBy(r.date,st.modal.iid);var it=r.items.filter(function(x){return x.id===st.modal.iid})[0];var need=needOf(it);var own=[];ownSam().forEach(function(x){if(x.status!=='repair'&&!used[x.id]&&own.length<need)own.push(x.id)});st.modal.own=own;renderModal();break}
     case 'mHireAdd':st.modal.hired.push({carrier:'',count:1});renderModal();break;
@@ -698,6 +845,11 @@ document.addEventListener('change',function(e){
     case 'item':d.items[+t.getAttribute('data-i')][t.getAttribute('data-f')]=t.value;break;
     case 'allOwn':d.items[+t.getAttribute('data-i')].allOwn=t.checked;renderForeman();break;
     case 'mAgreed':st.modal.agreed=t.value;break;
+    case 'fDest':{var Fm=st.modal.f;Fm.dest=t.value;var rq2=byId(S.requests,st.modal.rid);var rt2=findRoute(rq2.object,Fm.dest);Fm.km=rt2?rt2.km:'';renderModal();break}
+    case 'fOwnDriver':st.modal.f.own[+t.getAttribute('data-i')].driver=t.value;break;
+    case 'fOwnKind':{var oo=st.modal.f.own[+t.getAttribute('data-i')];oo.kind=t.value;if(oo.kind!=='Рейсы'){oo.vol=oo.man?oo.vol:''}renderModal();break}
+    case 'fOwnAdd':if(t.value){st.modal.f.own.push({id:t.value,driver:'',kind:'Рейсы',trips:'',hours:'',vol:'',man:false});renderModal()}break;
+    case 'fHireCar':st.modal.f.hired[+t.getAttribute('data-i')].carrier=t.value;break;
     case 'mHireCar':st.modal.hired[+t.getAttribute('data-i')].carrier=t.value;break;
     case 'fObj':{var f=byId(S.foremen,t.getAttribute('data-f'));var o=t.getAttribute('data-o');var list=(f.objects||[]).slice();var ix=list.indexOf(o);if(t.checked&&ix<0)list.push(o);if(!t.checked&&ix>=0)list.splice(ix,1);upd('foremen',f.id,{objects:list});break}
   }
@@ -708,6 +860,13 @@ document.addEventListener('input',function(e){
     case 'comment':d.comment=t.value;break;
     case 'item':d.items[+t.getAttribute('data-i')][t.getAttribute('data-f')]=t.value;break;
     case 'mNote':st.modal.note=t.value;break;
+    case 'fKm':st.modal.f.km=t.value;recalcFact();break;
+    case 'fOwnTrips':st.modal.f.own[+t.getAttribute('data-i')].trips=t.value;st.modal.f.own[+t.getAttribute('data-i')].man=false;recalcFact();break;
+    case 'fOwnHours':st.modal.f.own[+t.getAttribute('data-i')].hours=t.value;break;
+    case 'fOwnVol':{var ov=st.modal.f.own[+t.getAttribute('data-i')];ov.vol=t.value;ov.man=true;recalcFact();break}
+    case 'fHireVol':st.modal.f.hired[+t.getAttribute('data-i')].vol=t.value;recalcFact();break;
+    case 'fHireTrips':st.modal.f.hired[+t.getAttribute('data-i')].trips=t.value;break;
+    case 'fNote':st.modal.f.note=t.value;break;
     case 'mHireCnt':st.modal.hired[+t.getAttribute('data-i')].count=+t.value;break;
     case 'mNewCarrier':st.modal.newCarrier=t.value;break;
   }
