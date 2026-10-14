@@ -507,6 +507,10 @@ function submitReq(){
 function dayNav(kind,day){
   return '<div class="daynav"><button class="btn sm" data-act="navBack" data-v="'+kind+'" aria-label="Раньше">◀ раньше</button><button class="btn sm" data-act="navToday" data-v="'+kind+'">сегодня</button><button class="btn sm" data-act="navFwd" data-v="'+kind+'" aria-label="Позже">позже ▶</button><label class="small muted">выбрать дату <input type="date" data-chg="navDate" data-v="'+kind+'" value="'+esc(day)+'"></label></div>';
 }
+function weekOf(day){var d=parseKey(day),w=(d.getDay()+6)%7,out=[];for(var i=0;i<7;i++)out.push(dkey(addDays(d,i-w)));return out}
+function weekNav(day,wk){
+  return '<div class="daynav"><button class="btn sm" data-act="wkBack">◀ прошлая неделя</button><button class="btn sm" data-act="wkNow">эта неделя</button><button class="btn sm" data-act="wkFwd">следующая неделя ▶</button><label class="small muted">выбрать дату <input type="date" data-chg="navDate" data-v="disp" value="'+esc(day)+'"></label></div><div class="small muted" style="margin:-6px 0 10px">Неделя: '+short(wk[0]).slice(0,5)+' — '+short(wk[6]).slice(0,5)+'.'+wk[6].slice(0,4)+'</div>';
+}
 function winDays(off){var t=new Date(),out=[];for(var i=-6;i<=7;i++)out.push(dkey(addDays(t,off+i)));return out}
 function offFor(day){return Math.round((parseKey(day)-parseKey(today()))/86400000)}
 function dispDays_old(){
@@ -518,13 +522,12 @@ function renderDispatcher(){
   var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
   var m=me();var can=canAssign(m);
   if(!st.day)st.day=dkey(addDays(new Date(),1));
-  var days=winDays(st.dispOff||0);
-  if(days.indexOf(st.day)<0){st.dispOff=offFor(st.day);days=winDays(st.dispOff)}
+  var days=weekOf(st.day);
   var day=st.day;
   var reqs=sortBy(dayRequests(day),function(r){return r.createdAt||0});
   var stt=dayStats(day);
   var freeOwn=ownSam().filter(function(v){return v.status!=='repair'}).length-ownSam().filter(function(v){return v.status!=='repair'&&usedBy(day)[v.id]}).length;
-  var h='<div class="days">'+days.map(function(k){var n=dayRequests(k).length;return '<button class="chip" data-act="dispDay" data-v="'+k+'" aria-pressed="'+(k===day)+'">'+short(k)+'<small>'+n+' '+(n===1?'заявка':'заявок')+'</small></button>'}).join('')+'</div>'+dayNav('disp',day);
+  var h='<div class="days">'+days.map(function(k){var n=dayRequests(k).length;return '<button class="chip" data-act="dispDay" data-v="'+k+'" aria-pressed="'+(k===day)+'">'+short(k)+'<small>'+n+' '+(n===1?'заявка':'заявок')+'</small></button>'}).join('')+'</div>'+weekNav(day,days);
   h+='<div class="kpis"><div class="kpi"><span>Заявлено машин</span><b>'+stt.need+'</b></div><div class="kpi"><span>Своих назначено</span><b>'+stt.own+'</b><small>свободно ещё '+freeOwn+' Renault</small></div><div class="kpi"><span>Наёмных назначено</span><b>'+stt.hired+'</b></div><div class="kpi"><span>Вывезено (факт), м³</span><b>'+r1(stt.factVol)+'</b></div><div class="kpi"><span>Позиций без машин</span><b style="color:'+(stt.missing?'var(--warn)':'inherit')+'">'+stt.missing+'</b></div></div>';
   h+=approveBar(day,reqs,m);
   h+='<div class="grid2"><div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap"><h3 style="margin:0">Заявки на '+short(day)+'</h3><button class="btn sm" data-act="dayText">Разнарядка для MAX</button></div>';
@@ -914,6 +917,8 @@ document.addEventListener('click',function(e){
   var a=b.getAttribute('data-act'),v=b.getAttribute('data-v');var d=st.draft;
   var m=me();
   switch(a){
+    case 'wkBack':case 'wkFwd':st.day=dkey(addDays(parseKey(st.day),a==='wkBack'?-7:7));renderDispatcher();break;
+    case 'wkNow':st.day=today();renderDispatcher();break;
     case 'navBack':case 'navFwd':{var dk=v==='dir'?'dirOff':'dispOff';var ck=v==='dir'?'dirDay':'day';var o=(st[dk]||0)+(a==='navBack'?-14:14);st[dk]=o;var nd=dkey(addDays(new Date(),o));st[ck]=nd;v==='dir'?renderDirector():renderDispatcher();break}
     case 'navToday':{if(v==='dir'){st.dirOff=0;st.dirDay=dkey(addDays(new Date(),1));renderDirector()}else{st.dispOff=0;st.day=dkey(addDays(new Date(),1));renderDispatcher()}break}
     case 'per':st.per=v;renderSvodka();break;
