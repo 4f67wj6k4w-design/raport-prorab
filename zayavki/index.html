@@ -65,6 +65,7 @@ label.f{display:block;font-size:13px;color:var(--muted);margin:12px 0 5px;font-w
 .line .assign.none{color:var(--muted)}
 .grid2{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:16px}.fline{font-size:13px;color:var(--info);margin:-2px 0 6px}.frow{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1.3fr) minmax(0,1fr) 62px 62px 74px;gap:6px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}.frow input{width:100%}.fhead{font-size:12px;color:var(--muted);border-top:0}@media (max-width:700px){.frow{grid-template-columns:1fr 1fr}.fhead{display:none}}
+.daynav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:-4px 0 14px}.daynav input{font:inherit}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .kpi span{font-size:12px;color:var(--muted);display:block}.kpi b{font-size:24px;font-family:var(--mono);display:block;margin-top:2px}
 .kpi small{font-size:12px;color:var(--muted)}
@@ -503,7 +504,12 @@ function submitReq(){
 }
 
 /* ---------- dispatcher ---------- */
-function dispDays(){
+function dayNav(kind,day){
+  return '<div class="daynav"><button class="btn sm" data-act="navBack" data-v="'+kind+'" aria-label="Раньше">◀ раньше</button><button class="btn sm" data-act="navToday" data-v="'+kind+'">сегодня</button><button class="btn sm" data-act="navFwd" data-v="'+kind+'" aria-label="Позже">позже ▶</button><label class="small muted">выбрать дату <input type="date" data-chg="navDate" data-v="'+kind+'" value="'+esc(day)+'"></label></div>';
+}
+function winDays(off){var t=new Date(),out=[];for(var i=-6;i<=7;i++)out.push(dkey(addDays(t,off+i)));return out}
+function offFor(day){return Math.round((parseKey(day)-parseKey(today()))/86400000)}
+function dispDays_old(){
   var out=[],t=new Date();
   for(var i=0;i<=7;i++)out.push(dkey(addDays(t,i)));
   return out;
@@ -511,13 +517,14 @@ function dispDays(){
 function renderDispatcher(){
   var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
   var m=me();var can=canAssign(m);
-  var days=dispDays();
-  if(!st.day||days.indexOf(st.day)<0)st.day=days[1];
+  if(!st.day)st.day=dkey(addDays(new Date(),1));
+  var days=winDays(st.dispOff||0);
+  if(days.indexOf(st.day)<0){st.dispOff=offFor(st.day);days=winDays(st.dispOff)}
   var day=st.day;
   var reqs=sortBy(dayRequests(day),function(r){return r.createdAt||0});
   var stt=dayStats(day);
   var freeOwn=ownSam().filter(function(v){return v.status!=='repair'}).length-ownSam().filter(function(v){return v.status!=='repair'&&usedBy(day)[v.id]}).length;
-  var h='<div class="days">'+days.map(function(k){var n=dayRequests(k).length;return '<button class="chip" data-act="dispDay" data-v="'+k+'" aria-pressed="'+(k===day)+'">'+short(k)+'<small>'+n+' '+(n===1?'заявка':'заявок')+'</small></button>'}).join('')+'</div>';
+  var h='<div class="days">'+days.map(function(k){var n=dayRequests(k).length;return '<button class="chip" data-act="dispDay" data-v="'+k+'" aria-pressed="'+(k===day)+'">'+short(k)+'<small>'+n+' '+(n===1?'заявка':'заявок')+'</small></button>'}).join('')+'</div>'+dayNav('disp',day);
   h+='<div class="kpis"><div class="kpi"><span>Заявлено машин</span><b>'+stt.need+'</b></div><div class="kpi"><span>Своих назначено</span><b>'+stt.own+'</b><small>свободно ещё '+freeOwn+' Renault</small></div><div class="kpi"><span>Наёмных назначено</span><b>'+stt.hired+'</b></div><div class="kpi"><span>Вывезено (факт), м³</span><b>'+r1(stt.factVol)+'</b></div><div class="kpi"><span>Позиций без машин</span><b style="color:'+(stt.missing?'var(--warn)':'inherit')+'">'+stt.missing+'</b></div></div>';
   h+=approveBar(day,reqs,m);
   h+='<div class="grid2"><div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap"><h3 style="margin:0">Заявки на '+short(day)+'</h3><button class="btn sm" data-act="dayText">Разнарядка для MAX</button></div>';
@@ -667,8 +674,10 @@ function showText(title,text){
 /* ---------- director ---------- */
 function renderDirector(){
   var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
-  var t=new Date();var days=[];for(var i=-6;i<=7;i++)days.push(dkey(addDays(t,i)));
-  if(!st.dirDay||days.indexOf(st.dirDay)<0)st.dirDay=dkey(addDays(t,1));
+  var t=new Date();
+  if(!st.dirDay)st.dirDay=dkey(addDays(t,1));
+  var days=winDays(st.dirOff||0);
+  if(days.indexOf(st.dirDay)<0){st.dirOff=offFor(st.dirDay);days=winDays(st.dirOff)}
   var day=st.dirDay;var stt=dayStats(day);var a=approval(day);
   var reqs=dayRequests(day);
   var lastEdit=0;reqs.forEach(function(r){lastEdit=Math.max(lastEdit,r.editedAt||r.createdAt||0)});
@@ -677,7 +686,7 @@ function renderDirector(){
   var sam=ownSam();var work=sam.filter(function(v){return v.status!=='repair'});
   var busySam=sam.filter(function(v){return usedMap[v.id]}).length;
   var rep=S.fleet.filter(function(v){return v.status==='repair'}).length;
-  var h='<div class="days">'+days.map(function(k){return '<button class="chip" data-act="dirDay" data-v="'+k+'" aria-pressed="'+(k===day)+'">'+short(k)+'<small>'+(k===today()?'сегодня':dayRequests(k).length+' зая.')+'</small></button>'}).join('')+'</div>';
+  var h='<div class="days">'+days.map(function(k){return '<button class="chip" data-act="dirDay" data-v="'+k+'" aria-pressed="'+(k===day)+'">'+short(k)+'<small>'+(k===today()?'сегодня':dayRequests(k).length+' зая.')+'</small></button>'}).join('')+'</div>'+dayNav('dir',day);
   h+='<div class="kpis"><div class="kpi"><span>Заявлено машин</span><b>'+stt.need+'</b><small>'+reqs.length+' заявок</small></div><div class="kpi"><span>Своих в работе</span><b>'+busySam+'<span style="display:inline;font-size:14px;color:var(--muted)"> из '+work.length+'</span></b><small>в ремонте: '+rep+'</small></div><div class="kpi"><span>Наёмных</span><b>'+stt.hired+'</b><small>'+(stt.need?Math.round(stt.hired/Math.max(1,stt.own+stt.hired)*100):0)+'% от назначенных</small></div><div class="kpi"><span>Расстановка</span><b style="font-size:17px;font-family:var(--font);color:'+(okAppr?'var(--accent)':'var(--warn)')+'">'+(okAppr?'Утверждена':reqs.length?'Не утверждена':'Нет заявок')+'</b><small>'+(okAppr?esc(a.by):stt.missing+' поз. без машин')+'</small></div></div>';
   h+='<div class="cols2"><div class="card"><h3>Машины по дням</h3><div class="legend"><span><i class="c-own"></i>свои</span><span><i class="c-hire"></i>наёмные</span><span><i class="c-need"></i>не закрыто</span></div>'+trendHtml(days.slice(5,13),day)+'</div>';
   h+='<div class="card"><h3>Куда ушли машины ('+short(day)+')</h3>'+objBars(day)+'</div></div>';
@@ -723,7 +732,7 @@ function carrierBars(day){
   var m={};
   dayRequests(day).forEach(function(r){(r.items||[]).forEach(function(it){var a=it.assigned||{};
     (a.hired||[]).forEach(function(h){m[h.carrier]=(m[h.carrier]||0)+(+h.count||0)});
-    if(a.agreed)m[a.agreed]=(m[a.agreed]||0)+(+it.count||0)})});
+    if(a.agreed&&a.agreed!=='перенос из Excel')m[a.agreed]=(m[a.agreed]||0)+(+it.count||0)})});
   var rows=Object.keys(m).map(function(k){return {name:k,own:0,hired:m[k]}}).sort(function(a,b){return b.hired-a.hired});
   return barsHtml(rows);
 }
@@ -905,6 +914,8 @@ document.addEventListener('click',function(e){
   var a=b.getAttribute('data-act'),v=b.getAttribute('data-v');var d=st.draft;
   var m=me();
   switch(a){
+    case 'navBack':case 'navFwd':{var dk=v==='dir'?'dirOff':'dispOff';var ck=v==='dir'?'dirDay':'day';var o=(st[dk]||0)+(a==='navBack'?-14:14);st[dk]=o;var nd=dkey(addDays(new Date(),o));st[ck]=nd;v==='dir'?renderDirector():renderDispatcher();break}
+    case 'navToday':{if(v==='dir'){st.dirOff=0;st.dirDay=dkey(addDays(new Date(),1));renderDirector()}else{st.dispOff=0;st.day=dkey(addDays(new Date(),1));renderDispatcher()}break}
     case 'per':st.per=v;renderSvodka();break;
     case 'impGo':runImport();break;
     case 'tab':st.tab=v;st.pending=null;render();break;
@@ -954,6 +965,7 @@ document.addEventListener('change',function(e){
   var t=e.target;var c=t.getAttribute&&t.getAttribute('data-chg');if(!c)return;var d=st.draft;
   if(t.id==='who'){}
   switch(c){
+    case 'navDate':{if(!t.value)break;var kd=t.getAttribute('data-v');if(kd==='dir'){st.dirDay=t.value;st.dirOff=offFor(t.value);renderDirector()}else{st.day=t.value;st.dispOff=offFor(t.value);renderDispatcher()}break}
     case 'perFrom':st.perFrom=t.value;renderSvodka();break;
     case 'perTo':st.perTo=t.value;renderSvodka();break;
     case 'foremanSel':st.draftForeman=t.value||null;st.draft=newDraft();renderForeman();break;
