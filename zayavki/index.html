@@ -164,9 +164,9 @@ function tabsFor(m){
   if(!m)return [];
   if(m.kind==='foreman')return [['foreman','Заявка']];
   if(m.kind==='dispatcher')return [['dispatcher','Диспетчер'],['foreman','Новая заявка'],['admin','Справочники']];
-  if(m.kind==='approver')return [['dispatcher','Расстановка'],['director','Дашборд']];
-  if(m.kind==='director')return [['director','Дашборд']];
-  return [['dispatcher','Диспетчер'],['foreman','Новая заявка'],['director','Дашборд'],['admin','Справочники']];
+  if(m.kind==='approver')return [['dispatcher','Расстановка'],['director','Дашборд'],['svodka','Сводка']];
+  if(m.kind==='director')return [['director','Дашборд'],['svodka','Сводка']];
+  return [['dispatcher','Диспетчер'],['foreman','Новая заявка'],['director','Дашборд'],['svodka','Сводка'],['admin','Справочники']];
 }
 /* ---------- fleet & demand ---------- */
 function ownSam(){return S.fleet.filter(function(v){return v.kind==='sam'})}
@@ -765,12 +765,124 @@ function renderAdmin(){
 function slug(s){var m={а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh',з:'z',и:'i',й:'y',к:'k',л:'l',м:'m',н:'n',о:'o',п:'p',р:'r',с:'s',т:'t',у:'u',ф:'f',х:'h',ц:'c',ч:'ch',ш:'sh',щ:'sch',ы:'y',э:'e',ю:'yu',я:'ya'};
   return String(s).toLowerCase().split('').map(function(c){return m[c]!==undefined?m[c]:/[a-z0-9]/.test(c)?c:'-'}).join('').replace(/-+/g,'-').replace(/^-|-$/g,'')||'x'}
 
+
+/* ---------- сводка за период ---------- */
+var PERIODS=[['7','7 дней'],['30','30 дней'],['year','С начала года'],['all','Всё время'],['custom','Свой период']];
+function perRange(){
+  var t=new Date(),k=st.per||'30';var to=today(),from;
+  if(k==='7')from=dkey(addDays(t,-6));
+  else if(k==='30')from=dkey(addDays(t,-29));
+  else if(k==='year')from=t.getFullYear()+'-01-01';
+  else if(k==='custom'){from=st.perFrom||dkey(addDays(t,-29));to=st.perTo||to}
+  else{from='0000-00-00';to='9999-99-99'}
+  var prev=null;
+  if(k!=='all'){var a=parseKey(from),b=parseKey(to);var n=Math.round((b-a)/86400000)+1;prev={from:dkey(addDays(a,-n)),to:dkey(addDays(a,-1))}}
+  return {from:from,to:to,prev:prev};
+}
+function aggr(from,to){
+  var A={own:0,hired:0,trips:0,km:0,hours:0,work:0,repair:0,nodrv:0,days:{},obj:{},car:{},truck:{},drv:{}};
+  var tday={};
+  S.requests.forEach(function(r){
+    if(r.date<from||r.date>to)return;
+    (r.items||[]).forEach(function(it){
+      var f=it.fact;if(!f)return;A.days[r.date]=1;
+      var ob=A.obj[r.object]||(A.obj[r.object]={own:0,hired:0,trips:0,km:0});
+      (f.own||[]).forEach(function(o){
+        var v=num(o.vol),tr=(o.kind==='Рейсы'||!o.kind)?num(o.trips):0,km=num(f.km)*tr*ROUTE_K;
+        A.own+=v;A.trips+=tr;A.km+=km;A.hours+=num(o.hours);ob.own+=v;ob.trips+=tr;ob.km+=km;
+        var tk=A.truck[o.id]||(A.truck[o.id]={vol:0,trips:0,km:0,work:0,repair:0,nodrv:0});
+        tk.vol+=v;tk.trips+=tr;tk.km+=km;
+        var st0=(o.kind==='Ремонт/ТО')?'repair':(o.kind==='Без водителя')?'nodrv':'work';
+        var key=o.id+'|'+r.date,prevS=tday[key];
+        var rank={work:3,repair:2,nodrv:1};
+        if(!prevS||rank[st0]>rank[prevS.s])tday[key]={s:st0,id:o.id};
+        if(o.driver){var dv=A.drv[o.driver]||(A.drv[o.driver]={vol:0,trips:0,days:{}});dv.vol+=v;dv.trips+=tr;dv.days[r.date]=1}
+      });
+      (f.hired||[]).forEach(function(h){
+        var v=num(h.vol);A.hired+=v;ob.hired+=v;var cn=h.carrier||'(без перевозчика: экология, бесплатный вывоз, реализация)';
+        var c=A.car[cn]||(A.car[cn]={vol:0});c.vol+=v;
+      });
+    });
+  });
+  Object.keys(tday).forEach(function(k){var x=tday[k];A[x.s]++;A.truck[x.id][x.s]++});
+  return A;
+}
+function fmt(x,d){return (Math.round(x*Math.pow(10,d||0))/Math.pow(10,d||0)).toLocaleString('ru-RU',{maximumFractionDigits:d||0})}
+function deltaHtml(cur,prev,has){
+  if(!has)return '<small class="muted">нет данных для сравнения</small>';
+  if(!prev)return '<small class="muted">в прошлом периоде: 0</small>';
+  var p=(cur-prev)/prev*100;var cl=p>=0?'ok':'bad';
+  return '<small style="color:var(--'+(p>=0?'accent':'bad')+')">'+(p>=0?'▲ +':'▼ ')+fmt(p,0)+'% к прошлому периоду ('+fmt(prev,0)+')</small>';
+}
+function svodTable(head,rows){
+  if(!rows.length)return '<div class="empty">За период данных нет.</div>';
+  return '<div class="table"><table><thead><tr>'+head.map(function(h,i){return '<th'+(i?' class="num"':'')+'>'+esc(h)+'</th>'}).join('')+'</tr></thead><tbody>'+rows.map(function(r){return '<tr>'+r.map(function(c,i){return '<td'+(i?' class="num"':'')+'>'+(i?c:esc(c))+'</td>'}).join('')+'</tr>'}).join('')+'</tbody></table></div>';
+}
+function renderSvodka(){
+  var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
+  var R=perRange(),A=aggr(R.from,R.to),P=R.prev?aggr(R.prev.from,R.prev.to):null,hp=!!P;
+  var tot=A.own+A.hired,ptot=P?P.own+P.hired:0;
+  var td=A.work+A.repair+A.nodrv,ptd=P?P.work+P.repair+P.nodrv:0;
+  var ktg=td?A.work/td*100:0,pktg=ptd?P.work/ptd*100:0;
+  var h='<div class="days">'+PERIODS.map(function(p){return '<button class="chip" data-act="per" data-v="'+p[0]+'" aria-pressed="'+((st.per||'30')===p[0])+'">'+p[1]+'</button>'}).join('')+'</div>';
+  if((st.per||'30')==='custom')h+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><label class="small muted">с <input type="date" data-chg="perFrom" value="'+esc(R.from)+'"></label><label class="small muted">по <input type="date" data-chg="perTo" value="'+esc(R.to)+'"></label></div>';
+  h+='<div class="small muted" style="margin-bottom:10px">Период: '+(R.from==='0000-00-00'?'всё время':R.from.split('-').reverse().join('.')+' — '+R.to.split('-').reverse().join('.'))+' · дней с данными: '+Object.keys(A.days).length+(R.prev?' · сравнение: '+R.prev.from.split('-').reverse().join('.')+' — '+R.prev.to.split('-').reverse().join('.'):'')+'</div>';
+  h+='<div class="kpis">'
+   +'<div class="kpi"><span>Вывезено всего, м³</span><b>'+fmt(tot)+'</b><br>'+deltaHtml(tot,ptot,hp)+'</div>'
+   +'<div class="kpi"><span>Свои Рено, м³</span><b>'+fmt(A.own)+'</b><br>'+deltaHtml(A.own,P&&P.own,hp)+'</div>'
+   +'<div class="kpi"><span>Перевозчики и прочее, м³</span><b>'+fmt(A.hired)+'</b><br>'+deltaHtml(A.hired,P&&P.hired,hp)+'</div>'
+   +'<div class="kpi"><span>Рейсов Рено</span><b>'+fmt(A.trips)+'</b><br>'+deltaHtml(A.trips,P&&P.trips,hp)+'</div>'
+   +'<div class="kpi"><span>Пробег Рено, км</span><b>'+fmt(A.km)+'</b><br>'+deltaHtml(A.km,P&&P.km,hp)+'</div>'
+   +'<div class="kpi"><span>Рено в работе, % машино-дней</span><b>'+fmt(ktg,1)+'%</b><br>'+(hp?'<small class="muted">в прошлом периоде: '+fmt(pktg,1)+'%</small>':'')+'</div>'
+   +'<div class="kpi"><span>Машино-дней в работе</span><b>'+fmt(A.work)+'</b><br><small class="muted">ремонт/ТО: '+fmt(A.repair)+' · без водителя: '+fmt(A.nodrv)+'</small></div>'
+   +'</div>';
+  var objRows=Object.keys(A.obj).map(function(k){var x=A.obj[k];return {k:k,x:x,t:x.own+x.hired}}).sort(function(a,b){return b.t-a.t}).map(function(o){return [objShort(o.k),fmt(o.x.own),fmt(o.x.hired),'<b>'+fmt(o.t)+'</b>',fmt(o.x.trips),fmt(o.x.km)]});
+  h+='<div class="card" style="margin-top:16px"><h3>По объектам</h3>'+svodTable(['Объект','Рено, м³','Перевозчики, м³','Всего, м³','Рейсов Рено','Пробег, км'],objRows)+'</div>';
+  var carRows=Object.keys(A.car).map(function(k){return [k,A.car[k].vol]}).sort(function(a,b){return b[1]-a[1]}).map(function(x){return [x[0],fmt(x[1]),fmt(tot?x[1]/tot*100:0,1)+'%']});
+  h+='<div class="card" style="margin-top:16px"><h3>По перевозчикам</h3>'+svodTable(['Перевозчик','Вывезено, м³','Доля'],carRows)+'</div>';
+  var trRows=Object.keys(A.truck).map(function(k){var v=byId(S.fleet,k);return {k:k,v:v,x:A.truck[k]}}).sort(function(a,b){return b.x.vol-a.x.vol}).map(function(o){var d=o.x.work+o.x.repair+o.x.nodrv;return [(o.v?o.v.name:o.k)+(o.v&&o.v.bort?' (борт '+o.v.bort+')':''),fmt(o.x.vol),fmt(o.x.trips),fmt(o.x.km),fmt(o.x.work),fmt(o.x.repair),fmt(o.x.nodrv),fmt(d?o.x.work/d*100:0)+'%']});
+  h+='<div class="card" style="margin-top:16px"><h3>По самосвалам Renault</h3>'+svodTable(['Гос. номер','Вывезено, м³','Рейсов','Пробег, км','Дней в работе','Ремонт/ТО','Без водителя','В работе'],trRows)+'</div>';
+  var dvRows=Object.keys(A.drv).map(function(k){return [k,A.drv[k]]}).sort(function(a,b){return b[1].vol-a[1].vol}).map(function(o){return [o[0],fmt(o[1].vol),fmt(o[1].trips),fmt(Object.keys(o[1].days).length)]});
+  h+='<div class="card" style="margin-top:16px"><h3>По водителям</h3>'+svodTable(['Водитель','Вывезено, м³','Рейсов','Выходов'],dvRows)+'</div>';
+  el.innerHTML=h;
+}
+
+/* ---------- перенос данных из Excel (только админ) ---------- */
+function appendImport(){
+  var h='<div class="card" style="margin-top:16px"><h3>Перенос данных из Excel</h3><div class="small muted" style="margin-bottom:8px">Выберите файл переноса (import.json). Загрузка безопасна: если запустить повторно, записи не задвоятся.</div><input type="file" id="impFile" accept=".json,application/json"> <button class="btn" data-act="impGo">Загрузить</button><div id="impLog" class="small" style="margin-top8px;margin-top:8px"></div></div>';
+  $('#main').insertAdjacentHTML('beforeend',h);
+}
+function impLog(t){var e=$('#impLog');if(e)e.textContent=t}
+function runImport(){
+  var f=$('#impFile')&&$('#impFile').files[0];if(!f){toast('Сначала выберите файл');return}
+  var rd=new FileReader();
+  rd.onload=function(){
+    var J;try{J=JSON.parse(rd.result)}catch(e){impLog('Файл не читается');return}
+    var docs=[];
+    (J.objects||[]).forEach(function(o){if(!byId(S.objects,o.id))docs.push({coll:'objects',id:o.id,data:o})});
+    (J.carriers||[]).forEach(function(n){var id=slug(n);if(!S.carriers.some(function(c){return c.name===n}))docs.push({coll:'carriers',id:id,data:{name:n}})});
+    (J.requests||[]).forEach(function(r){docs.push({coll:'requests',id:r.id,data:r})});
+    var total=docs.length,done=0,CH=20;
+    impLog('Загружаю: 0 из '+total+'…');
+    function next(){
+      if(done>=total){impLog('Готово: загружено '+total+'. Откройте вкладку «Сводка».');toast('Загружено записей: '+total);return}
+      var part=docs.slice(done,done+CH);
+      api({op:'imp',docs:part}).then(function(r){
+        if(!r||!r.ok){impLog('Ошибка: '+((r&&r.error)||'нет связи')+'. Загружено '+done+' из '+total+'. Нажмите «Загрузить» ещё раз.');return}
+        done+=part.length;impLog('Загружаю: '+done+' из '+total+'…');next();
+      },function(e){impLog('Нет связи. Загружено '+done+' из '+total+'. Нажмите «Загрузить» ещё раз.')});
+    }
+    next();
+  };
+  rd.readAsText(f);
+}
+
 /* ---------- master render ---------- */
 function render(){
   renderHeader();
   var t=st.tab;
-  if(t==='foreman')renderForeman();else if(t==='dispatcher')renderDispatcher();else if(t==='director')renderDirector();else renderAdmin();
-  if(t==='admin'&&ME&&ME.kind==='admin')appendLinks();
+  if(t==='foreman')renderForeman();else if(t==='dispatcher')renderDispatcher();else if(t==='director')renderDirector();else if(t==='svodka')renderSvodka();else renderAdmin();
+  if(t==='admin'&&ME&&ME.kind==='admin'){appendLinks();appendImport()}
   renderModalIfOpen();
 }
 function linkFor(tok){return location.origin+location.pathname+'?t='+tok}
@@ -793,6 +905,8 @@ document.addEventListener('click',function(e){
   var a=b.getAttribute('data-act'),v=b.getAttribute('data-v');var d=st.draft;
   var m=me();
   switch(a){
+    case 'per':st.per=v;renderSvodka();break;
+    case 'impGo':runImport();break;
     case 'tab':st.tab=v;st.pending=null;render();break;
     case 'draftDay':d.day=v;renderForeman();break;
     case 'addItem':d.items.push(newItem(v));renderForeman();break;
@@ -840,6 +954,8 @@ document.addEventListener('change',function(e){
   var t=e.target;var c=t.getAttribute&&t.getAttribute('data-chg');if(!c)return;var d=st.draft;
   if(t.id==='who'){}
   switch(c){
+    case 'perFrom':st.perFrom=t.value;renderSvodka();break;
+    case 'perTo':st.perTo=t.value;renderSvodka();break;
     case 'foremanSel':st.draftForeman=t.value||null;st.draft=newDraft();renderForeman();break;
     case 'object':d.object=t.value;break;
     case 'item':d.items[+t.getAttribute('data-i')][t.getAttribute('data-f')]=t.value;break;
@@ -883,7 +999,7 @@ function afterData(){
   if(st.modal){renderHeader();renderModal();if(st.tab!=='foreman')renderMainOnly();else renderMine();return}
   render();
 }
-function renderMainOnly(){var t=st.tab;if(t==='dispatcher')renderDispatcher();else if(t==='director')renderDirector();else if(t==='admin')renderAdmin()}
+function renderMainOnly(){var t=st.tab;if(t==='dispatcher')renderDispatcher();else if(t==='director')renderDirector();else if(t==='svodka')renderSvodka();else if(t==='admin')renderAdmin()}
 function refresh(force){
   if(inflight>0&&!force)return;
   api({op:'boot',v:force?null:VER}).then(function(r){

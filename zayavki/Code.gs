@@ -27,6 +27,7 @@ function doPost(e) {
     if (!me) out = {ok: false, error: 'auth'};
     else if (b.op === 'boot') out = boot_(me, b);
     else if (b.op === 'w') out = write_(me, b);
+    else if (b.op === 'imp') out = import_(me, b);
     else out = {ok: false, error: 'op'};
   } catch (err) {
     out = {ok: false, error: String(err && err.message || err)};
@@ -38,7 +39,7 @@ function doPost(e) {
 function sheet_(coll) { return SpreadsheetApp.openById(SS_ID).getSheetByName(SPEC[coll].sheet); }
 
 function fromCell_(type, v) {
-  if (type === 'n') return v === '' ? undefined : Number(v);
+  if (type === 'n') return v === '' ? undefined : Number(String(v).replace(/\s/g, '').replace(',', '.'));
   if (type === 'b') return /^(да|true|1|yes|истина)$/i.test(String(v).trim());
   if (type === 'csv') return v ? String(v).split(',').map(function (x) { return x.trim(); }).filter(String) : [];
   if (type === 'j') { if (!v) return undefined; try { return JSON.parse(v); } catch (e) { return undefined; } }
@@ -146,6 +147,34 @@ function newToken_() {
   var a = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789', s = '';
   for (var i = 0; i < 18; i++) s += a.charAt(Math.floor(Math.random() * a.length));
   return s;
+}
+
+/* пакетная загрузка (перенос данных из Excel), только админ */
+function import_(me, b) {
+  if (me.kind !== 'admin') return {ok: false, error: 'Нет прав'};
+  var docs = b.docs || [];
+  if (!docs.length || docs.length > 60) return {ok: false, error: 'bad'};
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var by = {};
+    docs.forEach(function (d) { if (SPEC[d.coll] && d.id && d.data) (by[d.coll] = by[d.coll] || []).push(d); });
+    Object.keys(by).forEach(function (coll) {
+      var sh = sheet_(coll), cols = SPEC[coll].cols, last = Math.max(sh.getLastRow(), 1);
+      var ids = sh.getRange(1, 1, last, 1).getDisplayValues(), pos = {};
+      for (var i = 1; i < last; i++) pos[ids[i][0]] = i + 1;
+      var add = [];
+      by[coll].forEach(function (d) {
+        var doc = JSON.parse(JSON.stringify(d.data)); doc.id = String(d.id);
+        if (coll === 'requests') doc.summary = summary_(doc);
+        var row = cols.map(function (c) { return toCell_(c[1], doc[c[0]]); });
+        if (pos[doc.id]) { var rg = sh.getRange(pos[doc.id], 1, 1, cols.length); rg.setNumberFormat('@'); rg.setValues([row]); }
+        else add.push(row);
+      });
+      if (add.length) { var rg2 = sh.getRange(last + 1, 1, add.length, cols.length); rg2.setNumberFormat('@'); rg2.setValues(add); }
+    });
+    return {ok: true, ver: bump_(), n: docs.length};
+  } finally { lock.releaseLock(); }
 }
 
 function write_(me, b) {
