@@ -732,12 +732,17 @@ function objBars(day){
   return barsHtml(rows);
 }
 function carrierBars(day){
-  var m={};
+  var m={},f={};
   dayRequests(day).forEach(function(r){(r.items||[]).forEach(function(it){var a=it.assigned||{};
     (a.hired||[]).forEach(function(h){m[h.carrier]=(m[h.carrier]||0)+(+h.count||0)});
-    if(a.agreed&&a.agreed!=='перенос из Excel')m[a.agreed]=(m[a.agreed]||0)+(+it.count||0)})});
+    if(a.agreed&&a.agreed!=='перенос из Excel')m[a.agreed]=(m[a.agreed]||0)+(+it.count||0);
+    if(it.fact)(it.fact.hired||[]).forEach(function(h){var n=h.carrier||'без перевозчика (экология, бесплатный вывоз, реализация)';f[n]=(f[n]||0)+num(h.vol)})})});
   var rows=Object.keys(m).map(function(k){return {name:k,own:0,hired:m[k]}}).sort(function(a,b){return b.hired-a.hired});
-  return barsHtml(rows);
+  var frows=Object.keys(f).map(function(k){return {name:k,own:0,hired:Math.round(f[k])}}).sort(function(a,b){return b.hired-a.hired});
+  var h='';
+  if(rows.length)h+='<div class="small muted" style="margin-bottom:4px">заказано машин</div>'+barsHtml(rows);
+  if(frows.length)h+='<div class="small muted" style="margin:'+(rows.length?'12px':'0')+' 0 4px">вывезено по факту, м³</div>'+barsHtml(frows);
+  return h||barsHtml([]);
 }
 function materialBars(day){
   var m={};
