@@ -157,6 +157,7 @@ pre.gp{white-space:pre-wrap;font:13px/1.45 var(--f-num);background:var(--sunk);b
 .toggles{display:flex;flex-wrap:wrap;gap:8px 16px}
 .toggles label{display:flex;gap:6px;align-items:center;font-size:15px}
 .toggles input{width:20px;height:20px;min-height:0}
+.donebox{display:flex;gap:10px;align-items:center;padding:12px;border:2px solid var(--line);border-radius:10px;margin:0;font-weight:600;cursor:pointer}.donebox input{width:22px;height:22px;flex:none}.donebox:has(input:checked){border-color:var(--warn);background:var(--sunk)}
 .foot{margin-top:18px;text-align:center;font-size:12px;color:var(--muted)}
 .foot a{color:var(--muted)}
 .banner.okb{border-left-color:var(--ok)}
@@ -390,6 +391,12 @@ td.src small{display:block;color:var(--muted);font-size:11px}
       <div id="f-dt"></div>
       <button type="button" class="btn small" id="f-dt-add">+ Добавить простой / ремонт</button>
       <div class="hint">Вид: простой, ремонт или ТО. Укажите, что стояло, сколько часов и причину. У простоя обязательно — по чьей вине: простои по вине генподрядчика и заказчика — основание для продления срока.</div>
+    </section>
+
+    <section class="card" id="c-done">
+      <h2><span><span class="num"></span>. Завершение объекта</span></h2>
+      <label class="donebox"><input type="checkbox" id="f-done"> Работы на объекте завершены</label>
+      <div class="hint">Ставьте галочку только в последнем рапорте, когда все работы на объекте закончены. Руководство получит уведомление, проверит и подтвердит. Если поставили по ошибке — снимите и сохраните рапорт заново.</div>
     </section>
 
     <section class="card" id="c-send">
@@ -693,7 +700,7 @@ function startForm(cfg){
   $("h-haul-t").textContent=HL.t;$("hs-haul-t").textContent=HL.t;$("hs-haul-c").textContent="Материал / "+HL.c.toLowerCase();$("hs-haul-u").textContent=HL.tn?"рейсов / м³ / т":"рейсов / м³";
   $("f-haul-add").textContent="+ Добавить: "+HL.c.toLowerCase();$("f-haul-hint").textContent="Строки подставлены из прошлой смены — впишите объёмы.";
   {const hd=$("h-haul-hd");if(HL.tn){hd.innerHTML="<span></span>";hd.style.display="block";hd.firstChild.textContent=HL.c+", ниже — материал, ниже — рейсов · м³ · т";}else hd.firstChild.textContent=HL.c+", ниже — материал";}
-  let n=1;["c-haul","c-mdi","c-subs","c-mach","c-dt","c-send"].forEach(id=>{if(!$(id).hidden){n++;$(id).querySelector(".num").textContent=n;}});
+  let n=1;["c-haul","c-mdi","c-subs","c-mach","c-dt","c-done","c-send"].forEach(id=>{if(!$(id).hidden){n++;$(id).querySelector(".num").textContent=n;}});
   // подсказки
   const dl=(id,arr)=>{const d=$(id);d.innerHTML="";arr.forEach(v=>{const o=document.createElement("option");o.value=v;d.appendChild(o);});};
   dl("sub-list",cfg.subs||[]);dl("mach-list",(cfg.mach&&cfg.mach.length)?cfg.mach:DEF_MACH);
@@ -873,6 +880,7 @@ function loadForm(){fillForemen();
     (r.extra||[]).forEach(e=>addWork({other:true,n:e.n,u:e.u,v:e.v}));}
   if(!$("f-works").children.length)addWork();
   val("p-mdi",r&&r.people?r.people.own:null);
+  $("f-done").checked=!!(r&&r.done);
   {const idle=!!(r&&r.idle);$("f-idle").checked=idle;document.body.classList.toggle("is-idle",idle);val("f-other",r?(idle?String(r.other||"").replace(/^Работ не было\.? ?/,""):r.other):"");}
   const fill=(box,hint,arr,add,fn,strip)=>{$(box).innerHTML="";$(hint).hidden=true;
     if(r)arr(r).forEach(add);else{const p=prevWith(arr);if(p){arr(p).forEach(d=>add(strip(d)));$(hint).hidden=false;}}
@@ -907,6 +915,7 @@ function collect(){
   o.trips=o.haul.reduce((s,h)=>s+(h.t||0),0)||null;
   if(!$("c-dt").hidden)document.querySelectorAll("#f-dt .dt").forEach(row=>{const i=row.querySelectorAll("input");const sel=row.querySelector("select");const d={k:row.dataset.k||"Простой",what:i[0].value.trim(),h:num(i[1].value),why:i[2].value.trim(),fault:sel.value};if(d.what||d.h||d.why)o.downtime.push(d);});
   o.other=$("f-other").value.trim();
+  if($("f-done").checked)o.done=true;
   if($("f-idle").checked){o.idle=true;o.works={};o.extra=[];o.haul=[];o.trips=null;o._bad=[];o.other="Работ не было"+(o.other?". "+o.other:"");}
   o.id=o.date+"_"+o.shift+"_"+slug(o.foreman);
   return o;
@@ -974,6 +983,7 @@ function shiftText(o){
   L.push("ЛЮДИ: "+(pp.length?pplOf(o)+" чел. ("+pp.join(", ")+")":"не указаны"));
   if(!$("c-mach").hidden){if(!o.mach.length)L.push("ТЕХНИКА: нет");else{L.push("ТЕХНИКА: "+fmt(o.mach.reduce((a,m)=>a+(m.h||0),0))+" маш.-ч");o.mach.forEach(m=>L.push("• "+m.n+(m.q>1?" ×"+m.q:"")+" — "+(m.h!=null?fmt(m.h)+" ч":"часы не указаны")));}}
   if(!$("c-dt").hidden){if(!o.downtime.length)L.push("ПРОСТОЕВ И РЕМОНТОВ НЕТ");else{L.push("ПРОСТОИ И РЕМОНТ: "+fmt(o.downtime.reduce((a,d)=>a+(d.h||0),0))+" ч");o.downtime.forEach(d=>L.push("• "+(d.k||"Простой")+": "+(d.what||"")+" — "+fmt(d.h)+" ч"+(d.why?", "+d.why:"")+(d.fault?" (вина: "+d.fault+")":"")));}}
+  if(o.done){L.push("");L.push("РАБОТЫ НА ОБЪЕКТЕ ЗАВЕРШЕНЫ");}
   {const ot=o.idle?o.other.replace(/^Работ не было\.? ?/,""):o.other;if(ot){L.push("");L.push("ПРИМЕЧАНИЕ: "+ot);}}
   return L.join("\n");
 }
