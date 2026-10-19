@@ -146,19 +146,19 @@ pre.gp{white-space:pre-wrap;font:13px/1.45 var(--f-num);background:var(--sunk);b
 .dnav .btn{min-height:44px;padding:0;font-size:20px}
 .dlab{text-align:center;font-weight:600}
 .dlab small{display:block;font-weight:400;color:var(--muted);font-size:12px}
-.sum{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
-.sum div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 8px;text-align:center}
+.sum{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;margin-top:12px}
+.sum div{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 3px;text-align:center;min-width:0}
 .sum b{display:block;font:600 28px/1.1 var(--f-num)}
-.sum span{font-size:12px;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
+.sum span{font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:5px}
 .lamp{flex:none;display:inline-grid;place-items:center;border-radius:50%;color:#fff;font:700 14px/1 var(--f-ui);width:18px;height:18px}
 .lamp.big{width:44px;height:44px;font-size:24px;box-shadow:0 0 0 4px color-mix(in srgb,currentColor 0%,var(--surface))}
 .lamp.sm{width:12px;height:12px;font-size:0}
-.l-r{background:var(--s-r)}.l-y{background:var(--s-y);color:#3a2a00}.l-g{background:var(--s-g)}.l-n{background:var(--s-n)}
+.l-r{background:var(--s-r)}.l-y{background:var(--s-y);color:#3a2a00}.l-g{background:var(--s-g)}.l-n{background:var(--s-n)}.l-c{background:#5f6b5c}
 .grid{display:grid;gap:12px;margin-top:12px}
 @media (min-width:860px){.grid{grid-template-columns:1fr 1fr}}
 .oc{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--s-n);border-radius:var(--r);padding:12px 14px;cursor:pointer;text-align:left;font:inherit;color:inherit;width:100%;display:block}
 .oc:hover{border-color:var(--muted)}
-.oc.r{border-left-color:var(--s-r)}.oc.y{border-left-color:var(--s-y)}.oc.g{border-left-color:var(--s-g)}
+.oc.c{border-left-color:#5f6b5c;background:#f4f6f3}.cl-h{margin:18px 2px 6px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.oc.r{border-left-color:var(--s-r)}.oc.y{border-left-color:var(--s-y)}.oc.g{border-left-color:var(--s-g)}
 .oc-h{display:flex;gap:12px;align-items:flex-start}
 .oc-h .t{min-width:0;flex:1}
 .oc-h b{font-size:17px;line-height:1.25;display:block}
@@ -274,6 +274,7 @@ table.wt{width:100%;border-collapse:collapse;font-size:14px}
       <p><span class="lamp sm l-y"></span> <b>Жёлтый:</b> нет рапорта за рабочий день; простои от 8 ч за 7 дней или любой простой по вине заказчика/генподрядчика; объём за неделю меньше 2/3 прошлой недели; прогноз окончания ближе 7 дней к сроку; отставание от графика от 5 п.п.</p>
       <p><span class="lamp sm l-g"></span> <b>Зелёный:</b> рапорт сдан, простоев мало, темп не упал, по срокам успеваем.</p>
       <p><span class="lamp sm l-n"></span> <b>Серый:</b> данных пока мало (сравнение недель — после 2 недель рапортов; прогноз — после 3 дней; без срока в паспорте прогноз не сравнивается со сроком).</p>
+      <p><span class="lamp sm l-c"></span> <b>Закрыт:</b> работы завершены, итоговый отчёт отправлен. Срок, темп и простои не оцениваются; объект показан в конце списка.</p>
       <p>«% выполнения» — среднее по работам паспорта, у которых задан объём по проекту (без машино-часов, мобилизации и строк «в т.ч.»).</p>
     </details>
     <div class="grid" id="list"><div class="empty">Загрузка…</div></div>
@@ -313,7 +314,7 @@ const fmt=(v,d)=>{if(v===null||v===undefined||v===""||isNaN(v))return "—";retu
 const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;};
 const SVG="http://www.w3.org/2000/svg";
 const sv=(tag,a)=>{const e=document.createElementNS(SVG,tag);for(const k in a)e.setAttribute(k,a[k]);return e;};
-const LAB={r:"Красный",y:"Жёлтый",g:"Зелёный",n:"Нет данных"},ICO={r:"✕",y:"!",g:"✓",n:"–"};
+const LAB={r:"Красный",y:"Жёлтый",g:"Зелёный",n:"Нет данных",c:"Закрыт"},ICO={r:"✕",y:"!",g:"✓",n:"–",c:"■"};
 const lamp=(l,cls)=>{const s=el("span","lamp l-"+l+(cls?" "+cls:""),cls==="sm"?"":ICO[l]);s.setAttribute("role","img");s.setAttribute("aria-label",LAB[l]);s.title=LAB[l];return s;};
 const h=new URLSearchParams(location.hash.slice(1));
 let db=null;
@@ -329,7 +330,7 @@ async function load(quiet){
   try{const q={k:db.k,a:"exec"};if(date)q.date=date;
     const r=await fetch(db.u+(db.u.includes("?")?"&":"?")+new URLSearchParams(q),{redirect:"follow"});const j=await r.json();
     if(!j.ok)throw new Error(j.error==="action"||j.error==="key"?"доступ закрыт или скрипт базы не обновлён (нужна новая версия развертывания)":(j.error||"ошибка"));
-    M=j;date=j.date;status("");render();}
+    M=j;M.objects.forEach(o=>{if(o.closed)o.light="c";});date=j.date;status("");render();}
   catch(e){status("Не удалось загрузить: "+(e.message||"нет связи"),"bad");}
 }
 function dateLab(){const t=todayISO();$("d-lab").innerHTML="";$("d-lab").appendChild(document.createTextNode("за "+ru(date)));
@@ -339,15 +340,15 @@ function render(){dateLab();if(mode==="wk"){renderWk();return;}$("v-wk").hidden=
 
 /* ---------- список ---------- */
 function showList(){$("v-list").hidden=false;$("v-obj").hidden=true;
-  const s=$("sum");s.innerHTML="";["r","y","g","n"].forEach(l=>{const d=el("div");const b=el("b",null,String(M.counts[l]||0));const sp=el("span");sp.appendChild(lamp(l,"sm"));sp.appendChild(document.createTextNode(LAB[l]));d.appendChild(b);d.appendChild(sp);s.appendChild(d);});
+  const s=$("sum");s.innerHTML="";["r","y","g","n","c"].forEach(l=>{const d=el("div");const b=el("b",null,String(M.counts[l]||0));const sp=el("span");sp.appendChild(lamp(l,"sm"));sp.appendChild(document.createTextNode(LAB[l]));d.appendChild(b);d.appendChild(sp);s.appendChild(d);});
   const L=$("list");L.innerHTML="";if(!M.objects.length){L.appendChild(el("div","empty","Объектов с рапортами нет"));return;}
-  M.objects.forEach(o=>L.appendChild(card(o)));}
+  let ch=false;M.objects.forEach(o=>{if(o.closed&&!ch){ch=true;L.appendChild(el("div","cl-h","Закрытые объекты"));}L.appendChild(card(o));});}
 function card(o){
   const b=el("button","oc "+o.light);b.type="button";b.onclick=()=>{cur=o.pid;keep();showObj(o);scrollTo(0,0);};
   const hd=el("div","oc-h");hd.appendChild(lamp(o.light,"big"));const t=el("div","t");t.appendChild(el("b",null,o.short));
   if(o.kind)t.appendChild(el("div","k",o.kind));t.appendChild(el("div","lab",LAB[o.light]));hd.appendChild(t);b.appendChild(hd);
   const bad=o.reasons.filter(x=>x.l==="r"||x.l==="y");const ul=el("ul","rs");
-  (bad.length?bad:[{l:o.light==="n"?"n":"g",t:o.light==="n"?(o.reasons[0]||{}).t||"Данных мало":"Замечаний нет"}]).forEach(x=>{const li=el("li");li.appendChild(lamp(x.l,"sm"));li.appendChild(el("span",null,x.t));ul.appendChild(li);});
+  (bad.length?bad:[{l:(o.light==="n"||o.light==="c")?"n":"g",t:(o.light==="n"||o.light==="c")?(o.reasons[0]||{}).t||"Данных мало":"Замечаний нет"}]).forEach(x=>{const li=el("li");li.appendChild(lamp(x.l,"sm"));li.appendChild(el("span",null,x.t));ul.appendChild(li);});
   b.appendChild(ul);
   if(o.pct!==null){const p=el("div","pbar");const i=el("i");i.style.width=Math.min(100,o.pct)+"%";p.appendChild(i);b.appendChild(p);}
   const kp=el("div","kp");const add=(l,v)=>{const s=el("span",null,l+" ");s.appendChild(el("b",null,v));kp.appendChild(s);};
