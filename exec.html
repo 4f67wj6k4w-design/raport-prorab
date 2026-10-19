@@ -350,14 +350,14 @@ function card(o){
   const bad=o.reasons.filter(x=>x.l==="r"||x.l==="y");const ul=el("ul","rs");
   (bad.length?bad:[{l:(o.light==="n"||o.light==="c")?"n":"g",t:(o.light==="n"||o.light==="c")?(o.reasons[0]||{}).t||"Данных мало":"Замечаний нет"}]).forEach(x=>{const li=el("li");li.appendChild(lamp(x.l,"sm"));li.appendChild(el("span",null,x.t));ul.appendChild(li);});
   b.appendChild(ul);
-  if(o.pct!==null){const p=el("div","pbar");const i=el("i");i.style.width=Math.min(100,o.pct)+"%";p.appendChild(i);b.appendChild(p);}
+  if(o.pct!==null&&!o.closed){const p=el("div","pbar");const i=el("i");i.style.width=Math.min(100,o.pct)+"%";p.appendChild(i);b.appendChild(p);}
   const kp=el("div","kp");const add=(l,v)=>{const s=el("span",null,l+" ");s.appendChild(el("b",null,v));kp.appendChild(s);};
-  if(o.pct!==null)add("выполнено",fmt(o.pct,0)+"%");
+  if(o.pct!==null&&!o.closed)add("выполнено",fmt(o.pct,0)+"%");
   if(o.day){if(o.day.people!=null)add("людей",fmt(o.day.people,0));if(o.day.mach)add("техники",fmt(o.day.mach,0));if(o.day.m3)add("вывоз",fmt(o.day.m3,0)+" м³");}
-  if(o.due)add("срок",ru(o.due));
+  if(o.due&&!o.closed)add("срок",ru(o.due));
   if(kp.children.length)b.appendChild(kp);
   if(o.series){b.appendChild(spark(o));b.appendChild(el("div","k","люди на объекте за 14 дней"));}
-  const ch=el("span","chip"+(o.today?" ok":""),o.today?"Сегодня рапорт есть":"Сегодня рапорта пока нет");b.appendChild(ch);
+  const ch=el("span","chip"+(o.today?" ok":""),o.today?"Сегодня рапорт есть":"Сегодня рапорта пока нет");if(!o.closed)b.appendChild(ch);
   return b;}
 function spark(o){const v=o.series.people.slice(-14),dd=M.dates.slice(-14),n=v.length,mx=Math.max(1,...v.map(x=>x||0));const W=300,H=34;
   const s=sv("svg",{viewBox:"0 0 "+W+" "+H,class:"spark",preserveAspectRatio:"none",role:"img","aria-label":"Люди на объекте за 14 дней"});const bw=W/n;
