@@ -366,7 +366,11 @@ function recalcFact(){
   F.own.forEach(function(o){vo+=num(o.vol);if(o.kind==='Рейсы')tr+=num(o.trips)});
   F.hired.forEach(function(h){vh+=num(h.vol)});
   var el=document.getElementById('ftot');
-  if(el)el.innerHTML='Вывезено: <b>'+r1(vo+vh)+' м³</b> (Рено '+r1(vo)+', перевозчики '+r1(vh)+') · рейсов Рено: <b>'+tr+'</b>'+(num(F.km)&&tr?' · пробег ≈ <b>'+Math.round(num(F.km)*tr*ROUTE_K)+' км</b>':'');
+  var dif='';
+  if(F.rapOwn!==undefined&&F.rapOwn!==''&&F.own.length){var d1=vo-num(F.rapOwn);dif+='<br>Рено: прораб написал <b>'+r1(num(F.rapOwn))+'</b>, диспетчер принял <b>'+r1(vo)+'</b>'+(Math.abs(d1)>0.01?' → <span class="'+(d1>0?'':'')+'" style="color:var(--warn);font-weight:600">изменено на '+(d1>0?'+':'')+r1(d1)+' м³</span>':' (совпадает)')}
+  var dh=0,hasDh=false;F.hired.forEach(function(h){if(h.rap!==undefined&&h.rap!==''){hasDh=true;dh+=num(h.vol)-num(h.rap)}});
+  if(hasDh)dif+='<br>Перевозчики: разница «принято − рапорт» <b>'+(dh>0?'+':'')+r1(dh)+' м³</b>';
+  if(el)el.innerHTML='Вывезено (принято диспетчером): <b>'+r1(vo+vh)+' м³</b> (Рено '+r1(vo)+', перевозчики '+r1(vh)+') · рейсов Рено: <b>'+tr+'</b>'+(num(F.km)&&tr?' · пробег ≈ <b>'+Math.round(num(F.km)*tr*ROUTE_K)+' км</b>':'')+dif;
 }
 function renderFactModal(){
   var host=$('#modalHost');var M=st.modal;var F=M.f;
@@ -392,10 +396,11 @@ function renderFactModal(){
     });
     var used={};F.own.forEach(function(o){used[o.id]=1});
     h+='<div style="margin-top:8px"><select data-chg="fOwnAdd"><option value="">+ добавить машину…</option>'+S.fleet.filter(function(v){return v.kind==='sam'&&!used[v.id]}).map(function(v){return '<option value="'+v.id+'">'+esc(v.name)+(v.bort?' (борт '+esc(v.bort)+')':'')+'</option>'}).join('')+'</select></div>';
+    h+='<div style="display:grid;grid-template-columns:minmax(0,1fr) 140px;gap:8px;margin-top:10px;align-items:center"><div class="small muted">Объём Рено <b>по рапорту прораба</b>, м³ (если отличается от пересчёта диспетчера выше, оставьте оба числа)</div><input id="frapown" type="number" min="0" step="0.5" data-inp="fRapOwn" value="'+esc(F.rapOwn===undefined?'':F.rapOwn)+'" placeholder="по рапорту, м³" aria-label="Объём Рено по рапорту прораба"></div>';
   }
-  h+='<div style="margin-top:14px"><b>Перевозчики</b> <span class="small muted">сколько м³ вывезли</span></div>';
+  h+='<div style="margin-top:14px"><b>Перевозчики</b> <span class="small muted">«принято» — объём, который подтвердил диспетчер; «по рапорту» — что написал прораб</span></div>';
   F.hired.forEach(function(x,i){
-    h+='<div style="display:grid;grid-template-columns:minmax(0,1fr) 90px 70px auto;gap:6px;margin-top:6px;align-items:center"><select data-chg="fHireCar" data-i="'+i+'">'+carrierOptions(x.carrier)+'</select><input type="number" min="0" step="0.5" data-inp="fHireVol" data-i="'+i+'" value="'+esc(x.vol)+'" placeholder="м³" aria-label="Объём, м³"><input type="number" min="0" data-inp="fHireTrips" data-i="'+i+'" value="'+esc(x.trips)+'" placeholder="рейс." aria-label="Рейсов"><button class="link" data-act="fHireRm" data-v="'+i+'">убрать</button></div>';
+    h+='<div style="display:grid;grid-template-columns:minmax(0,1fr) 92px 92px 64px auto;gap:6px;margin-top:6px;align-items:center"><select data-chg="fHireCar" data-i="'+i+'">'+carrierOptions(x.carrier)+'</select><input type="number" min="0" step="0.5" data-inp="fHireVol" data-i="'+i+'" value="'+esc(x.vol)+'" placeholder="принято" title="Принято диспетчером, м³" aria-label="Принято диспетчером, м³"><input type="number" min="0" step="0.5" data-inp="fHireRap" data-i="'+i+'" value="'+esc(x.rap===undefined?'':x.rap)+'" placeholder="по рапорту" title="По рапорту прораба, м³" aria-label="По рапорту прораба, м³"><input type="number" min="0" data-inp="fHireTrips" data-i="'+i+'" value="'+esc(x.trips)+'" placeholder="рейс." aria-label="Рейсов"><button class="link" data-act="fHireRm" data-v="'+i+'">убрать</button></div>';
   });
   h+='<button class="btn sm" style="margin-top:8px" data-act="fHireAdd">+ перевозчик</button>';
   h+='<label class="f" for="fnote">Примечание</label><textarea id="fnote" data-inp="fNote" placeholder="Например: часть рейсов на другой полигон, простой, расхождение с рапортом прораба">'+esc(F.note||'')+'</textarea>';
@@ -408,9 +413,10 @@ function saveFact(){
   var M=st.modal,F=M.f;var r=byId(S.requests,M.rid);if(!r)return;
   var items=clone(r.items);var it=items.filter(function(x){return x.id===M.iid})[0];
   var own=F.own.filter(function(o){return o.driver||num(o.trips)||num(o.hours)||num(o.vol)||o.kind!=='Рейсы'}).map(function(o){return {id:o.id,driver:o.driver,kind:o.kind,trips:num(o.trips),hours:num(o.hours),vol:num(o.vol)}});
-  var hired=F.hired.filter(function(h){return h.carrier||num(h.vol)}).map(function(h){return {carrier:h.carrier,vol:num(h.vol),trips:num(h.trips)}});
+  var hired=F.hired.filter(function(h){return h.carrier||num(h.vol)}).map(function(h){var x={carrier:h.carrier,vol:num(h.vol),trips:num(h.trips)};if(h.rap!==undefined&&h.rap!=='')x.rap=num(h.rap);return x});
   var m=me();
   var fact={dest:F.dest||'',km:num(F.km)||0,own:own,hired:hired,note:F.note||'',at:nowStr(),by:m?m.name:''};
+  if(F.rapOwn!==undefined&&F.rapOwn!=='')fact.rapOwn=num(F.rapOwn);
   if(!own.length&&!hired.length&&!fact.dest)delete it.fact;else it.fact=fact;
   var newRoute=F.dest&&fact.km&&objDName(r.object)&&!findRoute(r.object,F.dest);
   var tot=factTotals(it);
@@ -889,7 +895,7 @@ function perRange(){
   return {kind:kind,from:r.from,to:r.to,prev:prev,partial:partial,label:perLabel(kind,r)};
 }
 function aggr(from,to){
-  var A={own:0,hired:0,trips:0,km:0,hours:0,work:0,repair:0,nodrv:0,days:{},obj:{},car:{},truck:{},drv:{},mat:{},perDay:{},tday:{},tripsPerWorkDay:0};
+  var A={own:0,hired:0,trips:0,km:0,hours:0,work:0,repair:0,nodrv:0,days:{},obj:{},car:{},truck:{},drv:{},mat:{},perDay:{},tday:{},tripsPerWorkDay:0,rapN:0,rapSum:0,rapAcc:0,diffs:[]};
   var tday={};
   S.requests.forEach(function(r){
     if(r.date<from||r.date>to)return;
@@ -898,6 +904,8 @@ function aggr(from,to){
       var pd=A.perDay[r.date]||(A.perDay[r.date]={own:0,hired:0});
       var mt=it.material||'без названия';var mm=A.mat[mt]||(A.mat[mt]={vol:0});
       var ob=A.obj[r.object]||(A.obj[r.object]={own:0,hired:0,trips:0,km:0});
+      if(f.rapOwn!==undefined&&f.rapOwn!==''&&(f.own||[]).length){var acc0=0;(f.own||[]).forEach(function(o){acc0+=num(o.vol)});A.rapN++;A.rapSum+=num(f.rapOwn);A.rapAcc+=acc0;if(Math.abs(acc0-num(f.rapOwn))>0.01)A.diffs.push({d:r.date,o:r.object,who:'Рено',rap:num(f.rapOwn),acc:acc0})}
+      (f.hired||[]).forEach(function(h){if(h.rap!==undefined&&h.rap!==''){A.rapN++;A.rapSum+=num(h.rap);A.rapAcc+=num(h.vol);if(Math.abs(num(h.vol)-num(h.rap))>0.01)A.diffs.push({d:r.date,o:r.object,who:h.carrier||'без перевозчика',rap:num(h.rap),acc:num(h.vol)})}});
       (f.own||[]).forEach(function(o){
         var v=num(o.vol),tr=(o.kind==='Рейсы'||!o.kind)?num(o.trips):0,km=num(f.km)*tr*ROUTE_K;
         A.own+=v;A.trips+=tr;A.km+=km;A.hours+=num(o.hours);ob.own+=v;ob.trips+=tr;ob.km+=km;pd.own+=v;mm.vol+=v;
@@ -1073,6 +1081,16 @@ function renderSvodka(){
   var TB3='<section class="card"><h2>По самосвалам Renault</h2>'+svodTable(['Гос. номер','Вывезено, м³','Рейсов','Пробег, км','Дней в работе','Ремонт/ТО','Без водителя','В работе'],trRows)+'</section>';
   var dvRows=Object.keys(A.drv).map(function(k){return [k,A.drv[k]]}).sort(function(a,b){return b[1].vol-a[1].vol}).map(function(o){return [o[0],fmt(o[1].vol),fmt(o[1].trips),fmt(Object.keys(o[1].days).length),fmt(Object.keys(o[1].days).length?o[1].vol/Object.keys(o[1].days).length:0)]});
   var TB4='<section class="card"><h2>По водителям</h2>'+svodTable(['Водитель','Вывезено, м³','Рейсов','Выходов','м³ за выход'],dvRows)+'</section>';
+  var CTRL='';
+  if(A.rapN){var dd=A.rapAcc-A.rapSum,dp=A.rapSum?dd/A.rapSum*100:0;
+    var drows=A.diffs.slice().sort(function(a,b){return Math.abs(b.acc-b.rap)-Math.abs(a.acc-a.rap)}).slice(0,12).map(function(x){var d=x.acc-x.rap;return [ruDate(x.d).slice(0,5)+' · '+objShort(x.o)+' · '+x.who,fmt(x.rap,1),fmt(x.acc,1),'<span class="'+(d>0?'':'warnc')+'">'+(d>0?'+':'')+fmt(d,1)+'</span>']});
+    CTRL='<div class="secttl">Контроль объёмов: рапорт прораба и диспетчер</div><div class="tiles">'
+     +tile('По рапортам прорабов',fmt(A.rapSum),'м³','<span class="muted">по '+A.rapN+' позициям, где внесён рапорт</span>')
+     +tile('Принято диспетчерами',fmt(A.rapAcc),'м³','<span class="muted">по тем же позициям</span>')
+     +tile('Разница',(dd>0?'+':'')+fmt(dd),'м³','<em>'+(dd>0?'+':'')+fmt(dp,1)+'%</em> <span class="muted">к рапорту</span>')
+     +tile('Позиций с правкой',fmt(A.diffs.length),'','<span class="muted">из '+A.rapN+' с рапортом</span>')+'</div>'
+     +'<div class="card" style="margin-top:8px"><h2>Самые большие правки диспетчеров, м³</h2>'+svodTable(['Дата · объект · кто','По рапорту','Принято','Правка'],drows)+'</div>';
+  }
   var MONEY='<div class="note">Деньги (выручка, зарплата, долги перевозчикам, прибыль) появятся в сводке после согласования расчётов с коммерческим директором.</div>';
   if(view==='short'){
     h+='<div class="secttl">Главное за период</div><div class="tiles">'+tile('Вывезено всего',fmt(tot),'м³',dsub(tot,ptot,hp),{hero:1})+tile('Свои Рено',fmt(A.own),'м³',dsub(A.own,P&&P.own,hp))+tile('Перевозчики и прочее',fmt(A.hired),'м³',dsub(A.hired,P&&P.hired,hp))+tile('Рено в работе',fmt(ktg,1),'%','<span class="muted">доля машино-дней</span>')+'</div>';
@@ -1084,7 +1102,7 @@ function renderSvodka(){
   }else{
     h+='<div class="secttl">Вывоз за период</div><div class="tiles">'+T1+'</div>';
     h+='<div class="secttl">Парк Renault</div><div class="tiles">'+T2+'</div>';
-    h+='<div class="secttl">Деньги</div>'+MONEY;
+    h+=CTRL+'<div class="secttl">Деньги</div>'+MONEY;
     h+='<div class="sgrid" style="margin-top:12px">'+C1+C2+C3+C4+C6+C5+'</div>';
     h+='<div class="sgrid">'+C7.replace('<section class="card">','<section class="card" style="grid-column:1/-1">')+TB1+TB2+TB3+TB4+'</div>';
   }
@@ -1233,6 +1251,8 @@ document.addEventListener('input',function(e){
     case 'fOwnHours':st.modal.f.own[+t.getAttribute('data-i')].hours=t.value;break;
     case 'fOwnVol':{var ov=st.modal.f.own[+t.getAttribute('data-i')];ov.vol=t.value;ov.man=true;recalcFact();break}
     case 'fHireVol':st.modal.f.hired[+t.getAttribute('data-i')].vol=t.value;recalcFact();break;
+    case 'fHireRap':st.modal.f.hired[+t.getAttribute('data-i')].rap=t.value;recalcFact();break;
+    case 'fRapOwn':st.modal.f.rapOwn=t.value;recalcFact();break;
     case 'fHireTrips':st.modal.f.hired[+t.getAttribute('data-i')].trips=t.value;break;
     case 'fNote':st.modal.f.note=t.value;break;
     case 'mHireCnt':st.modal.hired[+t.getAttribute('data-i')].count=+t.value;break;
