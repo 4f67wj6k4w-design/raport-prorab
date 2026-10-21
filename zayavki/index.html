@@ -1,23 +1,26 @@
 <!doctype html>
 <html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow">
 <title>Заявки на вывоз</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <style>
 /* Layout: узкая колонка для прораба, широкая двухколоночная сетка для диспетчера и директора. Палитра взята из прототипа: тёмно-зелёный, тёплый светлый фон. */
 :root{
-  --bg:#f3f2ec; --card:#ffffff; --fg:#1d2118; --muted:#6a705f; --line:#dad9cd; --soft:#ebeae0;
-  --accent:#2d6a1f; --accent-fg:#ffffff; --accent-soft:#e0edd7;
-  --warn:#9c4a14; --warn-soft:#f8e5d6; --bad:#a32a38; --bad-soft:#f6dcdf; --info:#2a5b86; --info-soft:#dde9f4;
-  --font:'Onest',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; --mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+  --brand:#2E671F; --bg:#eef1ec; --card:#ffffff; --fg:#18221a; --muted:#5a6758; --line:#cbd4c7; --soft:#e2e8df;
+  --accent:#2E671F; --accent-fg:#ffffff; --accent-soft:#dbe8d6;
+  --warn:#b26b00; --warn-soft:#f6e6cc; --bad:#b3362c; --bad-soft:#f6dcd9; --info:#2a5b86; --info-soft:#dde9f4;
+  --c-plan:#4a86e8; --c-fact:#2E671F; --c-rest:#cbd4c7;
+  --font:'IBM Plex Sans Condensed','Arial Narrow',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif; --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#14170f; --card:#1d2117; --fg:#e8eadf; --muted:#9aa18c; --line:#32382a; --soft:#262b1e;
-  --accent:#6fb85a; --accent-fg:#0f1a0b; --accent-soft:#25371d;
-  --warn:#e5a06b; --warn-soft:#3a2818; --bad:#ec8591; --bad-soft:#3d1d22; --info:#8fbbe6; --info-soft:#1b2f43; color-scheme:dark}}
+  --brand:#2E671F; --bg:#111612; --card:#1a211b; --fg:#e6ede5; --muted:#9aa898; --line:#344035; --soft:#232c24;
+  --accent:#5f9e4b; --accent-fg:#0c1709; --accent-soft:#243a1f;
+  --warn:#e3a33c; --warn-soft:#3a2d14; --bad:#ec6a5e; --bad-soft:#3d1d22; --info:#8fbbe6; --info-soft:#1b2f43;
+  --c-fact:#6aa84f; --c-rest:#3a463b; color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#14170f; --card:#1d2117; --fg:#e8eadf; --muted:#9aa18c; --line:#32382a; --soft:#262b1e;
-  --accent:#6fb85a; --accent-fg:#0f1a0b; --accent-soft:#25371d;
-  --warn:#e5a06b; --warn-soft:#3a2818; --bad:#ec8591; --bad-soft:#3d1d22; --info:#8fbbe6; --info-soft:#1b2f43; color-scheme:dark}
+  --brand:#2E671F; --bg:#111612; --card:#1a211b; --fg:#e6ede5; --muted:#9aa898; --line:#344035; --soft:#232c24;
+  --accent:#5f9e4b; --accent-fg:#0c1709; --accent-soft:#243a1f;
+  --warn:#e3a33c; --warn-soft:#3a2d14; --bad:#ec6a5e; --bad-soft:#3d1d22; --info:#8fbbe6; --info-soft:#1b2f43;
+  --c-fact:#6aa84f; --c-rest:#3a463b; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.4;padding-inline:16px;padding-block:0 40px}
 button,select,input,textarea{font:inherit;color:inherit}
@@ -111,6 +114,61 @@ th{color:var(--muted);font-weight:500;font-size:12px}
   .who select{flex:1}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* шапка как в отчёте ПТО */
+header{background:var(--brand);color:#fff;border-radius:14px;padding:12px 16px;border:0;margin-top:12px}
+header .logo{background:#fff;color:var(--brand)}
+header .brand span,header .who{color:rgba(255,255,255,.8)}
+header .tabs{background:rgba(255,255,255,.14)}
+header .tab{color:rgba(255,255,255,.85)}
+header .tab[aria-selected="true"]{background:#fff;color:#18221a}
+/* сводка */
+.sv .persec{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center}
+.sv .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.sv .seg button{border:0;background:transparent;padding:9px 14px;cursor:pointer;font-weight:600;color:var(--fg);min-height:40px}
+.sv .seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.sv .pnav{display:flex;align-items:center;gap:6px}
+.sv .pnav .btn{padding:0;width:40px;height:40px;font-size:20px;line-height:1}
+.sv .plabel{min-width:150px;text-align:center;font-weight:700;font-size:16px}
+.sv .pdates{display:flex;gap:10px;flex-wrap:wrap;margin-left:auto;font-size:13px;color:var(--muted)}
+.sv .pdates input{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:8px;padding:7px 8px;min-height:40px}
+.sv .viewsw{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0 2px}
+.sv .secttl{font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:20px 0 8px;font-weight:600}
+.sv .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:8px}
+.sv .tl{background:var(--soft);border-radius:10px;padding:11px 13px;min-width:0}
+.sv .tl small{display:block;color:var(--muted);font-size:12px;line-height:1.3;min-height:2.4em}
+.sv .tl b{display:block;font-family:var(--mono);font-size:24px;font-weight:600;margin-top:2px;font-variant-numeric:tabular-nums}
+.sv .tl b u{text-decoration:none;font-size:13px;font-weight:400;color:var(--muted);margin-left:5px}
+.sv .tl.hero{background:var(--accent);color:var(--accent-fg)}
+.sv .tl.hero small,.sv .tl.hero b u,.sv .tl.hero .muted{color:rgba(255,255,255,.8)}
+.sv .tl.hero b{font-size:30px}
+.sv .tl .s{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4}
+.sv .tl .s em{font-style:normal;font-family:var(--mono);color:var(--fg);font-weight:600}
+.sv .tl .s em.ok{color:var(--accent)}.sv .tl .s em.bad,.sv .tl .s .warnc{color:var(--bad)}
+.sv .tl.hero .s em,.sv .tl.hero .s em.ok,.sv .tl.hero .s em.bad{color:#fff}
+.sv .note{background:var(--soft);border-left:4px solid var(--accent);border-radius:8px;padding:10px 12px;font-size:14px;color:var(--fg)}
+.sv .sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,520px),1fr));gap:12px;margin-top:12px}
+.sv .sgrid>.card{min-width:0;padding:14px;border-radius:12px}
+.sv .card h2{font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;font-weight:600}
+.sv .chart{width:100%;min-width:0}.sv .chart svg{display:block;width:100%;height:auto}
+.sv .chart .grid{stroke:var(--line);stroke-width:1;opacity:.6}
+.sv .chart .tick{font:11px var(--font);fill:var(--muted)}
+.sv .chart .dot{stroke:var(--card);stroke-width:2}
+.sv .legend i.ln{height:3px;width:16px;border-radius:0;vertical-align:3px}
+.sv .legend i.dash{height:0;width:16px;border-top:2px dashed currentColor;border-radius:0;vertical-align:3px;background:none}
+.sv .hb{display:flex;flex-direction:column;gap:8px}
+.sv .hb-r{display:grid;grid-template-columns:minmax(90px,32%) 1fr auto;gap:8px;align-items:center;font-size:13px}
+.sv .hb-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sv .hb-t{display:flex;height:14px;background:var(--soft);border-radius:0 4px 4px 0;overflow:hidden}
+.sv .hb-t i{display:block;height:100%}
+.sv .hb-v{font-family:var(--mono);font-size:12px;color:var(--muted);min-width:44px;text-align:right;white-space:nowrap}
+.sv .tablewrap{overflow-x:auto;max-width:100%}
+.sv table.t th,.sv table.t td{padding:7px 8px;white-space:nowrap}
+.sv table.t th.n,.sv table.t td.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.sv table.t th.l,.sv table.t td.l{text-align:left;white-space:normal;font-family:var(--font)}
+.sv table.t tbody tr:hover{background:var(--soft)}
+.sv table.t tfoot td{font-weight:700;border-top:2px solid var(--line)}
+@media (max-width:620px){.sv .pdates{margin-left:0}.sv .plabel{min-width:0;flex:1}}
 </style>
 
 <style>body{margin:0}</style></head><body>
@@ -784,84 +842,242 @@ function slug(s){var m={а:'a',б:'b',в:'v',г:'g',д:'d',е:'e',ё:'e',ж:'zh'
 
 
 /* ---------- сводка за период ---------- */
-var PERIODS=[['7','7 дней'],['30','30 дней'],['year','С начала года'],['all','Всё время'],['custom','Свой период']];
+var MONTHS=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+var MONTHS_G=['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+var PKINDS=[['week','Неделя'],['month','Месяц'],['quarter','Квартал'],['year','Год'],['all','Всё время']];
+var SVIEWS=[['full','Полная'],['short','Кратко'],['park','Парк и перевозчики']];
+function ruDate(k){var p=k.split('-');return p[2]+'.'+p[1]+'.'+p[0]}
+function dayDiff(a,b){return Math.round((parseKey(b)-parseKey(a))/86400000)}
+function perBounds(kind,off){
+  var t=new Date(),a,b;
+  if(kind==='week'){var d=addDays(t,off*7),w=(d.getDay()+6)%7;a=addDays(d,-w);b=addDays(a,6)}
+  else if(kind==='month'){a=new Date(t.getFullYear(),t.getMonth()+off,1);b=new Date(a.getFullYear(),a.getMonth()+1,0)}
+  else if(kind==='quarter'){var q=Math.floor(t.getMonth()/3)+off;a=new Date(t.getFullYear(),q*3,1);b=new Date(a.getFullYear(),a.getMonth()+3,0)}
+  else if(kind==='year'){a=new Date(t.getFullYear()+off,0,1);b=new Date(t.getFullYear()+off,11,31)}
+  return {from:dkey(a),to:dkey(b)};
+}
+function perLabel(kind,r){
+  var a=parseKey(r.from),b=parseKey(r.to);
+  if(kind==='week')return ruDate(r.from).slice(0,5)+' — '+ruDate(r.to).slice(0,5)+'.'+r.to.slice(0,4);
+  if(kind==='month')return MONTHS[a.getMonth()][0].toUpperCase()+MONTHS[a.getMonth()].slice(1)+' '+a.getFullYear();
+  if(kind==='quarter')return (Math.floor(a.getMonth()/3)+1)+' квартал '+a.getFullYear();
+  if(kind==='year')return a.getFullYear()+' год';
+  return ruDate(r.from)+' — '+ruDate(r.to);
+}
 function perRange(){
-  var t=new Date(),k=st.per||'30';var to=today(),from;
-  if(k==='7')from=dkey(addDays(t,-6));
-  else if(k==='30')from=dkey(addDays(t,-29));
-  else if(k==='year')from=t.getFullYear()+'-01-01';
-  else if(k==='custom'){from=st.perFrom||dkey(addDays(t,-29));to=st.perTo||to}
-  else{from='0000-00-00';to='9999-99-99'}
-  var prev=null;
-  if(k!=='all'){var a=parseKey(from),b=parseKey(to);var n=Math.round((b-a)/86400000)+1;prev={from:dkey(addDays(a,-n)),to:dkey(addDays(a,-1))}}
-  return {from:from,to:to,prev:prev};
+  var kind=st.pk||'month',off=st.pOff||0,t=today(),r,prev=null,partial=false;
+  if(kind==='all'){r={from:'0000-00-00',to:'9999-99-99'};return {kind:kind,from:r.from,to:r.to,prev:null,label:'Всё время'}}
+  if(kind==='custom'){
+    r={from:st.pFrom||dkey(addDays(new Date(),-29)),to:st.pTo||t};
+    var n=dayDiff(r.from,r.to)+1;prev={from:dkey(addDays(parseKey(r.from),-n)),to:dkey(addDays(parseKey(r.from),-1))};
+  }else{
+    r=perBounds(kind,off);var p=perBounds(kind,off-1);prev=p;
+    if(t>=r.from&&t<r.to){ /* период ещё идёт: сравниваем с тем же сроком прошлого */
+      partial=true;var el=dayDiff(r.from,t)+1;prev={from:p.from,to:dkey(addDays(parseKey(p.from),el-1))};
+    }
+  }
+  return {kind:kind,from:r.from,to:r.to,prev:prev,partial:partial,label:perLabel(kind,r)};
 }
 function aggr(from,to){
-  var A={own:0,hired:0,trips:0,km:0,hours:0,work:0,repair:0,nodrv:0,days:{},obj:{},car:{},truck:{},drv:{}};
+  var A={own:0,hired:0,trips:0,km:0,hours:0,work:0,repair:0,nodrv:0,days:{},obj:{},car:{},truck:{},drv:{},mat:{},perDay:{},tday:{},tripsPerWorkDay:0};
   var tday={};
   S.requests.forEach(function(r){
     if(r.date<from||r.date>to)return;
     (r.items||[]).forEach(function(it){
       var f=it.fact;if(!f)return;A.days[r.date]=1;
+      var pd=A.perDay[r.date]||(A.perDay[r.date]={own:0,hired:0});
+      var mt=it.material||'без названия';var mm=A.mat[mt]||(A.mat[mt]={vol:0});
       var ob=A.obj[r.object]||(A.obj[r.object]={own:0,hired:0,trips:0,km:0});
       (f.own||[]).forEach(function(o){
         var v=num(o.vol),tr=(o.kind==='Рейсы'||!o.kind)?num(o.trips):0,km=num(f.km)*tr*ROUTE_K;
-        A.own+=v;A.trips+=tr;A.km+=km;A.hours+=num(o.hours);ob.own+=v;ob.trips+=tr;ob.km+=km;
+        A.own+=v;A.trips+=tr;A.km+=km;A.hours+=num(o.hours);ob.own+=v;ob.trips+=tr;ob.km+=km;pd.own+=v;mm.vol+=v;
         var tk=A.truck[o.id]||(A.truck[o.id]={vol:0,trips:0,km:0,work:0,repair:0,nodrv:0});
         tk.vol+=v;tk.trips+=tr;tk.km+=km;
         var st0=(o.kind==='Ремонт/ТО')?'repair':(o.kind==='Без водителя')?'nodrv':'work';
-        var key=o.id+'|'+r.date,prevS=tday[key];
-        var rank={work:3,repair:2,nodrv:1};
-        if(!prevS||rank[st0]>rank[prevS.s])tday[key]={s:st0,id:o.id};
+        var key=o.id+'|'+r.date,prevS=tday[key],rank={work:3,repair:2,nodrv:1};
+        if(!prevS||rank[st0]>rank[prevS.s])tday[key]={s:st0,id:o.id,d:r.date};
         if(o.driver){var dv=A.drv[o.driver]||(A.drv[o.driver]={vol:0,trips:0,days:{}});dv.vol+=v;dv.trips+=tr;dv.days[r.date]=1}
       });
       (f.hired||[]).forEach(function(h){
-        var v=num(h.vol);A.hired+=v;ob.hired+=v;var cn=h.carrier||'(без перевозчика: экология, бесплатный вывоз, реализация)';
+        var v=num(h.vol);A.hired+=v;ob.hired+=v;pd.hired+=v;mm.vol+=v;
+        var cn=h.carrier||'Без перевозчика (экология, бесплатный вывоз, реализация)';
         var c=A.car[cn]||(A.car[cn]={vol:0});c.vol+=v;
       });
     });
   });
-  Object.keys(tday).forEach(function(k){var x=tday[k];A[x.s]++;A.truck[x.id][x.s]++});
+  Object.keys(tday).forEach(function(k){var x=tday[k];A[x.s]++;A.truck[x.id][x.s]++;A.tday[k]=x});
   return A;
 }
-function fmt(x,d){return (Math.round(x*Math.pow(10,d||0))/Math.pow(10,d||0)).toLocaleString('ru-RU',{maximumFractionDigits:d||0})}
-function deltaHtml(cur,prev,has){
-  if(!has)return '<small class="muted">нет данных для сравнения</small>';
-  if(!prev)return '<small class="muted">в прошлом периоде: 0</small>';
-  var p=(cur-prev)/prev*100;var cl=p>=0?'ok':'bad';
-  return '<small style="color:var(--'+(p>=0?'accent':'bad')+')">'+(p>=0?'▲ +':'▼ ')+fmt(p,0)+'% к прошлому периоду ('+fmt(prev,0)+')</small>';
+function fmt(x,d){d=d||0;var m=Math.pow(10,d);return (Math.round(x*m)/m).toLocaleString('ru-RU',{maximumFractionDigits:d})}
+function pctDelta(cur,prev){return prev?((cur-prev)/prev*100):null}
+function tile(label,val,unit,sub,opts){
+  opts=opts||{};
+  return '<div class="tl'+(opts.hero?' hero':'')+'"><small>'+esc(label)+'</small><b>'+val+(unit?'<u>'+esc(unit)+'</u>':'')+'</b>'+(sub?'<div class="s">'+sub+'</div>':'')+'</div>';
 }
-function svodTable(head,rows){
+function dsub(cur,prev,hasPrev,goodUp){
+  if(!hasPrev)return '<span class="muted">нет периода для сравнения</span>';
+  if(!prev)return '<span class="muted">прошлый период: 0</span>';
+  var p=pctDelta(cur,prev),good=goodUp===false?(p<=0):(p>=0);
+  return '<em class="'+(good?'ok':'bad')+'">'+(p>=0?'▲ +':'▼ ')+fmt(p,0)+'%</em> <span class="muted">к прошлому (' +fmt(prev,prev<100?1:0)+')</span>';
+}
+function svodTable(head,rows,foot){
   if(!rows.length)return '<div class="empty">За период данных нет.</div>';
-  return '<div class="table"><table><thead><tr>'+head.map(function(h,i){return '<th'+(i?' class="num"':'')+'>'+esc(h)+'</th>'}).join('')+'</tr></thead><tbody>'+rows.map(function(r){return '<tr>'+r.map(function(c,i){return '<td'+(i?' class="num"':'')+'>'+(i?c:esc(c))+'</td>'}).join('')+'</tr>'}).join('')+'</tbody></table></div>';
+  return '<div class="tablewrap"><table class="t"><thead><tr>'+head.map(function(h,i){return '<th'+(i?' class="n"':' class="l"')+'>'+esc(h)+'</th>'}).join('')+'</tr></thead><tbody>'+rows.map(function(r){return '<tr>'+r.map(function(c,i){return '<td'+(i?' class="n"':' class="l"')+'>'+(i?c:esc(c))+'</td>'}).join('')+'</tr>'}).join('')+'</tbody>'+(foot?'<tfoot><tr>'+foot.map(function(c,i){return '<td'+(i?' class="n"':' class="l"')+'>'+c+'</td>'}).join('')+'</tr></tfoot>':'')+'</table></div>';
 }
+/* ---- графики (SVG) ---- */
+function niceMax(v){if(v<=0)return 1;var e=Math.pow(10,Math.floor(Math.log10(v))),m=v/e;var n=m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10;return n*e}
+function listDays(from,to){var a=parseKey(from),n=dayDiff(from,to),out=[];for(var i=0;i<=n;i++)out.push(dkey(addDays(a,i)));return out}
+function rangeOfData(A,R){
+  var ks=Object.keys(A.days).sort();if(!ks.length)return [];
+  var from=R.from<'1000'?ks[0]:R.from,to=R.to>'9000'?ks[ks.length-1]:R.to;
+  var end=to>today()?today():to; if(end<from)end=ks[ks.length-1]>to?to:ks[ks.length-1];
+  if(ks[ks.length-1]>end)end=ks[ks.length-1]<=to?ks[ks.length-1]:to;
+  return listDays(from,end);
+}
+function chartBars(days,A){
+  if(!days.length)return '<div class="empty">За период данных нет.</div>';
+  var bin=days.length>62?7:1,cols=[];
+  for(var i=0;i<days.length;i+=bin){
+    var o=0,h=0,lab=days[i];
+    for(var j=i;j<Math.min(days.length,i+bin);j++){var x=A.perDay[days[j]];if(x){o+=x.own;h+=x.hired}}
+    cols.push({k:lab,o:o,h:h});
+  }
+  var W=720,H=230,pl=48,pr=8,pt=10,pb=26,w=W-pl-pr,hh=H-pt-pb;
+  var mx=niceMax(Math.max.apply(null,cols.map(function(c){return c.o+c.h}).concat([1])));
+  var bw=w/cols.length,s='';
+  for(var t=0;t<=4;t++){var yv=mx*t/4,y=pt+hh-hh*t/4;s+='<line class="grid" x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y+'" y2="'+y+'"/><text class="tick" x="'+(pl-6)+'" y="'+(y+4)+'" text-anchor="end">'+fmt(yv)+'</text>'}
+  var step=Math.max(1,Math.ceil(cols.length/12));
+  cols.forEach(function(c,i){
+    var x=pl+i*bw+bw*0.15,bwid=bw*0.7,ho=hh*c.o/mx,hhd=hh*c.h/mx,y0=pt+hh;
+    var tip=ruDate(c.k).slice(0,5)+(bin>1?' (неделя)':'')+': Рено '+fmt(c.o)+', перевозчики '+fmt(c.h)+', всего '+fmt(c.o+c.h)+' м³';
+    s+='<g><title>'+esc(tip)+'</title><rect x="'+x+'" y="'+(y0-ho)+'" width="'+bwid+'" height="'+ho+'" fill="var(--c-fact)"/><rect x="'+x+'" y="'+(y0-ho-hhd)+'" width="'+bwid+'" height="'+hhd+'" fill="var(--c-plan)"/><rect x="'+(pl+i*bw)+'" y="'+pt+'" width="'+bw+'" height="'+hh+'" fill="transparent"/></g>';
+    if(i%step===0)s+='<text class="tick" x="'+(pl+i*bw+bw/2)+'" y="'+(H-8)+'" text-anchor="middle">'+ruDate(c.k).slice(0,5)+'</text>';
+  });
+  return '<div class="chart"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Вывоз по дням">'+s+'</svg></div><div class="legend"><span><i style="background:var(--c-fact)"></i>Свои Рено</span><span><i style="background:var(--c-plan)"></i>Перевозчики и прочее</span></div>';
+}
+function chartCum(days,A,pdays,P){
+  if(!days.length)return '<div class="empty">За период данных нет.</div>';
+  function cum(ds,X){var c=0;return ds.map(function(d){var x=X.perDay[d];if(x)c+=x.own+x.hired;return c})}
+  var cur=cum(days,A),pr=P&&pdays.length?cum(pdays,P):null;
+  var n=Math.max(cur.length,pr?pr.length:0);
+  var W=720,H=230,pl=52,pr_=10,pt=10,pb=26,w=W-pl-pr_,hh=H-pt-pb;
+  var mx=niceMax(Math.max.apply(null,cur.concat(pr||[]).concat([1])));
+  var s='';
+  for(var t=0;t<=4;t++){var y=pt+hh-hh*t/4;s+='<line class="grid" x1="'+pl+'" x2="'+(W-pr_)+'" y1="'+y+'" y2="'+y+'"/><text class="tick" x="'+(pl-6)+'" y="'+(y+4)+'" text-anchor="end">'+fmt(mx*t/4)+'</text>'}
+  function path(a){return a.map(function(v,i){var x=pl+(n>1?w*i/(n-1):0),y=pt+hh-hh*v/mx;return (i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)}).join(' ')}
+  if(pr)s+='<path d="'+path(pr)+'" fill="none" stroke="var(--muted)" stroke-width="2" stroke-dasharray="5 4"/>';
+  s+='<path d="'+path(cur)+'" fill="none" stroke="var(--c-fact)" stroke-width="2.5"/>';
+  var step=Math.max(1,Math.ceil(n/10));
+  for(var i=0;i<days.length;i+=step)s+='<text class="tick" x="'+(pl+(n>1?w*i/(n-1):0))+'" y="'+(H-8)+'" text-anchor="middle">'+ruDate(days[i]).slice(0,5)+'</text>';
+  var lx=pl+(n>1?w*(cur.length-1)/(n-1):0),ly=pt+hh-hh*cur[cur.length-1]/mx;
+  s+='<circle class="dot" cx="'+lx+'" cy="'+ly+'" r="4" fill="var(--c-fact)"/><text class="tick" x="'+Math.min(lx,W-pr_-2)+'" y="'+(ly-8)+'" text-anchor="end" style="font-weight:700;fill:var(--fg)">'+fmt(cur[cur.length-1])+'</text>';
+  return '<div class="chart"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Накопительный вывоз">'+s+'</svg></div><div class="legend"><span><i class="ln" style="background:var(--c-fact)"></i>Этот период</span>'+(pr?'<span><i class="dash" style="color:var(--muted)"></i>Прошлый период (с начала)</span>':'')+'</div>';
+}
+function hbars(rows,unit,max){
+  if(!rows.length)return '<div class="empty">За период данных нет.</div>';
+  var m=max||Math.max.apply(null,rows.map(function(r){return r.a+(r.b||0)}).concat([1]));
+  return '<div class="hb">'+rows.map(function(r){var t=r.a+(r.b||0);
+    return '<div class="hb-r" title="'+esc(r.n+': '+fmt(t)+' '+(unit||''))+'"><span class="hb-n">'+esc(r.n)+'</span><div class="hb-t"><i style="width:'+(r.a/m*100)+'%;background:'+(r.ca||'var(--c-fact)')+'"></i>'+(r.b?'<i style="width:'+(r.b/m*100)+'%;background:var(--c-plan)"></i>':'')+'</div><span class="hb-v">'+fmt(t)+(r.s?' · '+esc(r.s):'')+'</span></div>'}).join('')+'</div>';
+}
+function heatmap(days,A){
+  var ids=Object.keys(A.truck);if(!ids.length||!days.length)return '<div class="empty">За период данных нет.</div>';
+  var cut=false;if(days.length>62){days=days.slice(days.length-62);cut=true}
+  ids=sortBy(ids,function(id){var v=byId(S.fleet,id);return v?(v.order||0):999});
+  var cs=14,gap=2,lw=104,W=lw+days.length*(cs+gap)+4,H=18+ids.length*(cs+gap)+4,s='';
+  var col={work:'var(--c-fact)',repair:'var(--bad)',nodrv:'var(--warn)'};
+  days.forEach(function(d,i){if(i%Math.max(1,Math.ceil(days.length/16))===0)s+='<text class="tick" x="'+(lw+i*(cs+gap))+'" y="10">'+d.slice(8)+'.'+d.slice(5,7)+'</text>'});
+  ids.forEach(function(id,r){
+    var v=byId(S.fleet,id),y=18+r*(cs+gap);
+    s+='<text class="tick" x="0" y="'+(y+11)+'">'+esc(v?v.name:id)+'</text>';
+    days.forEach(function(d,i){
+      var x=A.tday[id+'|'+d],c=x?col[x.s]:'var(--c-rest)',t=ruDate(d).slice(0,5)+' · '+(v?v.name:id)+': '+(x?(x.s==='work'?'в работе':x.s==='repair'?'ремонт/ТО':'без водителя'):'нет отметки');
+      s+='<rect x="'+(lw+i*(cs+gap))+'" y="'+y+'" width="'+cs+'" height="'+cs+'" rx="2" fill="'+c+'"'+(x?'':' opacity=".55"')+'><title>'+esc(t)+'</title></rect>';
+    });
+  });
+  return '<div class="tablewrap"><div class="chart" style="min-width:'+Math.min(W,760)+'px"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Карта парка по дням">'+s+'</svg></div></div><div class="legend"><span><i style="background:var(--c-fact)"></i>в работе</span><span><i style="background:var(--bad)"></i>ремонт/ТО</span><span><i style="background:var(--warn)"></i>без водителя</span><span><i style="background:var(--c-rest)"></i>нет отметки</span></div>'+(cut?'<div class="hint">Показаны последние 62 дня периода.</div>':'');
+}
+function donut(a,b){
+  var t=a+b;if(!t)return '<div class="empty">Нет данных.</div>';
+  var R=54,C=2*Math.PI*R,pa=a/t*C;
+  return '<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap"><svg viewBox="0 0 140 140" width="150" height="150" role="img" aria-label="Доли"><circle cx="70" cy="70" r="'+R+'" fill="none" stroke="var(--c-plan)" stroke-width="22"/><circle cx="70" cy="70" r="'+R+'" fill="none" stroke="var(--c-fact)" stroke-width="22" stroke-dasharray="'+pa+' '+(C-pa)+'" transform="rotate(-90 70 70)"/><text x="70" y="75" text-anchor="middle" style="font:700 20px var(--mono);fill:var(--fg)">'+fmt(a/t*100)+'%</text></svg><div class="legend" style="flex-direction:column;gap:6px;font-size:14px"><span><i style="background:var(--c-fact)"></i>Свои Рено: <b class="num">'+fmt(a)+'</b> м³</span><span><i style="background:var(--c-plan)"></i>Перевозчики и прочее: <b class="num">'+fmt(b)+'</b> м³</span></div></div>';
+}
+function topRows(map,n,fn){return Object.keys(map).map(function(k){return {k:k,v:map[k]}}).sort(function(a,b){return fn(b.v)-fn(a.v)}).slice(0,n)}
+/* ---- сама вкладка ---- */
+function a0(R,w,t,c){var v=(c==='pFrom')===(w==='from')?t.value:(w==='from'?(R.from<'1000'?'':R.from):(R.to>'9000'?'':R.to));return v||(w==='from'?dkey(addDays(new Date(),-29)):today())}
 function renderSvodka(){
   var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
-  var R=perRange(),A=aggr(R.from,R.to),P=R.prev?aggr(R.prev.from,R.prev.to):null,hp=!!P;
+  var R=perRange(),A=aggr(R.from,R.to),hp=!!R.prev,P=hp?aggr(R.prev.from,R.prev.to):null;
+  var view=st.sv||'full';
   var tot=A.own+A.hired,ptot=P?P.own+P.hired:0;
   var td=A.work+A.repair+A.nodrv,ptd=P?P.work+P.repair+P.nodrv:0;
   var ktg=td?A.work/td*100:0,pktg=ptd?P.work/ptd*100:0;
-  var h='<div class="days">'+PERIODS.map(function(p){return '<button class="chip" data-act="per" data-v="'+p[0]+'" aria-pressed="'+((st.per||'30')===p[0])+'">'+p[1]+'</button>'}).join('')+'</div>';
-  if((st.per||'30')==='custom')h+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><label class="small muted">с <input type="date" data-chg="perFrom" value="'+esc(R.from)+'"></label><label class="small muted">по <input type="date" data-chg="perTo" value="'+esc(R.to)+'"></label></div>';
-  h+='<div class="small muted" style="margin-bottom:10px">Период: '+(R.from==='0000-00-00'?'всё время':R.from.split('-').reverse().join('.')+' — '+R.to.split('-').reverse().join('.'))+' · дней с данными: '+Object.keys(A.days).length+(R.prev?' · сравнение: '+R.prev.from.split('-').reverse().join('.')+' — '+R.prev.to.split('-').reverse().join('.'):'')+'</div>';
-  h+='<div class="kpis">'
-   +'<div class="kpi"><span>Вывезено всего, м³</span><b>'+fmt(tot)+'</b><br>'+deltaHtml(tot,ptot,hp)+'</div>'
-   +'<div class="kpi"><span>Свои Рено, м³</span><b>'+fmt(A.own)+'</b><br>'+deltaHtml(A.own,P&&P.own,hp)+'</div>'
-   +'<div class="kpi"><span>Перевозчики и прочее, м³</span><b>'+fmt(A.hired)+'</b><br>'+deltaHtml(A.hired,P&&P.hired,hp)+'</div>'
-   +'<div class="kpi"><span>Рейсов Рено</span><b>'+fmt(A.trips)+'</b><br>'+deltaHtml(A.trips,P&&P.trips,hp)+'</div>'
-   +'<div class="kpi"><span>Пробег Рено, км</span><b>'+fmt(A.km)+'</b><br>'+deltaHtml(A.km,P&&P.km,hp)+'</div>'
-   +'<div class="kpi"><span>Рено в работе, % машино-дней</span><b>'+fmt(ktg,1)+'%</b><br>'+(hp?'<small class="muted">в прошлом периоде: '+fmt(pktg,1)+'%</small>':'')+'</div>'
-   +'<div class="kpi"><span>Машино-дней в работе</span><b>'+fmt(A.work)+'</b><br><small class="muted">ремонт/ТО: '+fmt(A.repair)+' · без водителя: '+fmt(A.nodrv)+'</small></div>'
-   +'</div>';
-  var objRows=Object.keys(A.obj).map(function(k){var x=A.obj[k];return {k:k,x:x,t:x.own+x.hired}}).sort(function(a,b){return b.t-a.t}).map(function(o){return [objShort(o.k),fmt(o.x.own),fmt(o.x.hired),'<b>'+fmt(o.t)+'</b>',fmt(o.x.trips),fmt(o.x.km)]});
-  h+='<div class="card" style="margin-top:16px"><h3>По объектам</h3>'+svodTable(['Объект','Рено, м³','Перевозчики, м³','Всего, м³','Рейсов Рено','Пробег, км'],objRows)+'</div>';
-  var carRows=Object.keys(A.car).map(function(k){return [k,A.car[k].vol]}).sort(function(a,b){return b[1]-a[1]}).map(function(x){return [x[0],fmt(x[1]),fmt(tot?x[1]/tot*100:0,1)+'%']});
-  h+='<div class="card" style="margin-top:16px"><h3>По перевозчикам</h3>'+svodTable(['Перевозчик','Вывезено, м³','Доля'],carRows)+'</div>';
-  var trRows=Object.keys(A.truck).map(function(k){var v=byId(S.fleet,k);return {k:k,v:v,x:A.truck[k]}}).sort(function(a,b){return b.x.vol-a.x.vol}).map(function(o){var d=o.x.work+o.x.repair+o.x.nodrv;return [(o.v?o.v.name:o.k)+(o.v&&o.v.bort?' (борт '+o.v.bort+')':''),fmt(o.x.vol),fmt(o.x.trips),fmt(o.x.km),fmt(o.x.work),fmt(o.x.repair),fmt(o.x.nodrv),fmt(d?o.x.work/d*100:0)+'%']});
-  h+='<div class="card" style="margin-top:16px"><h3>По самосвалам Renault</h3>'+svodTable(['Гос. номер','Вывезено, м³','Рейсов','Пробег, км','Дней в работе','Ремонт/ТО','Без водителя','В работе'],trRows)+'</div>';
-  var dvRows=Object.keys(A.drv).map(function(k){return [k,A.drv[k]]}).sort(function(a,b){return b[1].vol-a[1].vol}).map(function(o){return [o[0],fmt(o[1].vol),fmt(o[1].trips),fmt(Object.keys(o[1].days).length)]});
-  h+='<div class="card" style="margin-top:16px"><h3>По водителям</h3>'+svodTable(['Водитель','Вывезено, м³','Рейсов','Выходов'],dvRows)+'</div>';
-  el.innerHTML=h;
+  var nd=Object.keys(A.days).length,pnd=P?Object.keys(P.days).length:0;
+  if(hp&&!pnd){hp=false;P=null}
+  var days=rangeOfData(A,R),pdays=R.prev?listDays(R.prev.from,R.prev.to):[];
+  var objN=Object.keys(A.obj).filter(function(k){return k!=='garage'&&(A.obj[k].own+A.obj[k].hired)>0});
+  var carN=Object.keys(A.car).filter(function(k){return A.car[k].vol>0&&k.indexOf('Без перевозчика')!==0});
+  var best=null;Object.keys(A.perDay).forEach(function(d){var v=A.perDay[d].own+A.perDay[d].hired;if(!best||v>best.v)best={d:d,v:v}});
+  var truckWork=Object.keys(A.truck).length;
+  var rowsObj=Object.keys(A.obj).map(function(k){return {k:k,x:A.obj[k],t:A.obj[k].own+A.obj[k].hired}}).filter(function(o){return o.t>0||o.x.trips>0}).sort(function(a,b){return b.t-a.t});
+  var rowsCar=Object.keys(A.car).map(function(k){return [k,A.car[k].vol]}).sort(function(a,b){return b[1]-a[1]});
+  var top3o=rowsObj.slice(0,3).reduce(function(s,o){return s+o.t},0),top3c=rowsCar.filter(function(x){return x[0].indexOf('Без перевозчика')!==0}).slice(0,3).reduce(function(s,o){return s+o[1]},0);
+  /* шапка периода */
+  var h='<div class="persec"><div class="seg" role="group" aria-label="Период">'+PKINDS.map(function(p){return '<button type="button" data-act="pk" data-v="'+p[0]+'" aria-pressed="'+(R.kind===p[0])+'">'+p[1]+'</button>'}).join('')+'</div>';
+  h+='<div class="pnav"><button type="button" class="btn" data-act="pPrev" aria-label="Предыдущий период"'+((R.kind==='all')?' disabled':'')+'>‹</button><div class="plabel">'+esc(R.label)+'</div><button type="button" class="btn" data-act="pNext" aria-label="Следующий период"'+((R.kind==='all')?' disabled':'')+'>›</button></div>';
+  h+='<div class="pdates"><label>с <input type="date" data-chg="pFrom" value="'+esc(R.from<'1000'?'':R.from)+'"></label><label>по <input type="date" data-chg="pTo" value="'+esc(R.to>'9000'?'':R.to)+'"></label></div></div>';
+  h+='<div class="hint" style="margin:6px 0 4px">'+(R.kind==='all'?'Все данные в системе':'Период: '+ruDate(R.from)+' — '+ruDate(R.to))+' · дней с данными: '+nd+(hp?' · сравнение с '+ruDate(R.prev.from)+' — '+ruDate(R.prev.to)+(R.partial?' (за такой же срок)':''):'')+'</div>';
+  h+='<div class="viewsw"><span class="muted small">Вид:</span><div class="seg">'+SVIEWS.map(function(v){return '<button type="button" data-act="sv" data-v="'+v[0]+'" aria-pressed="'+(view===v[0])+'">'+v[1]+'</button>'}).join('')+'</div></div>';
+  if(!nd){h+='<div class="empty" style="margin-top:12px">За выбранный период факт вывоза не внесён.</div>';el.innerHTML='<div class="sv">'+h+'</div>';return}
+  /* плитки */
+  var T1=tile('Вывезено всего',fmt(tot),'м³',dsub(tot,ptot,hp),{hero:1})
+   +tile('Свои Рено',fmt(A.own),'м³','<em>'+fmt(tot?A.own/tot*100:0)+'%</em> <span class="muted">от всего</span> · '+dsub(A.own,P&&P.own,hp))
+   +tile('Перевозчики и прочее',fmt(A.hired),'м³','<em>'+fmt(tot?A.hired/tot*100:0)+'%</em> <span class="muted">от всего</span> · '+dsub(A.hired,P&&P.hired,hp))
+   +tile('В среднем за день с данными',fmt(nd?tot/nd:0),'м³',hp&&pnd?dsub(nd?tot/nd:0,pnd?ptot/pnd:0,true):'')
+   +tile('Лучший день',best?fmt(best.v):'—','м³',best?'<span class="muted">'+ruDate(best.d)+'</span>':'')
+   +tile('Объектов с вывозом',fmt(objN.length),'',P?dsub(objN.length,Object.keys(P.obj).filter(function(k){return k!=='garage'&&(P.obj[k].own+P.obj[k].hired)>0}).length,true):'')
+   +tile('Перевозчиков задействовано',fmt(carN.length),'','<span class="muted">топ-3 дают</span> <em>'+fmt(tot&&A.hired?top3c/A.hired*100:0)+'%</em> <span class="muted">их объёма</span>')
+   +tile('Топ-3 объекта дают',fmt(tot?top3o/tot*100:0),'%','<span class="muted">от всего вывоза</span>');
+  var T2=tile('Рейсов Рено',fmt(A.trips),'',dsub(A.trips,P&&P.trips,hp),{hero:1})
+   +tile('Пробег',fmt(A.km),'км',dsub(A.km,P&&P.km,hp))
+   +tile('Средний рейс',fmt(A.trips?A.own/A.trips:0,1),'м³','<span class="muted">объём ÷ рейсы</span>')
+   +tile('Рейсов на машину в рабочий день',fmt(A.work?A.trips/A.work:0,1),'','<span class="muted">норма — по вашим данным</span>')
+   +tile('Вывоз на машино-день',fmt(A.work?A.own/A.work:0),'м³','<span class="muted">Рено в работе</span>')
+   +tile('Рено в работе',fmt(ktg,1),'%',hp&&ptd?'<span class="muted">прошлый период:</span> <em>'+fmt(pktg,1)+'%</em>':'<span class="muted">доля машино-дней</span>')
+   +tile('Машино-дней в работе',fmt(A.work),'','<span class="muted">из '+fmt(td)+' отмеченных</span>')
+   +tile('Ремонт/ТО и без водителя',fmt(A.repair+A.nodrv),'дн.','<span class="warnc">ремонт/ТО: <em>'+fmt(A.repair)+'</em></span> · <span class="muted">без водителя: '+fmt(A.nodrv)+'</span>');
+  var C1='<section class="card"><h2>Вывоз по дням, м³</h2>'+chartBars(days,A)+'</section>';
+  var C2='<section class="card"><h2>Накопительно, м³ — этот период и прошлый</h2>'+chartCum(days,A,pdays,P)+'</section>';
+  var objBars=hbars(rowsObj.slice(0,10).map(function(o){return {n:objShort(o.k),a:o.x.own,b:o.x.hired,s:fmt(tot?o.t/tot*100:0)+'%'}}),'м³');
+  var C3='<section class="card"><h2>Топ объектов по вывозу, м³</h2>'+objBars+'<div class="legend"><span><i style="background:var(--c-fact)"></i>Рено</span><span><i style="background:var(--c-plan)"></i>Перевозчики</span></div></section>';
+  var C4='<section class="card"><h2>Перевозчики, м³</h2>'+hbars(rowsCar.slice(0,10).map(function(x){return {n:x[0],a:x[1],ca:'var(--c-plan)',s:fmt(tot?x[1]/tot*100:0)+'%'}}),'м³')+'</section>';
+  var matRows=Object.keys(A.mat).map(function(k){return [k,A.mat[k].vol]}).sort(function(a,b){return b[1]-a[1]}).slice(0,8);
+  var C5='<section class="card"><h2>Что вывозим (материалы), м³</h2>'+hbars(matRows.map(function(x){return {n:x[0],a:x[1],ca:'var(--accent)',s:fmt(tot?x[1]/tot*100:0)+'%'}}),'м³')+'</section>';
+  var C6='<section class="card"><h2>Кто вывозит: Рено и перевозчики</h2>'+donut(A.own,A.hired)+'</section>';
+  var C7='<section class="card"><h2>Карта парка Renault по дням</h2>'+heatmap(days,A)+'</section>';
+  var objRows=rowsObj.map(function(o){return [objShort(o.k),fmt(o.x.own),fmt(o.x.hired),'<b>'+fmt(o.t)+'</b>',fmt(tot?o.t/tot*100:0,1)+'%',fmt(o.x.trips),fmt(o.x.km)]});
+  var TB1='<section class="card"><h2>По объектам</h2>'+svodTable(['Объект','Рено, м³','Перевозчики, м³','Всего, м³','Доля','Рейсов Рено','Пробег, км'],objRows,['Итого',fmt(A.own),fmt(A.hired),fmt(tot),'100%',fmt(A.trips),fmt(A.km)])+'</section>';
+  var carRows=rowsCar.map(function(x){return [x[0],fmt(x[1]),fmt(tot?x[1]/tot*100:0,1)+'%']});
+  var TB2='<section class="card"><h2>По перевозчикам</h2>'+svodTable(['Перевозчик','Вывезено, м³','Доля'],carRows)+'</section>';
+  var trRows=Object.keys(A.truck).map(function(k){return {k:k,v:byId(S.fleet,k),x:A.truck[k]}}).sort(function(a,b){return b.x.vol-a.x.vol}).map(function(o){var d=o.x.work+o.x.repair+o.x.nodrv;return [(o.v?o.v.name:o.k)+(o.v&&o.v.bort?' (борт '+o.v.bort+')':''),fmt(o.x.vol),fmt(o.x.trips),fmt(o.x.km),fmt(o.x.work),fmt(o.x.repair),fmt(o.x.nodrv),fmt(d?o.x.work/d*100:0)+'%']});
+  var TB3='<section class="card"><h2>По самосвалам Renault</h2>'+svodTable(['Гос. номер','Вывезено, м³','Рейсов','Пробег, км','Дней в работе','Ремонт/ТО','Без водителя','В работе'],trRows)+'</section>';
+  var dvRows=Object.keys(A.drv).map(function(k){return [k,A.drv[k]]}).sort(function(a,b){return b[1].vol-a[1].vol}).map(function(o){return [o[0],fmt(o[1].vol),fmt(o[1].trips),fmt(Object.keys(o[1].days).length),fmt(Object.keys(o[1].days).length?o[1].vol/Object.keys(o[1].days).length:0)]});
+  var TB4='<section class="card"><h2>По водителям</h2>'+svodTable(['Водитель','Вывезено, м³','Рейсов','Выходов','м³ за выход'],dvRows)+'</section>';
+  var MONEY='<div class="note">Деньги (выручка, зарплата, долги перевозчикам, прибыль) появятся в сводке после согласования расчётов с коммерческим директором.</div>';
+  if(view==='short'){
+    h+='<div class="secttl">Главное за период</div><div class="tiles">'+tile('Вывезено всего',fmt(tot),'м³',dsub(tot,ptot,hp),{hero:1})+tile('Свои Рено',fmt(A.own),'м³',dsub(A.own,P&&P.own,hp))+tile('Перевозчики и прочее',fmt(A.hired),'м³',dsub(A.hired,P&&P.hired,hp))+tile('Рено в работе',fmt(ktg,1),'%','<span class="muted">доля машино-дней</span>')+'</div>';
+    h+='<div class="sgrid">'+C2+C1+C3+C4+'</div>';
+  }else if(view==='park'){
+    h+='<div class="secttl">Парк Renault</div><div class="tiles">'+T2+'</div>';
+    h+='<div class="sgrid">'+C7.replace('<section class="card">','<section class="card" style="grid-column:1/-1">')+TB3+TB4+'</div>';
+    h+='<div class="secttl">Перевозчики</div><div class="sgrid">'+C4+C6+TB2+'</div>';
+  }else{
+    h+='<div class="secttl">Вывоз за период</div><div class="tiles">'+T1+'</div>';
+    h+='<div class="secttl">Парк Renault</div><div class="tiles">'+T2+'</div>';
+    h+='<div class="secttl">Деньги</div>'+MONEY;
+    h+='<div class="sgrid" style="margin-top:12px">'+C1+C2+C3+C4+C6+C5+'</div>';
+    h+='<div class="sgrid">'+C7.replace('<section class="card">','<section class="card" style="grid-column:1/-1">')+TB1+TB2+TB3+TB4+'</div>';
+  }
+  el.innerHTML='<div class="sv">'+h+'</div>';
 }
 
 /* ---------- перенос данных из Excel (только админ) ---------- */
@@ -926,7 +1142,9 @@ document.addEventListener('click',function(e){
     case 'wkNow':st.day=today();renderDispatcher();break;
     case 'navBack':case 'navFwd':{var dk=v==='dir'?'dirOff':'dispOff';var ck=v==='dir'?'dirDay':'day';var o=(st[dk]||0)+(a==='navBack'?-14:14);st[dk]=o;var nd=dkey(addDays(new Date(),o));st[ck]=nd;v==='dir'?renderDirector():renderDispatcher();break}
     case 'navToday':{if(v==='dir'){st.dirOff=0;st.dirDay=dkey(addDays(new Date(),1));renderDirector()}else{st.dispOff=0;st.day=dkey(addDays(new Date(),1));renderDispatcher()}break}
-    case 'per':st.per=v;renderSvodka();break;
+    case 'pk':st.pk=v;st.pOff=0;renderSvodka();break;
+    case 'pPrev':case 'pNext':{var dir=a==='pPrev'?-1:1;if((st.pk||'month')==='custom'){var R0=perRange(),n0=dayDiff(R0.from,R0.to)+1;st.pFrom=dkey(addDays(parseKey(R0.from),dir*n0));st.pTo=dkey(addDays(parseKey(R0.to),dir*n0))}else st.pOff=(st.pOff||0)+dir;renderSvodka();break}
+    case 'sv':st.sv=v;renderSvodka();break;
     case 'impGo':runImport();break;
     case 'tab':st.tab=v;st.pending=null;render();break;
     case 'draftDay':d.day=v;renderForeman();break;
@@ -976,8 +1194,7 @@ document.addEventListener('change',function(e){
   if(t.id==='who'){}
   switch(c){
     case 'navDate':{if(!t.value)break;var kd=t.getAttribute('data-v');if(kd==='dir'){st.dirDay=t.value;st.dirOff=offFor(t.value);renderDirector()}else{st.day=t.value;st.dispOff=offFor(t.value);renderDispatcher()}break}
-    case 'perFrom':st.perFrom=t.value;renderSvodka();break;
-    case 'perTo':st.perTo=t.value;renderSvodka();break;
+    case 'pFrom':case 'pTo':{var R1=perRange();if(!t.value)break;st.pFrom=a0(R1,'from',t,c);st.pTo=a0(R1,'to',t,c);st.pk='custom';renderSvodka();break}
     case 'foremanSel':st.draftForeman=t.value||null;st.draft=newDraft();renderForeman();break;
     case 'object':d.object=t.value;break;
     case 'item':d.items[+t.getAttribute('data-i')][t.getAttribute('data-f')]=t.value;break;
