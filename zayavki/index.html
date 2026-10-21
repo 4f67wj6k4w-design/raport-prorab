@@ -120,6 +120,7 @@ header{background:var(--brand);color:#fff;border-radius:14px;padding:12px 16px;b
 header .logo{background:#fff;color:var(--brand)}
 header .brand span,header .who{color:rgba(255,255,255,.8)}
 header .tabs{background:rgba(255,255,255,.14)}
+.themebtn{border:1px solid rgba(255,255,255,.45);background:transparent;color:#fff;border-radius:999px;padding:5px 12px;cursor:pointer;font-size:13px;margin-left:6px}
 header .tab{color:rgba(255,255,255,.85)}
 header .tab[aria-selected="true"]{background:#fff;color:#18221a}
 /* сводка */
@@ -151,6 +152,7 @@ header .tab[aria-selected="true"]{background:#fff;color:#18221a}
 .sv .sgrid>.card{min-width:0;padding:14px;border-radius:12px}
 .sv .card h2{font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;font-weight:600}
 .sv .chart{width:100%;min-width:0}.sv .chart svg{display:block;width:100%;height:auto}
+.sv svg.hm{display:block;width:auto;max-width:none;height:auto}
 .sv .chart .grid{stroke:var(--line);stroke-width:1;opacity:.6}
 .sv .chart .tick{font:11px var(--font);fill:var(--muted)}
 .sv .chart .dot{stroke:var(--card);stroke-width:2}
@@ -176,7 +178,7 @@ header .tab[aria-selected="true"]{background:#fff;color:#18221a}
   <header>
     <div class="brand"><div class="logo">КМ</div><div><b>Заявки на вывоз</b><span id="subline">тестовая версия · данные общие для всех</span></div></div>
     <div class="tabs" role="tablist" id="tabs"></div>
-    <div class="who"><span>Вы вошли как</span><b id="who"></b></div>
+    <div class="who"><span>Вы вошли как</span><b id="who"></b><button type="button" class="themebtn" id="themeBtn" data-act="theme" aria-label="Тема оформления"></button></div>
   </header>
   <div id="main"></div>
 </div>
@@ -223,9 +225,9 @@ function tabsFor(m){
   if(!m)return [];
   if(m.kind==='foreman')return [['foreman','Заявка']];
   if(m.kind==='dispatcher')return [['dispatcher','Диспетчер'],['foreman','Новая заявка'],['admin','Справочники']];
-  if(m.kind==='approver')return [['dispatcher','Расстановка'],['director','Дашборд'],['svodka','Сводка']];
-  if(m.kind==='director')return [['director','Дашборд'],['svodka','Сводка']];
-  return [['dispatcher','Диспетчер'],['foreman','Новая заявка'],['director','Дашборд'],['svodka','Сводка'],['admin','Справочники']];
+  if(m.kind==='approver')return [['dispatcher','Расстановка'],['svodka','Сводка'],['director','По дням']];
+  if(m.kind==='director')return [['svodka','Сводка'],['director','По дням']];
+  return [['dispatcher','Диспетчер'],['foreman','Новая заявка'],['svodka','Сводка'],['director','По дням'],['admin','Справочники']];
 }
 /* ---------- fleet & demand ---------- */
 function ownSam(){return S.fleet.filter(function(v){return v.kind==='sam'})}
@@ -450,9 +452,14 @@ function saveItems(r,items,text){
 function clone(x){return JSON.parse(JSON.stringify(x))}
 
 /* ---------- header ---------- */
+var THEMES=[['auto','Авто'],['light','Светлая'],['dark','Тёмная']];
+function getTheme(){try{var t=localStorage.getItem('zv_theme');return t==='light'||t==='dark'?t:'auto'}catch(e){return 'auto'}}
+function applyTheme(t){var r=document.documentElement;if(t==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',t);var b=document.getElementById('themeBtn');if(b){var n=THEMES.filter(function(x){return x[0]===t})[0][1];b.textContent=(t==='dark'?'☾ ':t==='light'?'☀ ':'◐ ')+n}}
+function cycleTheme(){var t=getTheme(),i=0;THEMES.forEach(function(x,k){if(x[0]===t)i=k});var n=THEMES[(i+1)%3][0];try{localStorage.setItem('zv_theme',n)}catch(e){}applyTheme(n)}
 function renderHeader(){
   var m=me();var tabs=tabsFor(m);
   $('#tabs').innerHTML=tabs.length>1?tabs.map(function(t){return '<button class="tab" role="tab" data-act="tab" data-v="'+t[0]+'" aria-selected="'+(st.tab===t[0])+'">'+t[1]+'</button>'}).join(''):'';
+  applyTheme(getTheme());
   $('#who').textContent=m?(m.name.toLowerCase().indexOf(ROLE_NAMES[m.kind])>=0?m.name:m.name+' · '+ROLE_NAMES[m.kind]):'';
 }
 
@@ -747,7 +754,7 @@ function renderDirector(){
   var sam=ownSam();var work=sam.filter(function(v){return v.status!=='repair'});
   var busySam=sam.filter(function(v){return usedMap[v.id]}).length;
   var rep=S.fleet.filter(function(v){return v.status==='repair'}).length;
-  var h='<div class="days">'+days.map(function(k){return '<button class="chip" data-act="dirDay" data-v="'+k+'" aria-pressed="'+(k===day)+'">'+short(k)+'<small>'+(k===today()?'сегодня':dayRequests(k).length+' зая.')+'</small></button>'}).join('')+'</div>'+dayNav('dir',day);
+  var h='<div class="days">'+days.map(function(k){return '<button class="chip" data-act="dirDay" data-v="'+k+'" aria-pressed="'+(k===day)+'">'+short(k)+'<small>'+(k===today()?'сегодня':dayRequests(k).length+' зая.')+'</small></button>'}).join('')+'</div>'+dayNav('dir',day)+'<div class="daynav" style="margin-top:-6px"><span class="small muted">Смотреть за период:</span>'+[['week','Неделя'],['month','Месяц'],['quarter','Квартал'],['year','Год'],['all','Всё время']].map(function(p){return '<button class="btn sm" data-act="goPer" data-v="'+p[0]+'">'+p[1]+'</button>'}).join('')+'</div>';
   h+='<div class="kpis"><div class="kpi"><span>Заявлено машин</span><b>'+stt.need+'</b><small>'+reqs.length+' заявок</small></div><div class="kpi"><span>Своих в работе</span><b>'+busySam+'<span style="display:inline;font-size:14px;color:var(--muted)"> из '+work.length+'</span></b><small>в ремонте: '+rep+'</small></div><div class="kpi"><span>Наёмных</span><b>'+stt.hired+'</b><small>'+(stt.need?Math.round(stt.hired/Math.max(1,stt.own+stt.hired)*100):0)+'% от назначенных</small></div><div class="kpi"><span>Расстановка</span><b style="font-size:17px;font-family:var(--font);color:'+(okAppr?'var(--accent)':'var(--warn)')+'">'+(okAppr?'Утверждена':reqs.length?'Не утверждена':'Нет заявок')+'</b><small>'+(okAppr?esc(a.by):stt.missing+' поз. без машин')+'</small></div></div>';
   h+='<div class="cols2"><div class="card"><h3>Машины по дням</h3><div class="legend"><span><i class="c-own"></i>свои</span><span><i class="c-hire"></i>наёмные</span><span><i class="c-need"></i>не закрыто</span></div>'+trendHtml(days.slice(5,13),day)+'</div>';
   h+='<div class="card"><h3>Куда ушли машины ('+short(day)+')</h3>'+objBars(day)+'</div></div>';
@@ -983,18 +990,19 @@ function heatmap(days,A){
   var ids=Object.keys(A.truck);if(!ids.length||!days.length)return '<div class="empty">За период данных нет.</div>';
   var cut=false;if(days.length>62){days=days.slice(days.length-62);cut=true}
   ids=sortBy(ids,function(id){var v=byId(S.fleet,id);return v?(v.order||0):999});
-  var cs=14,gap=2,lw=104,W=lw+days.length*(cs+gap)+4,H=18+ids.length*(cs+gap)+4,s='';
+  var cs=days.length<=10?24:days.length<=45?16:12,gap=2,lw=96,W=lw+days.length*(cs+gap)+30,H=20+ids.length*(cs+gap)+4,s='';
   var col={work:'var(--c-fact)',repair:'var(--bad)',nodrv:'var(--warn)'};
-  days.forEach(function(d,i){if(i%Math.max(1,Math.ceil(days.length/16))===0)s+='<text class="tick" x="'+(lw+i*(cs+gap))+'" y="10">'+d.slice(8)+'.'+d.slice(5,7)+'</text>'});
+  var step=Math.max(1,Math.ceil(36/(cs+gap)));
+  days.forEach(function(d,i){if(i%step===0)s+='<text class="tick" x="'+(lw+i*(cs+gap))+'" y="12">'+d.slice(8)+'.'+d.slice(5,7)+'</text>'});
   ids.forEach(function(id,r){
-    var v=byId(S.fleet,id),y=18+r*(cs+gap);
-    s+='<text class="tick" x="0" y="'+(y+11)+'">'+esc(v?v.name:id)+'</text>';
+    var v=byId(S.fleet,id),y=20+r*(cs+gap);
+    s+='<text class="tick" x="0" y="'+(y+cs-3)+'">'+esc(v?v.name:id)+'</text>';
     days.forEach(function(d,i){
       var x=A.tday[id+'|'+d],c=x?col[x.s]:'var(--c-rest)',t=ruDate(d).slice(0,5)+' · '+(v?v.name:id)+': '+(x?(x.s==='work'?'в работе':x.s==='repair'?'ремонт/ТО':'без водителя'):'нет отметки');
       s+='<rect x="'+(lw+i*(cs+gap))+'" y="'+y+'" width="'+cs+'" height="'+cs+'" rx="2" fill="'+c+'"'+(x?'':' opacity=".55"')+'><title>'+esc(t)+'</title></rect>';
     });
   });
-  return '<div class="tablewrap"><div class="chart" style="min-width:'+Math.min(W,760)+'px"><svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Карта парка по дням">'+s+'</svg></div></div><div class="legend"><span><i style="background:var(--c-fact)"></i>в работе</span><span><i style="background:var(--bad)"></i>ремонт/ТО</span><span><i style="background:var(--warn)"></i>без водителя</span><span><i style="background:var(--c-rest)"></i>нет отметки</span></div>'+(cut?'<div class="hint">Показаны последние 62 дня периода.</div>':'');
+  return '<div class="tablewrap"><svg class="hm" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Карта парка по дням">'+s+'</svg></div><div class="legend"><span><i style="background:var(--c-fact)"></i>в работе</span><span><i style="background:var(--bad)"></i>ремонт/ТО</span><span><i style="background:var(--warn)"></i>без водителя</span><span><i style="background:var(--c-rest)"></i>нет отметки</span></div>'+(cut?'<div class="hint">Показаны последние 62 дня периода.</div>':'');
 }
 function donut(a,b){
   var t=a+b;if(!t)return '<div class="empty">Нет данных.</div>';
@@ -1142,6 +1150,8 @@ document.addEventListener('click',function(e){
     case 'wkNow':st.day=today();renderDispatcher();break;
     case 'navBack':case 'navFwd':{var dk=v==='dir'?'dirOff':'dispOff';var ck=v==='dir'?'dirDay':'day';var o=(st[dk]||0)+(a==='navBack'?-14:14);st[dk]=o;var nd=dkey(addDays(new Date(),o));st[ck]=nd;v==='dir'?renderDirector():renderDispatcher();break}
     case 'navToday':{if(v==='dir'){st.dirOff=0;st.dirDay=dkey(addDays(new Date(),1));renderDirector()}else{st.dispOff=0;st.day=dkey(addDays(new Date(),1));renderDispatcher()}break}
+    case 'goPer':st.pk=v;st.pOff=0;st.tab='svodka';render();break;
+    case 'theme':cycleTheme();break;
     case 'pk':st.pk=v;st.pOff=0;renderSvodka();break;
     case 'pPrev':case 'pNext':{var dir=a==='pPrev'?-1:1;if((st.pk||'month')==='custom'){var R0=perRange(),n0=dayDiff(R0.from,R0.to)+1;st.pFrom=dkey(addDays(parseKey(R0.from),dir*n0));st.pTo=dkey(addDays(parseKey(R0.to),dir*n0))}else st.pOff=(st.pOff||0)+dir;renderSvodka();break}
     case 'sv':st.sv=v;renderSvodka();break;
