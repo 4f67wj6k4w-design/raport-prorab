@@ -480,15 +480,16 @@ function renderDebts(){
   var wk=st.dbWeek||(st.dbWeek=mondayOf(today())),we=dkey(addDays(parseKey(wk),6));
   var T=debtTable();
   var keys=Object.keys(T).filter(function(k){var x=T[k];return x.open||x.acc||x.paid||x.adv}).sort(function(a,b){return T[b].debt-T[a].debt});
+  var hasOpen=keys.some(function(k){return T[k].openDate});
   var tot={debt:0,acc:0,paid:0,adv:0,np:0};keys.forEach(function(k){var x=T[k];tot.debt+=x.debt;tot.acc+=x.acc;tot.paid+=x.paid;tot.adv+=x.adv});
   Object.keys(T).forEach(function(k){tot.np+=T[k].np});
   var h='<h2 style="margin:0 0 4px">Долги и сверка с перевозчиками</h2><div class="small muted" style="margin-bottom:12px">Долг = остаток на начальную дату + начислено (принятый диспетчером объём × цена) − оплаты. Авансы показаны отдельно и в долг не входят. Начисление идёт только по строкам, где указана цена.</div>';
-  h+='<div class="tiles">'+tile('Долг перед перевозчиками',fmt(tot.debt),'₽',keys.length+' перевозч.',{hero:true})+tile('Начислено (после даты остатка)',fmt(tot.acc),'₽','')+tile('Оплачено',fmt(tot.paid),'₽','')+tile('Авансы выданы, отдельно',fmt(tot.adv),'₽','не вычитаются из долга')+tile('Строк факта без цены',fmt(tot.np),'','начисление по ним 0')+'</div>';
+  h+='<div class="tiles">'+tile(hasOpen?'Долг перед перевозчиками':'Начислено, оплат и остатка нет',fmt(tot.debt),'₽',hasOpen?keys.length+' перевозч.':'это ещё не долг: внесите остатки и оплаты',{hero:true})+tile('Начислено (после даты остатка)',fmt(tot.acc),'₽','')+tile('Оплачено',fmt(tot.paid),'₽','')+tile('Авансы выданы, отдельно',fmt(tot.adv),'₽','не вычитаются из долга')+tile('Строк факта без цены',fmt(tot.np),'','начисление по ним 0')+'</div>';
   h+='<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">Долг по перевозчикам</h3>'+(canP?'<span style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm pri" data-act="dbPay" data-v="pay">+ Оплата</button><button class="btn sm" data-act="dbPay" data-v="adv">+ Аванс</button><button class="btn sm" data-act="dbPay" data-v="open">+ Начальный остаток</button></span>':'')+'</div>';
   if(!keys.length)h+='<div class="empty" style="margin-top:10px">Пока нет данных. Задайте начальный остаток долга по перевозчикам и вносите цены в назначении или факте.</div>';
   else{
-    h+='<div class="tablewrap" style="margin-top:8px"><table class="t"><thead><tr><th class="l">Перевозчик</th><th class="n">Остаток на дату</th><th class="n">Начислено</th><th class="n">Оплачено</th><th class="n">Долг</th><th class="n">Аванс</th></tr></thead><tbody>';
-    keys.forEach(function(k){var x=T[k];h+='<tr data-act="dbCar" data-v="'+esc(k)+'" style="cursor:pointer"><td class="l"><b>'+esc(k)+'</b>'+(x.np?'<div class="small" style="color:var(--warn)">без цены строк: '+x.np+'</div>':'')+'</td><td class="n">'+(x.openDate?fmt(x.open)+'<div class="small muted">на '+dmy(x.openDate)+'</div>':'—')+'</td><td class="n">'+fmt(x.acc)+'</td><td class="n">'+fmt(x.paid)+'</td><td class="n"><b style="color:'+(x.debt>0?'var(--warn)':'inherit')+'">'+fmt(x.debt)+'</b></td><td class="n">'+(x.adv?fmt(x.adv):'—')+'</td></tr>'});
+    h+='<div class="tablewrap" style="margin-top:8px"><table class="t"><thead><tr><th class="l">Перевозчик</th><th class="n">Остаток на дату</th><th class="n">Начислено</th><th class="n">Оплачено</th><th class="n">'+(hasOpen?'Долг':'Итого')+'</th><th class="n">Аванс</th></tr></thead><tbody>';
+    keys.forEach(function(k){var x=T[k];h+='<tr data-act="dbCar" data-v="'+esc(k)+'" style="cursor:pointer"><td class="l"><b>'+esc(k)+'</b>'+(x.np?'<div class="small" style="color:var(--warn)">без цены строк: '+x.np+'</div>':'')+(hasOpen&&!x.openDate?'<div class="small" style="color:var(--warn)">нет остатка на дату: долг завышен</div>':'')+'</td><td class="n">'+(x.openDate?fmt(x.open)+'<div class="small muted">на '+dmy(x.openDate)+'</div>':'—')+'</td><td class="n">'+fmt(x.acc)+'</td><td class="n">'+fmt(x.paid)+'</td><td class="n"><b style="color:'+(x.debt>0?'var(--warn)':'inherit')+'">'+fmt(x.debt)+'</b></td><td class="n">'+(x.adv?fmt(x.adv):'—')+'</td></tr>'});
     h+='</tbody><tfoot><tr><td class="l"><b>Итого</b></td><td class="n"></td><td class="n">'+fmt(tot.acc)+'</td><td class="n">'+fmt(tot.paid)+'</td><td class="n"><b>'+fmt(tot.debt)+'</b></td><td class="n">'+fmt(tot.adv)+'</td></tr></tfoot></table></div>';
   }
   h+='</div>';
@@ -1270,6 +1271,7 @@ function runImport(){
     (J.objects||[]).forEach(function(o){if(!byId(S.objects,o.id))docs.push({coll:'objects',id:o.id,data:o})});
     (J.carriers||[]).forEach(function(n){var id=slug(n);if(!S.carriers.some(function(c){return c.name===n}))docs.push({coll:'carriers',id:id,data:{name:n}})});
     (J.requests||[]).forEach(function(r){docs.push({coll:'requests',id:r.id,data:r})});
+    (J.payments||[]).forEach(function(p){docs.push({coll:'payments',id:p.id,data:p})});
     var total=docs.length,done=0,CH=20;
     impLog('Загружаю: 0 из '+total+'…');
     function next(){
