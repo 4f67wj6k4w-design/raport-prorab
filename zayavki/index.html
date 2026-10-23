@@ -323,7 +323,7 @@ function lastPrice(car,obj){
   return best?best.p:any?any.p:'';
 }
 function rub(x){return fmt(x,0)+' ₽'}
-function itemAccrual(it){var f=it.fact,s=0,np=0;if(!f)return {sum:0,np:0};(f.hired||[]).forEach(function(h){var v=num(h.vol);if(!v||!h.carrier)return;var p=num(h.price);if(p>0)s+=v*p;else np++});return {sum:s,np:np}}
+function itemAccrual(it){var f=it.fact,s=0,np=0;if(!f)return {sum:0,np:0};(f.hired||[]).forEach(function(h){var v=num(h.vol);if(!v||!h.carrier||h.nodebt)return;var p=num(h.price);if(p>0)s+=v*p;else np++});return {sum:s,np:np}}
 function dayFact(day){
   var vol=0,own=0,hired=0,trips=0,km=0;
   dayRequests(day).forEach(function(r){(r.items||[]).forEach(function(it){var t=factTotals(it);vol+=t.vol;own+=t.own;hired+=t.hired;trips+=t.trips;km+=t.km})});
@@ -385,7 +385,7 @@ function recalcFact(){
   if(F.rapOwn!==undefined&&F.rapOwn!==''&&F.own.length){var d1=vo-num(F.rapOwn);dif+='<br>Рено: прораб написал <b>'+r1(num(F.rapOwn))+'</b>, диспетчер принял <b>'+r1(vo)+'</b>'+(Math.abs(d1)>0.01?' → <span class="'+(d1>0?'':'')+'" style="color:var(--warn);font-weight:600">изменено на '+(d1>0?'+':'')+r1(d1)+' м³</span>':' (совпадает)')}
   var dh=0,hasDh=false;F.hired.forEach(function(h){if(h.rap!==undefined&&h.rap!==''){hasDh=true;dh+=num(h.vol)-num(h.rap)}});
   if(hasDh)dif+='<br>Перевозчики: разница «принято − рапорт» <b>'+(dh>0?'+':'')+r1(dh)+' м³</b>';
-  var acs=0,acn=0;F.hired.forEach(function(h){var v=num(h.vol);if(!v||!h.carrier)return;if(num(h.price)>0)acs+=v*num(h.price);else acn++});
+  var acs=0,acn=0;F.hired.forEach(function(h){var v=num(h.vol);if(!v||!h.carrier||h.nodebt)return;if(num(h.price)>0)acs+=v*num(h.price);else acn++});
   if(acs>0||acn)dif+='<br>Начислено перевозчикам: <b>'+rub(acs)+'</b>'+(acn?' · <span style="color:var(--warn)">без цены строк: '+acn+'</span>':'');
   if(el)el.innerHTML='Вывезено (принято диспетчером): <b>'+r1(vo+vh)+' м³</b> (Рено '+r1(vo)+', перевозчики '+r1(vh)+') · рейсов Рено: <b>'+tr+'</b>'+(num(F.km)&&tr?' · пробег ≈ <b>'+Math.round(num(F.km)*tr*ROUTE_K)+' км</b>':'')+dif;
 }
@@ -430,7 +430,7 @@ function saveFact(){
   var M=st.modal,F=M.f;var r=byId(S.requests,M.rid);if(!r)return;
   var items=clone(r.items);var it=items.filter(function(x){return x.id===M.iid})[0];
   var own=F.own.filter(function(o){return o.driver||num(o.trips)||num(o.hours)||num(o.vol)||o.kind!=='Рейсы'}).map(function(o){return {id:o.id,driver:o.driver,kind:o.kind,trips:num(o.trips),hours:num(o.hours),vol:num(o.vol)}});
-  var hired=F.hired.filter(function(h){return h.carrier||num(h.vol)}).map(function(h){var x={carrier:h.carrier,vol:num(h.vol),trips:num(h.trips)};if(h.rap!==undefined&&h.rap!=='')x.rap=num(h.rap);if(num(h.price)>0)x.price=num(h.price);return x});
+  var hired=F.hired.filter(function(h){return h.carrier||num(h.vol)}).map(function(h){var x={carrier:h.carrier,vol:num(h.vol),trips:num(h.trips)};if(h.rap!==undefined&&h.rap!=='')x.rap=num(h.rap);if(num(h.price)>0)x.price=num(h.price);if(h.nodebt)x.nodebt=true;return x});
   var m=me();
   var fact={dest:F.dest||'',km:num(F.km)||0,own:own,hired:hired,note:F.note||'',at:nowStr(),by:m?m.name:''};
   if(F.rapOwn!==undefined&&F.rapOwn!=='')fact.rapOwn=num(F.rapOwn);
@@ -457,7 +457,7 @@ function carFin(from,to){
   S.requests.forEach(function(r){if(r.date<from||r.date>to)return;(r.items||[]).forEach(function(it){var f=it.fact;if(!f)return;(f.hired||[]).forEach(function(h){
     if(!h.carrier)return;var x=m[h.carrier]=m[h.carrier]||{vol:0,rap:0,rapAll:true,sum:0,np:0};
     var v=num(h.vol);x.vol+=v;if(h.rap!==undefined&&h.rap!=='')x.rap+=num(h.rap);else if(v)x.rapAll=false;
-    var p=num(h.price);if(p>0)x.sum+=v*p;else if(v&&r.date>=ps)x.np++;
+    var p=num(h.price);if(h.nodebt){}else if(p>0)x.sum+=v*p;else if(v&&r.date>=ps)x.np++;
   })})});
   return m;
 }
@@ -467,7 +467,7 @@ function debtTable(){
   (S.payments||[]).forEach(function(p){if(p.kind==='open'){var x=g(p.carrier);if(!x.openDate||p.date>x.openDate){x.openDate=p.date;x.open=num(p.amount)}}});
   S.requests.forEach(function(r){(r.items||[]).forEach(function(it){var f=it.fact;if(!f)return;(f.hired||[]).forEach(function(h){
     if(!h.carrier)return;var v=num(h.vol);if(!v)return;var x=m[h.carrier];if(x&&x.openDate&&r.date<=x.openDate)return;
-    x=g(h.carrier);var p=num(h.price);if(p>0)x.acc+=v*p;else if(r.date>=ps)x.np++;
+    x=g(h.carrier);var p=num(h.price);if(h.nodebt){}else if(p>0)x.acc+=v*p;else if(r.date>=ps)x.np++;
   })})});
   (S.payments||[]).forEach(function(p){var x=g(p.carrier);if(p.kind==='pay'){if(!x.openDate||p.date>x.openDate)x.paid+=num(p.amount)}else if(p.kind==='adv')x.adv+=num(p.amount)});
   Object.keys(m).forEach(function(k){var x=m[k];x.debt=x.open+x.acc-x.paid});
