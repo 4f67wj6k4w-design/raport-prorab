@@ -299,6 +299,8 @@ section.card,.sum div,details.how,.oc,.box{background:var(--glass)}
 .pinw{background:none;border:0}.pinw svg{transition:transform .15s;transform-origin:50% 100%;display:block}.pinw.hl svg,.pinw:hover svg{transform:scale(1.35)}
 :root[data-theme="dark"] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.55)}
 .leaflet-container{font-family:var(--f-ui)}
+.osmcr{position:absolute;right:0;bottom:0;z-index:1000;background:rgba(255,255,255,.85);padding:1px 6px;font-size:11px;border-radius:4px 0 0 0}.osmcr a{color:#333;text-decoration:none}
+.leaflet-attribution-flag,.leaflet-control-attribution svg,.leaflet-control-attribution a[href*="leafletjs.com"],.leaflet-control-attribution a[href*="leafletjs"]+span{display:none!important}
 @keyframes flash{0%{box-shadow:0 0 0 5px var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
 .oc.flash{animation:flash 1.2s}
 @media (max-width:1100px){.lay{grid-template-columns:1fr}.side{position:static}#filt{order:1;grid-template-columns:1fr 1fr}#filt .box:first-child{grid-column:1/-1}#fl{display:flex;flex-wrap:wrap;gap:0 16px}#list{order:2}#mapcol{order:3}#map{height:300px}}
@@ -438,7 +440,8 @@ const coordOf=o=>{if(o.lat!=null&&o.lng!=null)return[+o.lat,+o.lng];const t=(o.s
 const PINC={r:"var(--s-r)",y:"var(--s-y)",g:"var(--s-g)",n:"var(--s-n)",c:"#5f6b5c"};
 let map=null,mlayer=null,pinOf={};
 function initMap(){if(map||!window.L)return;try{
-  map=L.map("map",{scrollWheelZoom:false,attributionControl:true}).setView([55.75,37.62],10);
+  map=L.map("map",{scrollWheelZoom:false,attributionControl:false}).setView([55.75,37.62],10);
+  const cr=document.createElement("div");cr.className="osmcr";cr.innerHTML='<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© участники OpenStreetMap</a>';map.getContainer().appendChild(cr);
   L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"© участники OpenStreetMap"}).addTo(map);
   mlayer=L.layerGroup().addTo(map);
   $("mmsk").onclick=()=>map.setView([55.75,37.62],10);
