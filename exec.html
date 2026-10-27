@@ -10,8 +10,6 @@
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <title>Объекты ГК КРАШМАШ</title>
 <script>try{var t=localStorage.getItem("raport2-theme");if(!t)t=matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
 <style>
 [hidden]{display:none!important}
@@ -293,14 +291,9 @@ section.card,.sum div,details.how,.oc,.box{background:var(--glass)}
 .mapbox{padding:0;overflow:hidden}
 .mapbox h3{padding:12px 12px 0}
 .mapbtn{display:flex;gap:6px;padding:0 12px 8px}.mapbtn .btn{min-height:32px;font-size:13px;padding:0 10px;width:auto}
-#map{height:420px;background:var(--sunk)}
+#map{display:block;width:100%;height:420px;border:0;background:var(--sunk)}
 .mapnote{padding:8px 12px;font-size:12px;color:var(--muted)}
 .leg{display:flex;flex-wrap:wrap;gap:4px 12px;padding:8px 12px 12px;font-size:12px;color:var(--muted)}.leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}
-.pinw{background:none;border:0}.pinw svg{transition:transform .15s;transform-origin:50% 100%;display:block}.pinw.hl svg,.pinw:hover svg{transform:scale(1.35)}
-:root[data-theme="dark"] .leaflet-tile-pane{filter:invert(1) hue-rotate(180deg) brightness(.85) contrast(.9) saturate(.55)}
-.leaflet-container{font-family:var(--f-ui)}
-.osmcr{position:absolute;right:0;bottom:0;z-index:1000;background:rgba(255,255,255,.85);padding:1px 6px;font-size:11px;border-radius:4px 0 0 0}.osmcr a{color:#333;text-decoration:none}
-.leaflet-attribution-flag,.leaflet-control-attribution svg,.leaflet-control-attribution a[href*="leafletjs.com"],.leaflet-control-attribution a[href*="leafletjs"]+span{display:none!important}
 @keyframes flash{0%{box-shadow:0 0 0 5px var(--accent)}100%{box-shadow:0 0 0 0 transparent}}
 .oc.flash{animation:flash 1.2s}
 @media (max-width:1100px){.lay{grid-template-columns:1fr}.side{position:static}#filt{order:1;grid-template-columns:1fr 1fr}#filt .box:first-child{grid-column:1/-1}#fl{display:flex;flex-wrap:wrap;gap:0 16px}#list{order:2}#mapcol{order:3}#map{height:300px}}
@@ -343,9 +336,8 @@ section.card,.sum div,details.how,.oc,.box{background:var(--glass)}
         <div class="box"><button type="button" class="btn" id="freset">Показать все</button></div></aside>
       <div class="grid" id="list"><div class="empty">Загрузка…</div></div>
       <aside class="side" id="mapcol"><div class="box mapbox"><h3>Карта объектов</h3>
-        <div class="mapbtn"><button type="button" class="btn" id="mmsk">Москва</button><button type="button" class="btn" id="mall">Все объекты</button></div>
-        <div id="map"></div><div class="mapnote" id="mnote" hidden></div>
-        <div class="leg"><span><i style="background:var(--s-r)"></i>красный</span><span><i style="background:var(--s-y)"></i>жёлтый</span><span><i style="background:var(--s-g)"></i>зелёный</span><span><i style="background:var(--s-n)"></i>нет данных</span><span><i style="background:#5f6b5c"></i>закрыт</span></div></div></aside>
+        <iframe id="map" title="Карта объектов" src="https://yandex.ru/map-widget/v1/?um=constructor%3Ae87843fcc1f159fdfb5ab0611f1dab75b3b93321ac86393855a960b65e1355c2&amp;source=constructor" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe><div class="mapnote" id="mnote" hidden></div>
+</div></aside>
     </div>
   </div>
 
@@ -432,34 +424,9 @@ function showList(keepF){$("v-list").hidden=false;$("v-obj").hidden=true;
   const vis=M.objects.filter(passF);if(!vis.length)L.appendChild(el("div","empty","Нет объектов по выбранным фильтрам"));
   let ch=false;vis.forEach(o=>{if(o.closed&&!ch){ch=true;L.appendChild(el("div","cl-h","Закрытые объекты"));}L.appendChild(card(o));});
   drawMap(vis);}
-/* ---------- карта (OpenStreetMap) ---------- */
-/* Координаты подобраны по адресам; чтобы поправить объект — измените пару чисел [широта, долгота] ниже
-   или передайте o.lat / o.lng из базы. Объекты без координат на карту не попадают. */
-const GEO=[[/филёвск|филевск/,[55.73906,37.49786]],[/волоколам/,[55.82670,37.42740]],[/барвих/,[55.74155,37.27722]],[/шумкин/,[55.78889,37.66812]],[/олимпийск/,[55.78957,37.62204]],[/арбат/,[55.75348,37.57703]],[/мнёвник|мневник/,[55.77327,37.48810]],[/фрунзенск/,[55.72231,37.57961]],[/подбельск/,[55.81620,37.73816]],[/тимура|тимур/,[55.73357,37.59083]],[/кубинк/,[55.72121,37.40783]],[/подольск|мэр/,[55.43110,37.54470]],[/татарск/,[55.73753,37.63546]]];
-const coordOf=o=>{if(o.lat!=null&&o.lng!=null)return[+o.lat,+o.lng];const t=(o.short||"").toLowerCase();for(const g of GEO)if(g[0].test(t))return g[1];return null;};
-const PINC={r:"var(--s-r)",y:"var(--s-y)",g:"var(--s-g)",n:"var(--s-n)",c:"#5f6b5c"};
-let map=null,mlayer=null,pinOf={};
-function initMap(){if(map||!window.L)return;try{
-  map=L.map("map",{scrollWheelZoom:false,attributionControl:false}).setView([55.75,37.62],10);
-  const cr=document.createElement("div");cr.className="osmcr";cr.innerHTML='<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">© участники OpenStreetMap</a>';map.getContainer().appendChild(cr);
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:"© участники OpenStreetMap"}).addTo(map);
-  mlayer=L.layerGroup().addTo(map);
-  $("mmsk").onclick=()=>map.setView([55.75,37.62],10);
-  $("mall").onclick=()=>{const p=Object.values(pinOf).map(m=>m.getLatLng());if(p.length)map.fitBounds(L.latLngBounds(p),{padding:[30,30],maxZoom:12});};
-  }catch(e){map=null;}}
-function hlCard(pid,v){const c=document.querySelector('.oc[data-pid="'+CSS.escape(pid)+'"]');if(c)c.classList.toggle("hl",!!v);}
-function hlPin(pid,v){const m=pinOf[pid];if(m&&m._icon)m._icon.classList.toggle("hl",!!v);}
-function drawMap(list){
-  if(!window.L){const n=$("mnote");n.hidden=false;n.textContent="Карта недоступна: не загрузилась библиотека карты. Остальные данные работают.";$("map").style.display="none";document.querySelector(".mapbtn").style.display="none";return;}
-  initMap();if(!map)return;setTimeout(()=>map.invalidateSize(),50);
-  mlayer.clearLayers();pinOf={};let miss=0;
-  list.forEach(o=>{const ll=coordOf(o);if(!ll){miss++;return;}
-    const ico=L.divIcon({className:"pinw",iconSize:[28,38],iconAnchor:[14,38],html:'<svg width="28" height="38" viewBox="0 0 28 38"><path d="M14 37C14 37 2 24 2 14a12 12 0 0 1 24 0C26 24 14 37 14 37z" fill="'+PINC[o.light]+'" stroke="#fff" stroke-width="2"/><circle cx="14" cy="14" r="4.5" fill="#fff"/></svg>'});
-    const m=L.marker(ll,{icon:ico,title:o.short}).addTo(mlayer);m.bindTooltip(o.short,{direction:"top",offset:[0,-30]});
-    m.on("mouseover",()=>hlCard(o.pid,1));m.on("mouseout",()=>hlCard(o.pid,0));
-    m.on("click",()=>{const c=document.querySelector('.oc[data-pid="'+CSS.escape(o.pid)+'"]');if(c){c.scrollIntoView({behavior:"smooth",block:"center"});c.classList.remove("flash");void c.offsetWidth;c.classList.add("flash");}});
-    pinOf[o.pid]=m;});
-  const n=$("mnote");n.hidden=!miss;n.textContent=miss?"Без координат: "+miss+" (не показаны на карте)":"";}
+/* ---------- карта: встроена карта Яндекс Конструктора (iframe в блоке #map) ---------- */
+function drawMap(){}
+function hlPin(){}
 function card(o){
   const b=el("button","oc "+o.light);b.type="button";b.dataset.pid=o.pid;b.onmouseenter=()=>hlPin(o.pid,1);b.onmouseleave=()=>hlPin(o.pid,0);b.onclick=()=>{cur=o.pid;keep();showObj(o);scrollTo(0,0);};
   const hd=el("div","oc-h");hd.appendChild(lamp(o.light,"big"));const t=el("div","t");t.appendChild(el("b",null,o.short));
