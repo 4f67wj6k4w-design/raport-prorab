@@ -450,6 +450,9 @@ function spark(o){const v=o.series.people.slice(-14),dd=M.dates.slice(-14),n=v.l
   return s;}
 
 /* ---------- объект ---------- */
+/* строки недельной таблицы без значений за обе недели (14 дней) скрываем: Техника, Вывоз, Рейсы */
+const QUIET=["Моточасы техники","Рейсов вывоза","Вывоз"];
+function quiet(o,n){const r=o.week&&o.week.rows.find(x=>x.n===n);return !!r&&!(r.a>0)&&!(r.b>0);}
 function showObj(o){$("v-list").hidden=true;$("v-obj").hidden=false;
   const H=$("o-head");H.innerHTML="";H.appendChild(lamp(o.light,"big"));const t=el("div");const h2=el("h2",null,o.short);t.appendChild(h2);t.appendChild(el("div","k",LAB[o.light]+(o.kind?" · "+o.kind:"")));H.appendChild(t);
   const ul=$("o-rs");ul.innerHTML="";o.reasons.forEach(x=>{const li=el("li",x.l==="n"?"dim":null);li.appendChild(lamp(x.l,"sm"));li.appendChild(el("span",null,x.t));ul.appendChild(li);});
@@ -457,7 +460,7 @@ function showObj(o){$("v-list").hidden=true;$("v-obj").hidden=false;
   $("o-date").textContent="Показатели за "+ru(date);
   const T=$("o-tiles");T.innerHTML="";const tile=(l,v,sm)=>{const d=el("div","tile");d.appendChild(el("span",null,l));d.appendChild(el("b",null,v));if(sm)d.appendChild(el("small",null," "+sm));T.appendChild(d);};
   if(o.pct!==null)tile("Выполнено по плану",fmt(o.pct,1)+"%");
-  if(o.day){tile("Людей",fmt(o.day.people,0));tile("Техники",fmt(o.day.mach,0),o.day.mh?fmt(o.day.mh,0)+" маш.-ч":"");tile("Вывоз",fmt(o.day.m3,0),"м³"+(o.day.trips?" · "+fmt(o.day.trips,0)+" рейс.":""));tile("Простои/ремонт",fmt(o.day.dt||0,1),"ч");}
+  if(o.day){tile("Людей",fmt(o.day.people,0));if(!(quiet(o,"Моточасы техники")&&!(o.day.mach>0)&&!(o.day.mh>0)))tile("Техники",fmt(o.day.mach,0),o.day.mh?fmt(o.day.mh,0)+" маш.-ч":"");if(!(quiet(o,"Вывоз")&&quiet(o,"Рейсов вывоза")&&!(o.day.m3>0)&&!(o.day.trips>0)))tile("Вывоз",fmt(o.day.m3,0),"м³"+(o.day.trips?" · "+fmt(o.day.trips,0)+" рейс.":""));tile("Простои/ремонт",fmt(o.day.dt||0,1),"ч");}
   if(o.due)tile("Срок по договору",ru(o.due));if(o.forecast)tile("Прогноз окончания",ru(o.forecast));
   if(!T.children.length)T.appendChild(el("div","empty","Рапортов по объекту ещё не было"));
   charts(o);week(o);worksList(o);}
@@ -468,7 +471,7 @@ function charts(o){const C=$("o-charts");C.innerHTML="";if(!o.series){C.appendCh
     C.appendChild(line("Выполнение плана объекта, %",plan?"сплошная — факт, пунктир — равномерный график до срока":"накопительно, по работам с объёмом по проекту",D,cut(S.pct),plan,"%"));}
   o.works.filter(w=>w.act>0).slice(0,4).forEach(w=>C.appendChild(bars(w.n+", "+w.u,"объём за день"+(w.t?" · план "+fmt(w.t)+", выполнено "+fmt(w.pct,1)+"%":""),D,cut(w.d),w.u,o.first,{cum:w.done,t:w.t})));
   C.appendChild(bars("Люди на объекте","свои + субподрядчики, чел. в день; точка — рапорта нет",D,cut(S.people),"чел.",o.first,{avg:1}));
-  C.appendChild(bars("Техника, машино-часы","моточасы за день",D,cut(S.mh),"маш.-ч",o.first,{sum:1}));
+  if(cut(S.mh).some(x=>x))C.appendChild(bars("Техника, машино-часы","моточасы за день",D,cut(S.mh),"маш.-ч",o.first,{sum:1}));
   if(S.m3.some(x=>x))C.appendChild(bars("Вывоз, м³","за день",D,cut(S.m3),"м³",o.first,{sum:1}));
   if(cut(S.dt).some(x=>x))C.appendChild(bars("Простои и ремонт, ч","без ТО",D,cut(S.dt),"ч",o.first,{sum:1}));else{const f=frame("Простои и ремонт, ч","без ТО");f.appendChild(el("div","empty","За период простоев и ремонтов не было"));C.appendChild(f);}}
 function frame(title,sub){const w=el("div","ch");w.appendChild(el("h3",null,title));if(sub)w.appendChild(el("div","sub",sub));return w;}
@@ -510,7 +513,7 @@ function line(title,sub,D,v,plan,unit){const w=frame(title,sub);const W=340,H=16
 const T=$("tip");function tip(e,t){T.textContent=t;T.hidden=false;mvtip(e);}function mvtip(e){T.style.left=e.clientX+"px";T.style.top=e.clientY+"px";}function untip(){T.hidden=true;}
 function week(o){const W=$("o-week");W.innerHTML="";if(!o.week){W.appendChild(el("div","empty","Нет данных"));return;}
   const wk=o.week;const tb=el("table","ww");const cg=el("colgroup");["c0","c1","c2","c3"].forEach(c=>cg.appendChild(el("col",c)));tb.appendChild(cg);const th=el("thead");const tr=el("tr");["Показатель",ru5(wk.b[0])+"–\u200b"+ru5(wk.b[1]),ru5(wk.a[0])+"–\u200b"+ru5(wk.a[1]),"Изм."].forEach(x=>tr.appendChild(el("th",null,x)));th.appendChild(tr);tb.appendChild(th);
-  const bd=el("tbody");let sep=false;wk.rows.forEach(r=>{const tr=el("tr",r.s&&!sep?"sep":null);if(r.s)sep=true;const td=el("td",null,r.n+" ");td.appendChild(el("small",null,r.u));tr.appendChild(td);
+  const bd=el("tbody");let sep=false;wk.rows.filter(r=>!(QUIET.indexOf(r.n)>=0&&!(r.a>0)&&!(r.b>0))).forEach(r=>{const tr=el("tr",r.s&&!sep?"sep":null);if(r.s)sep=true;const td=el("td",null,r.n+" ");td.appendChild(el("small",null,r.u));tr.appendChild(td);
     tr.appendChild(el("td",null,fmt(r.b)));tr.appendChild(el("td",null,fmt(r.a)));
     let c="",cls="eq";if(r.b>0){const p=Math.round((r.a/r.b-1)*100);c=(p>0?"▲+":p<0?"▼":"")+p+"%";cls=p===0?"eq":((p>0)!==!!r.bad?"up":"dn");}else if(r.a>0){c="новое";}
     tr.appendChild(el("td",cls,c));bd.appendChild(tr);});tb.appendChild(bd);const wr=el("div","wwrap");wr.appendChild(tb);W.appendChild(wr);
