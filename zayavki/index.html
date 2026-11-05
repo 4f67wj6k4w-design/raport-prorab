@@ -193,6 +193,8 @@ header .tab[aria-selected="true"]{background:#fff;color:#1d4713;box-shadow:0 2px
 .card{background:color-mix(in srgb,var(--card) 95%,transparent);box-shadow:0 2px 10px rgba(20,40,20,.08)}
 .wrap{padding-top:0}
 @media (max-width:700px){header{padding:12px 14px}header .tabs{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;width:100%}header .tab{white-space:nowrap;padding:7px 12px;font-size:14px}}
+.intro,#main>.muted,.sv>.muted,.sv>.small.muted{display:block;background:color-mix(in srgb,var(--card) 92%,transparent);border-radius:10px;padding:8px 12px;color:var(--fg);box-shadow:0 1px 6px rgba(20,40,20,.08);width:fit-content;max-width:100%}
+.sv>h2,#main>h2{text-shadow:none}
 </style>
 
 <style>body{margin:0}</style></head><body>
@@ -538,7 +540,7 @@ function renderSalary(){
   var keys=Object.keys(D);keys.forEach(function(k){var x=D[k];x.total=x.trip+x.hpay+x.shift+x.adj;x.nd=Object.keys(x.days).length});
   keys.sort(function(a,b2){return D[b2].total-D[a].total});
   var T={trip:0,hpay:0,shift:0,adj:0,total:0,trips:0,hrs:0};keys.forEach(function(k){var x=D[k];T.trip+=x.trip;T.hpay+=x.hpay;T.shift+=x.shift;T.adj+=x.adj;T.total+=x.total;T.trips+=x.trips;T.hrs+=x.hrs});
-  var h='<h2 style="margin:0 0 4px">Зарплата водителей Renault</h2><div class="small muted" style="margin-bottom:10px">Рейсы по тарифу за км в одну сторону + '+fmt(C.shift,0)+' ₽ за каждый день выхода (рейс, работа по месту, простой, ремонт/ТО) + '+fmt(C.hourRate,0)+' ₽/ч за работу по месту и оплачиваемый простой (от '+C.idleMin+' ч; в журнале диспетчер вносит оплачиваемые простои). Налоги и взносы не включены. Премии, штрафы и удержания вносятся вручную (их ведут механики). Ставки меняются в «Справочники → Настройки расчёта».</div>';
+  var h='<h2 style="margin:0 0 4px">Зарплата водителей Renault</h2><div class="small muted intro" style="margin-bottom:10px">Рейсы по тарифу за км в одну сторону + '+fmt(C.shift,0)+' ₽ за каждый день выхода (рейс, работа по месту, простой, ремонт/ТО) + '+fmt(C.hourRate,0)+' ₽/ч за работу по месту и оплачиваемый простой (от '+C.idleMin+' ч; в журнале диспетчер вносит оплачиваемые простои). Налоги и взносы не включены. Премии, штрафы и удержания вносятся вручную (их ведут механики). Ставки меняются в «Справочники → Настройки расчёта».</div>';
   h+=monthNav('salMonth');
   h+='<div class="tiles">'+tile('К начислению, без налогов',fmt(T.total),'₽',keys.length+' водит.',{hero:true})+tile('За рейсы',fmt(T.trip),'₽',fmt(T.trips,0)+' рейсов')+tile('За часы',fmt(T.hpay),'₽',fmt(T.hrs,1)+' ч')+tile('Выходы',fmt(T.shift),'₽',fmt(T.shift/Math.max(C.shift,1),0)+' дн.')+tile('Премии / удержания',fmt(T.adj),'₽','вручную')+'</div>';
   h+='<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">По водителям: '+esc(monthLabel(ym))+'</h3>'+(canA?'<button class="btn sm pri" data-act="adjAdd">+ Премия / удержание</button>':'')+'</div>';
@@ -579,7 +581,7 @@ function renderEcon(){
   keys.sort(function(a,b2){return V[b2].profit-V[a].profit});
   var T={rev:0,sal:0,fuel:0,amort:0,profit:0,nd:0,mil:0,vol:0,idle:0};keys.forEach(function(k){var x=V[k];T.rev+=x.rev;T.sal+=x.sal;T.fuel+=x.fuel;T.amort+=x.amort;T.profit+=x.profit;T.nd+=x.nd;T.mil+=x.mil;T.vol+=x.vol;T.idle+=x.idle});
   var mg=T.rev>0?T.profit/T.rev*100:0;
-  var h='<h2 style="margin:0 0 4px">Экономика Renault</h2><div class="small muted" style="margin-bottom:10px">Выручка внутренняя: объём × цена по маршруту (для сравнения с ценой перевозчиков), работа по месту — '+fmt(C.placeRate,0)+' ₽/ч. Расходы: зарплата (рейсы, часы, выход), топливо ('+C.fuelNorm+' л/100 км × '+fmt(C.fuelPrice,0)+' ₽/л), амортизация '+fmt(C.amort,0)+' ₽/км. Пробег = км × рейсы × '+C.kmK+'. Налоги, ремонт и прочие расходы отдельно не учитываются: они заложены в амортизацию на км. Всё меняется в «Справочники → Настройки расчёта».</div>';
+  var h='<h2 style="margin:0 0 4px">Экономика Renault</h2><div class="small muted intro" style="margin-bottom:10px">Выручка внутренняя: объём × цена по маршруту (для сравнения с ценой перевозчиков), работа по месту — '+fmt(C.placeRate,0)+' ₽/ч. Расходы: зарплата (рейсы, часы, выход), топливо ('+C.fuelNorm+' л/100 км × '+fmt(C.fuelPrice,0)+' ₽/л), амортизация '+fmt(C.amort,0)+' ₽/км. Пробег = км × рейсы × '+C.kmK+'. Налоги, ремонт и прочие расходы отдельно не учитываются: они заложены в амортизацию на км. Всё меняется в «Справочники → Настройки расчёта».</div>';
   h+=monthNav('econMonth');
   h+='<div class="tiles">'+tile('Прибыль',fmt(T.profit),'₽','маржа '+fmt(mg,1)+'% (цель '+C.targetMargin+'%)',{hero:true})+tile('Выручка',fmt(T.rev),'₽',fmt(T.vol,0)+' м³')+tile('Зарплата',fmt(T.sal),'₽','')+tile('Топливо',fmt(T.fuel),'₽',fmt(T.mil,0)+' км пробега')+tile('Амортизация',fmt(T.amort),'₽','')+'</div>';
   if(np)h+='<div class="note" style="margin-top:10px">Строк рейсов без цены заказчика: <b>'+np+'</b>. Их выручка принята за 0. Добавьте цену в справочник маршрутов.</div>';
@@ -635,7 +637,7 @@ function renderAdv(){
   Object.keys(M).forEach(function(k){var x=M[k];x.work=0;S.requests.forEach(function(r){if(r.date<x.first)return;(r.items||[]).forEach(function(it){var f=it.fact;if(!f)return;(f.hired||[]).forEach(function(h){if(h.carrier!==k||h.nodebt)return;var v=num(h.vol),p=num(h.price);if(v&&p>0)x.work+=v*p})})});x.after=x.work;x.work=Math.min(x.adv,x.work);x.left=x.adv-x.work});
   var keys=Object.keys(M).sort(function(a,b){return M[b].left-M[a].left});
   var T={adv:0,work:0,left:0};keys.forEach(function(k){T.adv+=M[k].adv;T.work+=M[k].work;T.left+=M[k].left});
-  var h='<h2 style="margin:0 0 4px">Авансы перевозчикам</h2><div class="small muted" style="margin-bottom:12px">Отдельный блок: авансы в долг не входят и из него не вычитаются. «Отработано» — принятый объём × цена по этому перевозчику с даты первого аванса, но не больше выданного. Блок можно выключить в «Справочники → Настройки расчёта».</div>';
+  var h='<h2 style="margin:0 0 4px">Авансы перевозчикам</h2><div class="small muted intro" style="margin-bottom:12px">Отдельный блок: авансы в долг не входят и из него не вычитаются. «Отработано» — принятый объём × цена по этому перевозчику с даты первого аванса, но не больше выданного. Блок можно выключить в «Справочники → Настройки расчёта».</div>';
   h+='<div class="tiles">'+tile('Выдано авансов',fmt(T.adv),'₽',keys.length+' перевозч.',{hero:true})+tile('Отработано в счёт аванса',fmt(T.work),'₽','')+tile('Остаток аванса',fmt(T.left),'₽','выдано − отработано')+'</div>';
   h+='<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">По перевозчикам</h3>'+(canP?'<button class="btn sm pri" data-act="dbPay" data-v="adv">+ Аванс</button>':'')+'</div>';
   if(!keys.length)h+='<div class="empty" style="margin-top:10px">Авансов нет. Нажмите «+ Аванс», чтобы внести первый.</div>';
@@ -652,7 +654,7 @@ function renderAdv(){
 function renderPlan(){
   var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
   var canE=finCan('plans'),pl=sortBy(S.plans||[],function(p){return (p.object||'')+(p.from||'')});
-  var h='<h2 style="margin:0 0 4px">План / факт по объектам</h2><div class="small muted" style="margin-bottom:12px">План вывоза по объекту на период вносится вручную (источник: проект, график, руководитель). Факт — принятый объём (Renault и перевозчики). Блок можно выключить в «Справочники → Настройки расчёта».</div>';
+  var h='<h2 style="margin:0 0 4px">План / факт по объектам</h2><div class="small muted intro" style="margin-bottom:12px">План вывоза по объекту на период вносится вручную (источник: проект, график, руководитель). Факт — принятый объём (Renault и перевозчики). Блок можно выключить в «Справочники → Настройки расчёта».</div>';
   h+='<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">Планы</h3>'+(canE?'<button class="btn sm pri" data-act="planAdd">+ План</button>':'')+'</div>';
   if(!pl.length)h+='<div class="empty" style="margin-top:10px">Планов пока нет. Нажмите «+ План».</div>';
   else{
@@ -734,7 +736,7 @@ function renderDebts(){
   var hasOpen=keys.some(function(k){return T[k].openDate});
   var tot={debt:0,acc:0,paid:0,adv:0,np:0};keys.forEach(function(k){var x=T[k];tot.debt+=x.debt;tot.acc+=x.acc;tot.paid+=x.paid;tot.adv+=x.adv});
   Object.keys(T).forEach(function(k){tot.np+=T[k].np});
-  var h='<h2 style="margin:0 0 4px">Долги и сверка с перевозчиками</h2><div class="small muted" style="margin-bottom:12px">Долг = остаток на начальную дату + начислено (принятый диспетчером объём × цена) − оплаты. Авансы показаны отдельно и в долг не входят. Начисление идёт только по строкам, где указана цена.</div>';
+  var h='<h2 style="margin:0 0 4px">Долги и сверка с перевозчиками</h2><div class="small muted intro" style="margin-bottom:12px">Долг = остаток на начальную дату + начислено (принятый диспетчером объём × цена) − оплаты. Авансы показаны отдельно и в долг не входят. Начисление идёт только по строкам, где указана цена.</div>';
   h+='<div class="tiles">'+tile(hasOpen?'Долг перед перевозчиками':'Начислено, оплат и остатка нет',fmt(tot.debt),'₽',hasOpen?keys.length+' перевозч.':'это ещё не долг: внесите остатки и оплаты',{hero:true})+tile('Начислено (после даты остатка)',fmt(tot.acc),'₽','')+tile('Оплачено',fmt(tot.paid),'₽','')+tile('Авансы выданы, отдельно',fmt(tot.adv),'₽','не вычитаются из долга')+tile('Строк факта без цены',fmt(tot.np),'','начисление по ним 0')+'</div>';
   h+='<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">Долг по перевозчикам</h3>'+(canP?'<span style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm pri" data-act="dbPay" data-v="pay">+ Оплата</button>'+(CFG().features.adv?'<button class="btn sm" data-act="dbPay" data-v="adv">+ Аванс</button>':'')+'<button class="btn sm" data-act="dbPay" data-v="open">+ Начальный остаток</button></span>':'')+'</div>';
   if(!keys.length)h+='<div class="empty" style="margin-top:10px">Пока нет данных. Задайте начальный остаток долга по перевозчикам и вносите цены в назначении или факте.</div>';
