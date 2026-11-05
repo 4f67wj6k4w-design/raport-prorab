@@ -13,7 +13,10 @@ var SPEC = {
   requests:  {sheet:'Заявки',       cols:[['id','s'],['date','s'],['object','s'],['foremanId','s'],['foremanName','s'],['items','j'],['comment','s'],['sentAt','s'],['byStaff','s'],['editedAt','n'],['log','j'],['createdAt','n'],['summary','d']]},
   approvals: {sheet:'Утверждения',  cols:[['id','s'],['by','s'],['at','n'],['atStr','s']]},
   payments:  {sheet:'Платежи',      cols:[['id','s'],['date','s'],['carrier','s'],['amount','n'],['kind','s'],['doc','s'],['note','s'],['by','s']]},
-  recon:     {sheet:'Сверка',       cols:[['id','s'],['week','s'],['carrier','s'],['regVol','n'],['invSum','n'],['upd','s'],['stage','s'],['transferDate','s'],['transferTo','s'],['note','s'],['by','s'],['at','s']]}
+  recon:     {sheet:'Сверка',       cols:[['id','s'],['week','s'],['carrier','s'],['regVol','n'],['invSum','n'],['upd','s'],['stage','s'],['transferDate','s'],['transferTo','s'],['note','s'],['by','s'],['at','s']]},
+  settings:  {sheet:'Настройки',    cols:[['id','s'],['val','s'],['by','s'],['at','s']]},
+  adjust:    {sheet:'Корректировки',cols:[['id','s'],['month','s'],['driver','s'],['amount','n'],['note','s'],['by','s']]},
+  plans:     {sheet:'План',         cols:[['id','s'],['object','s'],['from','s'],['to','s'],['vol','n'],['note','s'],['by','s']]}
 };
 var TYPES = {vyvoz:'Вывоз', mesto:'По месту', samo:'Самовывоз', polivo:'Поливомоечная'};
 
@@ -127,7 +130,7 @@ function boot_(me, b) {
   var data = {};
   Object.keys(SPEC).forEach(function (c) { data[c] = readColl_(c); });
   if (me.kind === 'foreman') data.requests = data.requests.filter(function (r) { return r.foremanId === me.id; });
-  if (me.kind === 'foreman') { data.payments = []; data.recon = []; }
+  if (me.kind === 'foreman') { data.payments = []; data.recon = []; data.adjust = []; data.plans = []; data.settings = []; }
   if (me.kind !== 'admin') { data.foremen.forEach(function (f) { delete f.token; }); data.staff.forEach(function (f) { delete f.token; }); }
   data.foremen = data.foremen.filter(function (f) { return me.kind === 'admin' || me.kind === 'dispatcher' ? true : f.active !== false; });
   return {ok: true, ver: ver, me: me, data: data};
@@ -137,8 +140,8 @@ function allowed_(me, kind, coll, id, data, existing) {
   var k = me.kind;
   if (k === 'admin') return true;
   if (k === 'director') return false;
-  if (k === 'approver') return coll === 'approvals' || coll === 'recon';
-  if (k === 'dispatcher') return ['requests', 'carriers', 'fleet', 'foremen', 'objects', 'drivers', 'routes', 'places', 'payments', 'recon'].indexOf(coll) >= 0;
+  if (k === 'approver') return coll === 'approvals' || coll === 'recon' || coll === 'adjust' || coll === 'plans';
+  if (k === 'dispatcher') return ['requests', 'carriers', 'fleet', 'foremen', 'objects', 'drivers', 'routes', 'places', 'payments', 'recon', 'settings', 'adjust', 'plans'].indexOf(coll) >= 0;
   if (k === 'foreman') {
     if (coll !== 'requests') return false;
     if (kind === 'set' && !existing) return data && data.foremanId === me.id;
