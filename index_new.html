@@ -1,0 +1,1183 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2E671F">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<title>Рапорт прораба — ГК «КРАШМАШ»</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+[hidden]{display:none!important}
+html,body{margin:0}
+:root{padding-top:env(safe-area-inset-top,0px)}
+
+/* Layout: одна колонка под большой палец; липкая шапка с вкладками; поля крупные, цифры моноширинные */
+:root{
+  --brand:#2E671F;
+  --bg:#eef1ec; --surface:#ffffff; --sunk:#e2e8df; --line:#cbd4c7;
+  --fg:#18221a; --muted:#5a6758; --accent:#2E671F; --accent-ink:#ffffff;
+  --steel:#2E671F; --ok:#2E671F; --warn:#b26b00; --bad:#b3362c;
+  --f-ui:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111612; --surface:#1a211b; --sunk:#232c24; --line:#344035;
+  --fg:#e6ede5; --muted:#9aa898; --accent:#5f9e4b; --accent-ink:#0c1709;
+  --steel:#8cc47a; --ok:#7fc06a; --warn:#e3a33c; --bad:#ec6a5e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111612; --surface:#1a211b; --sunk:#232c24; --line:#344035;
+  --fg:#e6ede5; --muted:#9aa898; --accent:#5f9e4b; --accent-ink:#0c1709;
+  --steel:#8cc47a; --ok:#7fc06a; --warn:#e3a33c; --bad:#ec6a5e; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:16px;line-height:1.35}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:0 96px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--brand);color:#fff;margin-inline:-16px;padding:10px 16px 0}
+.brandrow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.brandrow img{height:48px;width:auto;flex:0 0 auto;display:block}
+.brandrow .ttl{min-width:0}
+.obj{font-size:16px;font-weight:600;line-height:1.3}
+h1{font-size:20px;margin:2px 0 8px;font-weight:700;text-wrap:balance}
+nav.tabs{display:flex;gap:4px}
+nav.tabs button{flex:1;border:0;background:transparent;color:inherit;font:600 15px var(--f-ui);padding:10px 4px 12px;border-bottom:3px solid transparent;opacity:.75;cursor:pointer}
+nav.tabs button[aria-selected="true"]{opacity:1;border-bottom-color:#fff}
+.banner{margin-top:12px;padding:10px 12px;border-radius:var(--r);background:var(--sunk);border-left:4px solid var(--warn);font-size:14px}
+.banner.bad{border-left-color:var(--bad)}
+section.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-top:12px;padding:14px}
+section.card h2{font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;font-weight:600;display:flex;justify-content:space-between;gap:8px}
+.code{font-family:var(--f-num);font-size:12px;color:var(--steel);font-weight:600}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1 1 140px;min-width:0}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+input,select,textarea{font:16px var(--f-ui);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 10px;width:100%;min-height:44px}
+input[inputmode]{font-family:var(--f-num);text-align:right}
+textarea{min-height:64px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;border:0;background:var(--bg);color:var(--fg);font:600 15px var(--f-ui);min-height:44px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.work{display:grid;grid-template-columns:1fr 112px;gap:6px 10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.work:first-of-type{border-top:0}
+.work .nm{min-width:0}
+.work .nm b{display:block;font-weight:500}
+.work .nm small{color:var(--muted);font-size:12px;line-height:1.5}
+.work .nm small b.pt{display:inline;font-family:var(--f-num);font-weight:600;color:var(--fg)}
+.mach{display:grid;grid-template-columns:1fr 84px 44px;gap:8px;align-items:center;padding:6px 0}
+.haul{display:grid;grid-template-columns:1fr 64px 84px 44px;gap:8px;padding:10px 0;border-top:1px dashed var(--line)}
+.haul:first-child{border-top:0}
+.haul .cr{grid-column:1/4}
+.haul .del{min-width:44px;padding:0;font-size:20px;line-height:1}
+.haul-hd{display:grid;grid-template-columns:1fr 64px 84px 44px;gap:8px;font-size:12px;color:var(--muted)}
+.haul-hd span:nth-child(2),.haul-hd span:nth-child(3){text-align:right}
+.mach .del{min-width:44px;padding:0;font-size:20px;line-height:1}
+.mach-hd{display:grid;grid-template-columns:1fr 84px 44px;gap:8px;font-size:12px;color:var(--muted)}
+.mach-hd span:nth-child(2){text-align:right}
+.dt{display:grid;grid-template-columns:1fr 78px;gap:6px 8px;padding:10px 0;border-top:1px dashed var(--line)}
+.dt .full{grid-column:1/-1}
+.dtk{display:flex;gap:6px}.dtk button{flex:1;min-height:38px;border:1px solid var(--line);border-radius:8px;background:var(--surface,#fff);color:inherit;font-size:14px}
+.dtk button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--fg);font:600 15px var(--f-ui);border-radius:8px;min-height:44px;padding:0 14px;cursor:pointer}
+.btn.small{min-height:36px;font-size:14px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px))}
+.savebar .in{max-width:720px;margin:0 auto;display:flex;gap:10px;align-items:center}
+.savebar .msg{flex:1;font-size:13px;color:var(--muted);min-width:0}
+.savebar .btn{flex:0 0 auto;min-width:150px}
+td.muted{color:var(--muted);padding-left:14px}
+.ok{color:var(--ok)} .bad{color:var(--bad)} .warnc{color:var(--warn)}
+.ot{display:flex;gap:8px}
+.ot button{flex:1}
+.ot button[aria-pressed="true"].no{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.ot button[aria-pressed="true"].yes{background:var(--bad);border-color:var(--bad);color:var(--surface)}
+.tablewrap{overflow-x:auto;margin-inline:-4px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal}
+th{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+td.n{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--sunk);border-radius:3px;margin-top:4px;overflow:hidden;min-width:60px}
+.bar i{display:block;height:100%;background:var(--accent)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.kpi{background:var(--sunk);border-radius:8px;padding:10px}
+.kpi small{display:block;color:var(--muted);font-size:12px}
+.kpi b{font-family:var(--f-num);font-size:20px;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:13px;padding:4px 8px;border-radius:999px;background:var(--sunk)}
+.chip.miss{background:color-mix(in srgb,var(--bad) 18%,var(--surface));color:var(--bad)}
+.log{display:flex;flex-direction:column;gap:8px}
+.log button.item{text-align:left;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:var(--r);padding:10px 12px;cursor:pointer;font:15px var(--f-ui);display:flex;flex-direction:column;gap:4px}
+.log .meta{display:flex;justify-content:space-between;gap:8px;font-weight:600}
+.log .sum{color:var(--muted);font-size:13px}
+.flag{font-size:12px;padding:1px 6px;border-radius:4px;background:var(--bad);color:var(--surface);font-weight:600}
+.sendgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+a.btn.send,button.btn.send{display:flex;align-items:center;justify-content:center;text-decoration:none;min-height:48px;font-size:16px}
+a.btn.send.max{background:#4b2bd6;border-color:#4b2bd6;color:#fff}
+a.btn.send.tg{background:#229ed9;border-color:#229ed9;color:#fff}
+a.btn.send.wa{background:#1fa855;border-color:#1fa855;color:#fff}
+pre.gp{white-space:pre-wrap;font:13px/1.45 var(--f-num);background:var(--sunk);border-radius:8px;padding:12px;margin:10px 0 0;max-height:420px;overflow:auto}
+.empty{color:var(--muted);font-size:14px;padding:6px 0}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .4s}}
+
+.pop{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.pop[hidden]{display:none}
+.popc{background:var(--surface);border-radius:16px;max-width:420px;width:100%;padding:22px 20px 18px;text-align:center;border-top:8px solid var(--steel);max-height:90vh;overflow:auto}
+.popc.ok{border-top-color:var(--ok)}.popc.warn{border-top-color:var(--warn)}.popc.bad{border-top-color:var(--bad)}.popc.info{border-top-color:var(--muted)}
+.popi{width:56px;height:56px;border-radius:50%;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font:700 30px/1 Arial,sans-serif;color:#fff;background:var(--steel)}
+.popc.ok .popi{background:var(--ok)}.popc.warn .popi{background:var(--warn)}.popc.bad .popi{background:var(--bad)}.popc.info .popi{background:var(--muted)}
+.popt{font-size:21px;font-weight:700;margin-bottom:8px}
+.popc.bad .popt{color:var(--bad)}.popc.ok .popt{color:var(--ok)}
+.popx{font-size:15px;line-height:1.45;color:var(--fg)}
+.popc ul{text-align:left;margin:10px 0 0;padding-left:20px;font-size:15px;line-height:1.45}
+.popc li{margin:4px 0}
+.popb{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.popb .btn{flex:1;min-width:130px}
+
+/* --- конструктор --- */
+.wt{display:grid;grid-template-columns:70px 64px 1fr 40px;gap:6px;align-items:center;padding:10px 0;border-top:1px dashed var(--line)}
+.wt:first-child{border-top:0}
+.wt .wn{grid-column:1/4}
+.wt .d0{grid-column:1/3}
+.wt .src{grid-column:3/5}
+.wt input,.wt select{min-height:40px;padding:8px}
+.wt .del{min-width:40px;min-height:40px;padding:0;font-size:18px}
+.wt-hd{display:grid;grid-template-columns:62px 1fr 56px 96px 34px;gap:6px;font-size:12px;color:var(--muted)}
+.wt-hd span:nth-child(4){text-align:right}
+.linkbox{font:13px var(--f-num);word-break:break-all;background:var(--sunk);border-radius:8px;padding:10px;max-height:110px;overflow:auto}
+.qr{display:flex;justify-content:center;padding:10px;background:#fff;border-radius:8px;margin-top:10px}
+.proj{display:flex;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.proj:first-child{border-top:0}
+.proj .nm{flex:1;min-width:0}
+.proj .nm small{display:block;color:var(--muted);font-size:12px}
+.toggles{display:flex;flex-wrap:wrap;gap:8px 16px}
+.toggles label{display:flex;gap:6px;align-items:center;font-size:15px}
+.toggles input{width:20px;height:20px;min-height:0}
+.donebox{display:flex;gap:10px;align-items:center;padding:12px;border:2px solid var(--line);border-radius:10px;margin:0;font-weight:600;cursor:pointer}.donebox input{width:22px;height:22px;flex:none}.donebox:has(input:checked){border-color:var(--warn);background:var(--sunk)}
+.mitem{display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;text-align:left;margin-top:10px;min-height:56px;padding:10px 14px;white-space:normal;line-height:1.3}.mitem:first-child{margin-top:0}.mitem small{display:block;color:var(--muted);font-weight:400;font-size:12px;margin-top:2px}.mitem>span:last-child{font-size:22px;color:var(--muted)}
+.foot{margin-top:18px;text-align:center;font-size:12px;color:var(--muted)}
+.foot a{color:var(--muted)}
+.banner.okb{border-left-color:var(--ok)}
+.wrow{display:grid;grid-template-columns:1fr 92px 44px;gap:6px 8px;align-items:center;padding:10px 0;border-top:1px dashed var(--line)}
+.wrow:first-child{border-top:0}
+.wrow select,.wrow input{min-width:0}
+.wrow .wq{text-align:right;font-family:var(--f-num)}
+.wrow .del{min-width:44px;padding:0;font-size:20px;line-height:1}
+.wrow .wh{grid-column:1/-1;font-size:12px;color:var(--muted);line-height:1.4}
+.wrow .wh.bad{color:var(--bad)}
+.wrow .wm{grid-column:1/-1;display:flex;gap:6px}.wrow .wm button{flex:1;min-height:34px;padding:4px 8px;font-size:13px;border:1px solid var(--line);background:var(--surface,#fff);border-radius:8px;color:inherit}
+.wrow .wm button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.idle{display:flex;gap:10px;align-items:center;padding:12px;border:2px solid var(--line);border-radius:10px;margin:0 0 10px;font-weight:600;cursor:pointer}.idle input{width:22px;height:22px;flex:none}
+.prevfill{width:100%;margin:0 0 10px;min-height:48px;font-weight:600;border:2px dashed var(--accent);background:transparent;color:var(--accent)}
+body.is-idle #f-prev,body.is-idle #f-works,body.is-idle #f-work-add,body.is-idle #c-works .hint,body.is-idle #c-haul{display:none}
+.mach.tech{grid-template-columns:1fr 1fr 44px;padding:10px 0;border-top:1px dashed var(--line)}
+.mach.tech:first-child{border-top:0}
+.mach.tech .tn{grid-column:1/3;grid-row:1}
+.mach.tech .del{grid-column:3;grid-row:1}
+.mach.tech .tq{grid-column:1;grid-row:2;text-align:right;font-family:var(--f-num)}
+.mach.tech .th{grid-column:2;grid-row:2;text-align:right;font-family:var(--f-num)}
+.tech-hd{display:grid;grid-template-columns:1fr 1fr 44px;gap:8px;font-size:12px;color:var(--muted)}
+.tech-hd span:first-child{grid-column:1/-1}
+.tech-hd span:nth-child(2),.tech-hd span:nth-child(3){text-align:right}
+.pw{padding:9px 0;border-top:1px solid var(--line)}
+.pw:first-child{border-top:0}
+.pw .pn{font-weight:500}
+.pw .pn small{display:block;color:var(--muted);font-size:11px;font-weight:400}
+.pw .pv{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:13px;color:var(--muted);margin-top:3px}
+.pw .pv b{font-family:var(--f-num);font-weight:600;color:var(--fg)}
+.pw .pv b.bad{color:var(--bad)}
+.pw .bar{margin-top:5px}
+.haul.tn{grid-template-columns:1fr 1fr 1fr 44px}
+.haul.tn .cr{grid-column:1/4}
+.haul.tn select{grid-column:1/-1}
+.haul.tn input{text-align:right;font-family:var(--f-num)}
+.haul.tn input.cr{text-align:left;font-family:inherit}
+.passinfo div{padding:2px 0}
+td.src small{display:block;color:var(--muted);font-size:11px}
+.mode-pill{display:inline-block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;background:rgba(255,255,255,.18);border-radius:4px;padding:2px 6px;margin-bottom:4px}
+</style>
+<link rel="stylesheet" href="tema.css">
+<script src="tema.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brandrow">
+      <div class="ttl">
+        <div id="mode-pill" class="mode-pill" hidden>Конструктор</div>
+        <div class="obj" id="hdr-obj">Рапорт прораба</div>
+        <h1 id="hdr-title">Рапорт прораба</h1>
+        <button type="button" class="btn small" id="back-menu" hidden style="margin-top:8px">← Другие объекты</button>
+      </div>
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAZgAAACkCAYAAACq9Dg3AABX5UlEQVR42u29V5NdV5Ym9u1z702LTHiAJEDQs2iq6FldU11Fsqp62iiqNaZnJE2MQiPpN+hVz3rQj9BEKEIaaTpG6lF1V1WXtyx6EkSRoCdIeJtIn9ecpYfzbWBhYR93Tdq9IjKQyGvOOXuvvey31gIiRYoUKVKkSJEiRYoUKVKkSJEiRYoUKVKkSJEiRYoUKVKkSJEiRYoUKVKkSJEiRYoUKVKkSJEiRYoUKVKkSJEiRYoUKVKkSJEiRYoUKVKkSJEiRYoUKVKkSJEiRYoUKVKkSJEiRYoUKVKkSJEiRYoUKVKkSJEiRYq0ackN88tExAFI/H/rfhwAnHMStyVSpEg7jSg/vVy+TR7ydf8e2Qqysjnk70sAjHMRUv64ispFAPREJI1KJlKkSDvU4G8q+dkTEa1kEiWzu1FWRooUKVKkgT0b5d1sKUri9kWKFCnSplUuCeV0Y0fmYEQkcc6l/H0awDEAu9SiNPl7kSvXA7AA4DKAy865Na+5owsYKVKkHaJM9gG4A0ALwFUAl5xzq+r1PQCOUqZe4uttbNccDLVrE4B/yHsA/E8AHqdyEQBTfI9VFKnyoJYAHAfwMwA/BXDee1gxzhgpUqTtGPZyzok20Ck3/w2AwwB+D+CHIvKhc67L178O4N8BmAbwnwD8kIrmNmN/OyX5teu2D8B3ANxrvBOf7PfJK5/U99efB3ABwIz5PleCtsBWQJ5VjZ8O+hxl1xnWOoWus52NgLx13Q7PvB48s53XD8NJU3ilMAPgGQBPAzgA4DqAjohc4mvfA/BfAegAeMUqq+2KIrMP5r2ZVWrhz7lQPlzW4WccgDG+dwHAJ/RiFsx3O42kUFA9pxZY6sL2LCSw7LPqupXh1AZWWPWeBnmOSt/fz+E213G3v1z/3kchIEPXHwTeGeI3zXaDPG9g7+rwYd9Q1RyecaHzPMi+VuCZvtevqpFZ95wXnfuKe1NJedJ7ubEu/P08gA8ZCboHwLcoTy/y/89Rhn4G4AslKxMa8rLdYco9KpNVAO8A+P8AvE43roEsttjmQiT8v1dGC/RkVtQm9OzmceMGXkjFAFLj/dLHNUa66XWfY7NfZ4D7Guo+1OG3fi3IftZ0GDy1Hntp1mTo61f1/YM+a5317lNZilI4nwP4AY3wJwA8RBm9AuAIvZo/APgVgDdVfsbtlDqYBoAJeiZXAZyiRr6mMN5d5cE4lY9JAaTGU/EL75EUEJFejpWa9GvVGWFS+/Vhfaafz/VzOOt8RltZZfHdQfZgGB6MvWade88pGHZ5/GYLi+vmCkMWeF0+rGMx92Nl92PF63Whh9KrsM61vZm6YfJ+z3BIHpUUmKd1DB8RSdXnFwD8FsAyje0nAHwFWR67Rc/lF1QwX+DWfPamDDk2R4BK88pgFVnyfsk51zHhs1rWAIVDqja0RUXm+J1rWoBUEaD6PUXvHdQ61cpRubM6F6VDb91+LTkRaQSuA5PzSp1ztYS/teBEpEkDosX77gJoO+faG5FgLHqWwL0nFZSk3++e4beWLnIjz/XM+1wfljXqhFUGtZhNZXiizmuIX0CeSc06ugrrrtdljDzjgT9dAB3KhaGt37C9CyODpCq/1LxGqqI/PQBnRWSJXswlhsZ2A1gD8BaAnwB4TxnestkS+6NUMNoVTXJir3Ws0wlq71Xn3LL62zHchPNdA3BRRK5RqaU6V5LzvU0AkyLiuw6sURmKcy411oqj8N6lPLBVCtUyYTVJt3ZKxUj9NTsKSdfi63MicsUr5LIDRwYb473NqJyW3tsO7zllwnCVLvdamXUZEEYzAPbymXYr9/2KiFwEcN051+7HSh7Aexnjmvr83opC3eh7PwigKSJXnXMrBevb0F6LiMyS1/YiQ+8IgEU+8yXn3IKxYns17r/Je5+i8F3md0tOXsTxvVP8fYnP2yvjF2ONN7h/s0pxjvE6bQPM6YjIgnPuqjEkpSLfeOjtPnUOlsjrF5xz16p8b2DdJrhmHc/jAQ/Wn48JxR9Llj9K1mmWn121vKU8NS83WjyLadl1Avfp93SF6/M6gA/Ic2P8zmtUOmMispcfv0b5tSmT/c0RfneDCzPGBQyFyG5rF0PN3OSBPgbgbgCrInKKzPkwgK8hw4NPMefzGYD3GY477TfW1Oho63WKrueD3MDTjGleNNZ/j4xzEMDzyOCDFwF8xPDfig4N6WtRGD+ADBFyiM+ektm1N+c9j2W6va+IyKk85jTPMQ7gfq7JMQqNhkH3rXHdvGK8AuBjAO/5JGGRZc+92I0MGfgA9+MgD94En+kyv/NdETnpnLteBz3Xb90V1/gR3lPCfTzJQ+cFxBjv++t8z6si8l5AUIDeXVfVdB1RYYpDfF5R6/iJiLwD4JRzbtErlwqGgVcUd3PvDvPezgJ4zTl3PickdggZyugoz895ACdF5AsvZCoo5Enyij9DXsm0vDeqogVemZ4Skbd5f+0KglnzzFfJowfIr16JXQHwoYi8DuBL8n+uJxPY98cB3MUzeArAp7xXTeN8z8NUcpcAvMoznMf3WsndwfO7l2v9sYic9XV63nMRkZaIfIW8uBsZItbnnoPXMX/bx+e5k+vwGYAPnHNXAut8FFmy/26eu19xX1DXwNmqCkZbXakN0ajf7QHUCz4B4D4ALwD4E37nSTLm4zzwM+pwXCDj/AhZLc15fS/KuvTfPw3gKQB/TeZ/i1bDxZxnehjAf0sGehXA3/GaK4FwFCjU7gHwEoB/TmYYJ/M4ZSG2+F7vCbzPfy8xBnsLMwaeY4bM9hcAniRze+Xlw3Adfr9X7qcB/BjAOYVCadAKE3+41QGf4vN/j0r2bt6zF1azvKdTXPu/FZG3/CEcgcfSUM+/n8/+Ip/zF1y7a1Ty09yH73MfFqkcPgWwqJ7Rr2tXeclP8ntfoIKaVJ6g90JPIavb+hmfeT500H0OQ/F3g0rlT3lfD/LvJwAs0zPqBazcR8mHT/P6HwL4f7jftxhW+nz5/aSFfSeAbwP4G2RJ5CllgHjvRfPlMjJ05wSA35Bv0sB1EhpkQuX8NPn/T6nIWtwjb+X3uA8/YNjnhD5POqeVs+9/ye+eI99dCyiYCfLuv6CBcQLAGXXOmyLS0XxvZMbDAP4l1+mPyOpOrgNYM0rwMHnsX/FMvsxzdkldp6sMUHuOj1AWPU+l8SPKsEuGB6aRIcv+HXnyfXo5Z9V1NlXIbJQejGivpAhOHLB0GwD2UMk8SwviKQr1hJt8gYzmLfhZMu0FEVnUFpEK12ma4iY9RkH0KxF5gwJI508meLBf4OH82Fh5ed7bXt7XcxROKaHYXsh5L2eClpJXfP/I989X6L4wSSvxKd4juC6XdKyb1vddPNx38GDPVqw3muBzP0TlktLTWqKgvZOK9ykKpXMMH32mLPphFoA5s4cPUXis8b6mefhThkC/BuDP+Z5PVe7oNkGsnvcRAH9F5XU/Bd95/ggF5n3c22l+56KInKiYZ2zRC3yIgvgI/76HFulxEblilMse8tO3uQ/ewDjBn/NeQRZY5A1ay48A+CfkgS4V5XU+pw8Hj5NXvCHxFoC3AVzICa1avryfZ+sOrskZKoMxKtR7KFDBs3rOOfdloDYk1NbKGz1fJ7+/D6AVkCMt8v7jNBhQhe8VHaAH+xTf+5aPQChQxiz38Hu8H/Ds7iq5jv7bbp7f57lO7wHYLSJzKs0wSe/1L3itlipk37Stv9ZDwfRDqbIWWzxce8iIvwLwOx6oQ/Rw/ooM94Ji5Pc05NnQMoXNJzwE+3jY70NWt7OsGPlBMug+fu87PNBLyoqRAPM4JcwEwC9p7Z6lcG5SQd5NhnlOdaNu5LTqtqTzD2sM3f0EwJtKwawxTPHnZNA1dZ1b8maBayQqkX+Fbv97tGgX+fohAP8MwL+mZ/kSBf0VFbf3cepRxIe7yltIlLfWIc88y8Pb4b59qPjChy19gnWc+/2XyrP4nGv6e66vUEB/i2vqFbv3Ok/xWlaBObNv+6mcFkxI5wFed1VZ5NMU2PdT0ECFP6f5nC1+xioVZ/azqeL6AuDnNGrOc11aNI6OcC+/RaE6USOf6hWEN3Y+pgdwha89T57/FgX4WWTw2y8tqq6AZ1IFJNL76Yx8011EVo3ikhKElw7l+6hDovZ1N4BvUOh/RX28k5ebzjnH/qyukB+WTTf6KfLcCzzDLSXHulWeZzsqmGQAjdrj4q0qZXMVwGsA/gHAz51za9ysD/gcd9Caf57M/LkHBmiLiJ9ZpqD8HRn8IAX9MQBnnXNLyiV9jMor5bXecM6dUzH+nml7o5+hTYa5yPDC31EALfOe91CYzJBBV4zArLLGPvR1jgrg/+VhBROfKb2J3SrR2jEHsYgx1+ju/5aH+TWT8IWIXOfav0BF/TBDiVdHHBtOlSDu0gqfU6jF+6m4D5AnfgngY5V/cQzN+tDSFI2Jl6iUFxl2+z/53P5979JAAcMVj1NYfsT+UHMlzz2mwrtXGRaZ4Poe5RqeUgACnzM8Rn5q0QhZoFKaUUKnqvG3xmv/GsB/BHCeAA0fwjrC+3/IhLyL9gJKkH/C/bgE4F2dTxCR41Q2s1zrBwAcLjDYELj2EsNic9ynFbXv/joLqr5unr93aqyTP79zvN6aQtVBRO4G8E9paNypisjnzf2mJQXqKT9zRdURigJvHAbwZzSk7+dnO/xMB9hZ3ZTFKJikT8Hh47UzFLw/BvB/86DrJNtJCtZzFBj38iBOGo/C5zC8QD5Dl/8sr+MBBVMikqiwxGP0bDq0zM/r9StIZDvV5HONzDDnnFtiTLzDA3KFr/XU+7sFkElrkU6p/MA1hjAsbHiRB0TH129z1wMQ5pSf+4QK5vdWuZB8knWO1vEBs/6jas7qKGAnVAJZH8pv0PLr0fN804Qe7cGfpUfyGP//Ab2X4xoUwL07ToX1OYX9k1RKeSEYa1nPKs/jGvl3kaHMrwDYxzbtCY2Dx6h8LjEJfJXPvF99T9XQT0Ot1xy9zbZ/NiK7zlLx9ZRXLRWLERcBvEvl9YpNVtOA+5QeS4cKbbd6hpDnLgHD2Ifz9phQ0S2dQPi9U8prQ0GHAR2W1OUETe0ZEl34NEOND6mIgP9co0bxrl/bBs/PpPm8jkD4ffOlGslOGjiGKptXQ1F5OOJ1KpGXnXPzqslmj56Mb53wEA/uQYXWQgBMIESmfcnPPcHD+zCAPzjnzigP5l5+3xUe7OsV27OIQeM4JtPHlAJpmXoSD2VOKkIOQ4AJUQWPWtFpZm7UKDLrcP393w9SqE0pCPQDNAQ6CmDQKrHghm3MTNIQ+JaIHFNeBahYfsnwWEflhFKzFrtoZOyhYn0XwAnn3BLX1MfVF51zyyJykkroQSZ676WAKBP0TX7XLAXGZfLXtEI9HXbOneB++ryJ98RWqQj3ct2na5xlXdPS81a5EqiiOm2kxkNv5D2TTshTWV32Xr6IeJi376w+QZ6Z5vVFGQrtivziDbIDFMAviciMOkOO1v4zCsWZ1AgjaQPZn6E2gAWe4a/Tq7hbdYIfY5SgrmEtpvt8hzm9Bvf9JfLYGmXQbgUcau5UBZMOKFgSBeFNubhttSE9lWxcpkXXVsimVk6yU4yb/QmtwruoaI7ROvXJtyP8zncpTOYNaCGPYXqKccZUWCM1aJJxhXPvqZqEvJoAMYdsVXl7YwaN55VCT4XTGhWVvzOWpIf7PksBuJee5SqV87M8XF/wfvQBG1b+JdSR2yOfZnno9/FvR2gYnGXe7lVlkTe4d2kgebybz36Z3qr3llMRaRs02Brft0qFsTfgSbgALF8rmBZDqMcZZnmQP8dEZILtQI5QeU4oft3P5wtZvK6iUdLzdSSmUNnz7Jh6XxLIcYR4NFFeZItn6gkq311K0O+lVzahasEm9PkqyCV51Juvb3qe3/dtFZJsULHcS/6smqMQM13Sn89EKdt7kSHTvk2P+Dg9wXu4F6F1CvVT1Hzsz2aXcqnNsL+/zgIjLp/Sw71bFa/uWAXT61PJJIoReyq0MykiPuboFHyxoYSdT3wnRbFifnaVIbbPyDT3ALiL6CPQKj3ITf/AAweUdZ9W9OQailGbFPhQ/dma6nldTYHbVZZ4i98fStZ7ZvTr6SpCgxtcg2cpwJ/gujQZ2llR4UVd59BdB/4VxWNNGgmTKr/VpsX/GXMMnZL6nHHVL++az3ewruNG8aGqgB+jcbOmkFdJRf6epHJoUEmdoLB6kVb5UQBHRWSFfDnL+/mY4bQn+T3T6nvQh9Xsa9V6Ri6MGwGWGu8n6PE653pcr0MMIb1IRbJb5f5afJ5jymLv1bD6uyrC4WtdxsmXqTIc9nAtJ/ro2ZWqEKw3Yhv0ir5Br2IGGUjiD6oI2SnwSJ1oT4ufWeS/d9B7+S/4fD9nyLHNtQ1FJ3aEgrGoCxmg5YxuoaDnUVurRlv8ZdfVzeWu82C/iywZPMPNfIDXe4RMc5XveU/VsujCUJcT53YKpCC2n5OI+OJHr0DHvVVeAOt1gRneDfXsoYpmnW/rhJL8gV5Yory45wH811wjb3FfoHewouDKhw2KC+s81+cKLfy2ysO1aO0f8GEbVa/hSrxczYeh944pw6DMQnaGNyb50+N6fujhugoS/hxfv5/r+Rnfd5VejPfcdlfMwUiAd8YBjClAjPd4fahqTO1nEIWlDL2uqlP5LrKk9DP8/Dl6t2s8Z3fSM5tSZzYt6zpswuee768wD3hGnbce7+MYzzEqGnD+DPREJFVnZpVC/04qmL00Xv6eHszzaj2dAXfc8GTVHJgQWrPN9TlExfwUDd8LDPH+TtVkYQD5ui08mGHC5m4UDSpkxY04Og/EDDdXo4rKPBhfO3GCB2APmf45Mv7XeMC+APCJL6SjhVa0uYnKr3gvoxs4QBJAjUkfXp8UoNlCsPGiGLEumJugcPs2LbZ9yOZQ/Jbhowt050/hZiJ1PZOPiQqhznMff0mB7QXB3czF+Pqocyq0agWOP+C+jmk3Q5pdpahF8V2HAt6DLKqilJqqfckCFcZF7s9pei/+/hv8/zVkKDWfGJ/jvU6oVjP95Eclhy97JrTXVSipstY9X0EG9X6B3/NHAG8wCrDMez7C+39JGY9SQ26NKSj02/QiPjfn7QCF9DTXsO7o4Y6CfutuHofJ8z/ida9RkU4opZfU3A9/fnfxniep0K7Qe/k9r3lMeVUpNjmtR5LfDVhD48NLNqGlK3ubyhU+T2WxGmpDow5C0znXYQ+zk2TOrzIc4ZOHD/JAfMSDfwt6rMAid8qSh7GqQjFrjzTznkWz4PsloKDaap2bOZ/xwmFMWVmhjrkaWuvh00/xUJ3mofoBPZcVrs9FZEnnx1XYZXwd8PlOHU6/j7+gFzPOtfnvAXyT93qFBbVzXFurYLyw73H/7zRgkaayND0PHuDzXqQFvVLhuSdVYn5JheOEXsrDFGh7+d1tCtIPeJ1xZMCLRSqXiYowZXsmu9y/lQIPvGsS/7d9H619H2XYzzDqc7z/XyHrNvAmva62KmKcYahvPC+8mIMi8+G7LtfjdWTlC18Y+bGf13tYFTM3qtTqMTTsYcpj5O37eW0P2/fTd3ep8HBXRSRuAVYYj9miNVcUmtWDZs5RufwdQ6NQebMtQc1RVvBjMBSZU1bTFIXcSRF53Tl3QcXTfRXsgyp886Wp5JcCVzgVkQs82MdoWd2h0CCfMDR2zVZ+l6yBjys3FFIszQEyOKUo+rF+ymLkOhnerGEt+oJAj8K5SlTVHwP9ymZUO5DuOiYfE5Vwv8r6EV+n9AayOoUHKPBO8v6v5YSSFigwllR/qEdF5Avn3IJquOrj+08x/NJElnz9oymcTHM85xnVRFEL+EVkVemP8Gcf1/QMshqwEzScJlRjzENqREbd85nmtW1Sob+u4slmXm2PCvv4Hm5HeV+nCVV+V/HLOM/a/gJPvuqztLnvn1o4ND3Wh+jt1TV0PGpsXoEyQPnyRyrO9yg/ZlSfum4fw7/WVOHyYWWcfUmD6Q3n3CobXLbK8mHYxnUwuj1JdwAXTsMCl6hg/hzZuNBv+k6ihG9+Exlc8C6+/0Me9qUSBaP/Nk/hc0ZV9R/mM5xAVkMx55xLKyb3PRJk2Vi+UnAvqVq7Xol3BAMgSFTtULugM0JbhQ+6ZdMMVefbJQXjPWQO8f3IqrKfoHBZCRWAjTD/ote0ZSzHTykI3qdC+KpCFGkgCgyq0FuLD5K3nheRA+p9vsr9r5Ghu5aQodTe0pBu3Do9VIcnZ9V4cM8nCX9/i7zoldgM9+cjAH9keM+/9zq/d9LUgUiB95uqPBwUPDgvB9otQJGFPGofVmqr1jR7zGeeQNa36/vkqSXyzFrOXCEbCVlTXvskv2MypyXPmEq6dw1flkVYeqr4GXyu48yFnPAF2QbZ5td3JeDpSU49m+/m3lGRmZPIepod9wW3CtCk5Wy6kzwYX0A2piCJbsAJmd7qPoQMxdQBsJ9zqo8xvv4SbhbTveKTiSVoL21RrlCRPEDLcUIx1If8WauBHtPIsV3qICcFnsJelSRMaxgIk6q4L6+dR4OCyhekNStWZPsOzx/TWr8bwPeZe/iS136Myv/hAOBg1OST5bv57z4AM/SoHC3bP9DDfYQx9GfYM+ya4QGohqO/ohf7ABXMOIC3WG8F1cvrmxSMr1HonPLjChSfWOXtWwQd4f36WpQGreEvqRhTJTQ7AL50zi2oRole8Pm84UERaVABpRXWbJb3tCvH+/F92TxfThUZpKr/mx9//j7zEk8C+Dcici+fazfX7UWGo6F69XVqGBUTPkfmlZiInDfvm1Fw7vGauUFRPOXP8Cf0KF5mTk+HHJsK5r6roMg2b0928VpNFRr7OYAzJnytW/3srdnBYUsqGBdA1kDVffRrlaZmrPIFupFPIku+p/QyjqhGdP8ZGZTvvIdLhiYSqj5D/p4XqZzuI+MfUQrmS3aq7VBwdSvUdSQqLu6tmU5BHUeqUGRJTaskNYVwzYJJo+MqhluIslMW/adc2ydpeX6Xlv0S163DQzXvZ/cEUDSjnlXhDIqwp0JeHyPLr4E5lSeoON5VIS8fplylYPTC/a/4rL4W4RJfO0ShtUoh8PcAXlWW5g3UnEILidmLXardy4LydhbYfl+Hey7wx/Oub4szz+/wbYDGVR+rPOSbUzzSVIZcqMRAjFfYC3gsYmbhzKsq/l1cv39LvjmjQm4+HHlHhSJICcgZp+rAVlQI2Bqoeu3TEg8spMT2qLPwNrJk+4d+phCfv2eQh42A0i7qK+hDcN4L/RAZWOV1AAuKjzrm7Fqj1W1HBZMGWkSsIktIXkP/zdi6KmG8QivxQ1rR9ymr9QL//lNkbbs/8W0vKk6S872oLonIR2T6xxTs9ZL6vqQiYi5l3Pcksh5k87R+ls16eUHxIS1gj2pr1/AwPqSV3uQ1VgOfWWWO6WUKi3cLWqboNu89WoWvUqhep5A+SMFwls94mt+5S0FGl0aU5LcK8AOuXZu/LxoY+CUqyF/wvq9yDZJQPo5NTE/wWdaQtYS/l8LmLiW0TvGZf8Trn604Ayclj71GL+I44/ra8znD75zic71M/vTIyTV+x3EaQ/O2tXtBYe48eeZV8ujnAX5LlXHxMgXmB4EeW6GpnB16ej/jur6ILDm+T9VOfUC+eR9ZfdU5nuO0Bt+/T0v+st13JchXuU+vUjC/V5AjC13vGtdqnOfyZwBOOudWDKR/lXv2JvfmPTM6oKwX2TL34Q+UCT/nfKp5bZyJyBrX6k2ew09NSDbdVgqGLrFWIGeRNQbcpwoY1/qo6BZVPNjgIh6nEplmaGyPaiPziZ/1YJRLr8LgJy1ornOzfcO6jwMzGVyORwQDf/Zt/d8nc7/PA50qIdTjAfkFD5gP862Y4rVUz/BWl75GS+cjrtOFHEFzFeypxT2/ZHqqBUco8G/LFKRzDD/eT+Ye43d8wOuKQm5d9UO/hlnJz+fvBZ7rBNf4jKp1gXOuy1onP+d8D99z2oRjUqNY2yLyJgX/m1Qw+1Qid5HP/hEF0CW7R3Yct3r+Ni3hNe7Fx7ynVfWeMwD+E9e7R+F2Ud3jCv/2jzxjbe7RWuB8OmPQnKNS/IDfc1xPRDQ1Yr9V++i7IaeBmUEwfLlABXqZ338fz22PZ+xTPneTwnSN998N5K5C+37Re418hnMqka+V/CK9gCsMey7wvbfJB/Us+pofAPi/uF4XVBcFm1Nc4nNeZ0huzqBOe3b8simEOYes1+Kb/I5TtrO0MhQ/Qtac9B0+n75Od7ONT3bDGAKlLMYJhXyZp3vXrThIKlE1LpMMg/2PyAYsXQbwv1J5eUExqeoIrvkGmIHhTmXXbarw17cA/M8Mh5wA8O8B/C1rJ/zApm6Z0jIHb1o1+As1vYPqmCvK9a46GbFh0D2dome30zcLJgiG7nGMXsA+tfYXVGhIh5t6oy6s5LO0VIeCLutWJPDeKYXAaeetE+9fVDuflqqJmVKC64rqmhxc1wr3DRbVhsIniQWF5IwEnuQzV+IbwzOpNshy9tzPP1mt+P2J4a1ZdV4TCsk5j+QjTzX65Psbg/7yJpSa/W8CWK4xMtm3yhdTiJpYo0kZqx6h2anK/+S5CZ6ZVfP3NOds+hHLq1VHM2/JEJl5eO+6Y0BN6kzfLB9bXyNc76IvsrPhsECVLIq6mioPbBZZovoon+MdjwpSz5jWXA8YpEkuokozcFXkFV+3iLCqocGy+wn9rS0ivsuuVyIWLbZuI1tVuKjKe5erhnyNtdkBcJH1Ug1lKXbL1rWf+1bX7lX8nqU6fFPEMzl7vlrz+1Pz/3nChW90tjCdqdsD8H2lM1hn/62nEVrfkEfuxyf3A27hmVkq48UK97W9UWQFsxz6VTDj1NS+Y+yEiCyrTrjaovAWX9WWJHbE6xMAvkMlc5UhhE/YdblO7zHb7lvKQlHWk6wjrMznJcd6d4Hq7UphK4NgSUPCUXktUnQwRuTFuFDbmzrrk9OaJFECMaWi6eSEV2WAPSu659z96pdvqn4u9L6aPKO9i9vawBiekbphVNMxvIjvk7o8H/AmXZl8KdvTmudMr1vt595JrWIGbWLYNUVFeRo99W5LjQXXBWN7kEEqn+L/zzNOfJGJbh+Cqfz9VQXOoEq5yucHuYbyCHNDXuvptdR9tn6eXee6Cp5ZAPT6QccN45773dOqnxsCz6Qlnk5vCN7rwPdR0ZsRnXsa8Tkuu86mbw8zUgWji6QGKLDr0Yt4HxmaZh5Z0qtnLIVEJ2j7uZb6Pt9McAFZ8vAzJon7nmtjEUUlcfFK4QEbX+7nGnXXKtBm3JW12lhnD6bq87uqvJLTWt3WtMgAPFd4z3Xf06dljgq5jr55pmztBuGXqvdmm5oOcp2qZ3OdruO2ggfjRnXoA91qXVnbFlPtPI2sD9bjDMm8igw508uZQyF9TEMUM8nwHtWi4X3n3FXlZqcF3yc1O9nmPn/F5CaqJtGLYLMDhAsKDYgKUN1aeaxhKqB+r1f1meoIofX87CjWrsb95o7nXu+9HuSao9i7AfZ85yqYITLMXmSQ5C57Da2M6DrjyNBRU7jZ6mR+IzYvhIAZRMEM89BuhFcyqIdQA8njNvth3SzeYAlq0vWjuAcV+qPw4CJ/bNIcTChJ2udXtXCzjcRETtfXYba4mcXNaXKLWJ92JwiAFVDQgaBX8/AmJR5jWhJW0vckoUrughBakZdaZTZ67Ri6TZbmIApDHmfptQLrKTnWeRUwR6iiXIrgvwVV6K6fJHbBurmc/XY5lem215pDNpgtFEJ1ge8UDkpJ+5UzgX2WCsZ0Jf7y18np7IwiYEvBGbT7llYFZZg13NReTHNU4bFAq5CGzZkUHNREtU7x0L9x1iSE5tDX8cicmTGjuxc3VCv1JU4TLJqn4sygpDrhMd3ET4hUsug4lwOHrBNq6g0YqqoMvRwiirBv61EnS4dtEQ+ynkNIAo80uTvouuH29iwj3ec8OTPCtemt92dHeaa2ZIhMhXB6xm2ewc3mlx2FYbdC3qnxoWOBbq52UmbIcsqzEkLWte7jpWdv60mTuq15ajyrBDfnuNhngFFAqVGkohSV70I7r9E1flRvXQs+pyDvRqubisWvSQ5Mcpz31K1QPNYyY52hivz0PnTyvq9q4WadxCfXNQkU6DWqwo5ZIKhzc4mtCyooVm3oEcy6z1eFe09UkWGiijV7/QrqonVTz6mH/YV4LK8osKGKD7tEfCYsruwE9qVX0aNoFL1XGbS31d7keBhpjajAmO5SXqVIWZ2dGzKhwhnS9YANI4M8MCndzMgyNworkwtzBFnfsENqZnhHNaVLjIJpqIPTVB1jF1XX1/HA3Ig0Z0qjBDyWJPA5pzraimrvbWdnWAUzoUYKdI2CaZiWN9oLSALhIq/cFpC1ifgCwGVVTV7bsuMe7EXWpuOw6STrxwmcBfC5Lwa1Fco8pLuQDYc6zL0c52c/Q9amYklNfBzje48gayczZYadwTTkdOr1ZTVRchFZS44rZRXkOX8bZ7hzP39mVP8xZ8YnrHEdPnbOXQ8JX7UPk+TpI/zeltnXC8haJF1SCESojtmHkY2COKiMDi8oLvM+ztriRl73Lq7pPtXk0PPuBfayukzDqIqiCq3bGL/f/+zm2XWmNbwf8HYBWSeHeXOv+8grB9TcG21oONWH7wx5/XrVTgSBCn1/Pd3ho2lkTEeFvufIX3N5/GV+9zNu7uI1xk2z2rMAPvKdHcy+j3PfH+Z9aqNzGTcHJF4OKNxdyBqz3q06pveUEXsRwNt+Do7qpr0tQ2S6rmQfshb6LyFL0neQwY6vqgVKAnPKm2begR12JOZgOjPczOWg1Zz56aleZ2Oqv1NP3UOaE2N35tr69yRnHG2qnltbVn4o2V4yYYM9mn6FrLHe+Zy4ddHBS9RzPADgb3BzhniiDsZVZH2g/ndVFazXHhQQz/DzTyDrQ+YF6U94jx+oBoK7+d7vIGtiOKtqmlzBlFNfybxGoXMWWW+q10TkbWXpNQMt3Z2IaFjxbmS9w55A1rTUz/aZwa3w9p4yel4D8B9E5He+stzkn1LF13+BrDPwvcpD83v0OoD/AOBlEZlX9+Qnrv4JgH/Ge3OBJrE/44+tnp9F1nTzO3wmPftlBVmfsJ+CoyrUMyQFyuZG3oIGySyf6Wne3yO85ykj2KB6Yr0J4E0ReY/8tAsZ8vM58s39anAfjKHm9/mP/I43nHMXK/D7DTnDe/4q79lPoz2gIhF2eOEKz9Rn4JwnEflAddtwxhDqqvk/f4OshdSdqs2PN1B+DeB/U/3Q/OgCP2bkJWSzrI6Za1xD1uDyl8i6NM+ZZ92LbGDed6lk/HN4uX0cwP+iOm83+8llbWoFYzR9ixr+68iGUD1GZrxIi+GaOthJwLtoKAZqq27KjcBM8DxlkhjhHlI+XsE0FTN2QiGLwGedaWfeVNd0gSmToZb6/qetCkqbyNrUPEkGXhWR3/HgdovCVgV5n/086C/mvOcCLVSbcPW9jh5SDP6oUsYPIYNyH+dhhZrrcR/3/+t9stQa7+t+KoZpCrDLaoqpCzWSFJFDVHBPI+tl9zCV7FTJNQ/Qmhxnk8vLFBDWy5/mOnxbTWOEMZJ+G2jV7tfzHt7fAwgDWj4KDP8C/+bX9bHA67P0YE7WGSKo1u0gv/tZZMXGj3OPiyIc91HYHkXWkv8SFczjVDBPcP+K6CrX4hhnPL2GrBv6LfyuPUkWPjsK3CepeJ+hYjtSYUTIMnn3Ad77bhE54Zy7pDzVhlnHXXyeP8uZv7KMbKxxSBnOcn2+pbwQTW0alaGZPNPc7xdzeHjMfGcCbKMkv4qFetd3P62sP6OA+IiW7jtKmPYCgjg01yM1no4d7+oKJmG6UJfcHK/Hfn/VkKLNHUkROshcv6E8KX8f4zzc3+Ph/Wv+7ed+FgiRLGXhD6sg8wYSrapZNAgo3jt4Py/Smh0zSqCTUxs06KjkcR78PeShB5HNW/8RBRLMUDNReb6vA/gfeN+zFMxTFa55BMC/plD99/QgL+XMDynqSdcoQfYUrU8aCONaHuoVDKxDlVG9yiDU4Z9nAPx3XL/dqpFimVJ+noJ9To0WPqDCkmW0j4bAMfLYnQD+D4bNAKBBJJpTUQXvKf9TZBMxn+Q1pysK2CkqFx+uPArg70XkF2ZyZGK6UBcBIBIjS+15z+s91zVGbN4cp1aBMZaOaCzGpgmRJcrN3k+B9BSVyz8A+IGO0UYqPPyfkmn+S1ouCwDecs6dD4Qhq7Y76ai8lQ4tzqu80y1QS7r2h6nojik0nw8ZzDHckAZgy11adNdMeCUx+bWiFkEaNr6bfzslIm9bqDrvd4zC4lsAXqDggglNuhzlv8ZDfIQhic8AnBWRJefcsmlDn1IxzysBmiqlsaKEBnIQVj7XZOeBLBUMgvP3ucDQ0oQRYGu8r7UKKDDdg2+cgt2Hsw+pZ+oYYRuC/c7w50jJOGsX+Js3ZCb5c9CPjBYRz19iIMW+e/SjNMS+Q/7QArtMifvr7lH5lGUAn4nISXrJVpn4qbdz5JFU7bvjfaclXvlcwIO5zvBou2Dfe2otfEjdgwWu12l0uxUVjD20s2p07s8A/HSjlQvdXW/99EwCG6Y1u25qJ6bdhbNIHRVr1V5JqgS17QrdtYk8Iyyvi8jPyMRHkSUVZ/oZyEUlMYaboIXE5L/8XPhmTrjGC3gN4XYG5GBj3V6BeBRgywAwGhWbnGryo7LfVwPGVgOW8DeRjTHeXSNk4ExIaorhtc8UACINeCB6yqNWMDfyiCYZnZj58C0jUMbMeoWUgr5uy1i+jSoWrJk8CXoaL1K5HDDXczlh30Hkg/6eRsBa/wr38ArDfau6Fx4F6wMMUT5t9rqKPEsCPHEPeec4gGscsNcLeD1NhXDVE3ddCYK1ofa2Fbjfsvyq3nuYKb/NzV4s3xzBjPQmQxnv+KQd3fBOSbuVfqYaOqPpG2oOt7dI9SzxrrJIdUFZGgrRKffcF3PpeedN/i01yKSUPdN6SuD617oiMs8DdJH/LtAKGXPOrTnnLojIO7TGnWHKtObhTgwkOjWzvRslB8NP67Phm6TECwmh9pxCr62acI5/76SaZ95Wa+dHHX/Eufe24HYPQyUPK69FAy40Si0ximFChZiEXtvTAF4RkdMBKKkEwhpJAHWYJ2xD3lQdIa6NIJdzHqqGefer/IW3tLUxIKrwWIeCG2oOj/VSnPHYumavfUlA00yudTQUnmRO4gu/z8ooHGPu5VF6PLopbks9w5rxJJ3Kt3qDosPPNKlk/HWvBUZsuADIp27OIxT+dBXrilKz78lW6MQyDAVjD1NXjVXtmL93RxQj1IPKpsko3+C/h8hQaQA6LOqw5I2XDR1qax1bZksDTNFUr/lZ5CeRoY7eZM+ztpmQd54H4LYW4DVgy6nJI+jD0a0QzskLL0lAcCCnPklf10/++4R80lWGyRTzLR59NqauOY4sJ3SXgojCeM5HKHQ8MixRNU1nkKG0LqnwwopKwB6jYTJOnnmQHuQJEVk00E8JFOjetuZmf3TBaqgTgBggSN45y8tBpiWWdF5Pq93KENP7lKjJlCfIiz4X0FbrfUjVg2nyqNHLDJXqENI4P3tMQYoT5SncSyU/pdBRUJ/dT0U0FkBlLiGbMPoF772j5NwMr/kV5mu09z1Nz+gBnsulnFxHXpPXPE9C77v0KV9tIfemVyqj9GA63NgEwJgvnBq0jUVJvYePzU4jgyr+BePwj9Ky3Wwb4uOxD/GgrNBjWWYooKHyHC2P6uqjotcyJwIJxl7BZ/XrrsbBkYI2HUvI5pX/Fhn2v60UzCzDI0foxViFPU2BOBEoPJxRtVYWOr5AofOPrDHSCuYQeWWS3zvBM7GbezOt4OuocMjz1lyU0VFkDEgNY65KOKpstv20Wk9rELSRjaz4KS17rWAO0Mt7kgrBKv0lZGOhj1M5rai1GUeWX/xrKnFnvJs9VCLjOfJqWuUExRh31wnVfkVFBjR//QkNlV12Fg33PO+63UAuCRVDsemA3REG/fy2UjA6HpyqZOKoep15JvOey18iQ5bcXxE9tBE0ruoydiFL8nXZvXmeobWesVqSPq2gQSweV0GYVrkffTB9Udp7apa8v9Ys1+NPaGlOmLzONF+fxO0Iqt3q7/q+u7SCPwDwMgWmLlC8g17Pffxdn4sJU5xqc0lFHb37zVegQqshV1PABae9qjG9TcNn3lO/Tu/lxwxN6pogD+ue4bpZoTwH4DfIkH/nlZD3obbPaEwcVQLch9encrwi/5xT/GmpkLRfk3lkNU0/VF4sVC/DJjJgAEzouGE6eZT10auzf67C3m7pdjAbpWBG3X1Uo2F87c13kaFifFFmOwAjbowQL56XGxJjMY3xkHwFWcLyEg/ivBICLlAYiHXu8uBqJkzLFE+q0FBzpiK7x7+vFST/xwLCrKVCLRKoj1qlsLyQU6l/mdftmT1zObySFIWiNoiSGjk63Y1iLKeAGPQ6LjLndcms2zwjBHkopjY/+6mvbjefP22AGjo02FJdF0LPOaY6GYQiKFdUwaa97tVAoS5QXAS8KetLtgol26T9/wF6MF81FllLJSNdQZ3BqISyLSS1SJJxZMnrp0zhnoYX3/jOIStsNwB23hXkZnqBBH5RrZIVHtNG8Fl0WitQhzWmQl8IJHdbBZZpmgM42OzxbunTqxSjYJo566YBKggo9fECQd9CltfZl3MPe805cKZt0niBgrGepRiQ0RTBAAi025nMybkm6rpF/QzT7epp7LSRyXXJw3pnlHAeM+1cmqZ/kKtwWOuGLpw5LK1AAZaoHEeTiuUYwz9bKfbqCpRHUmDQeIjzhIisGaHUKghThAoVnRKCjQIeHwMwqRpn+r3w4ZbxAk8lLyYum0wBpX0gPhsFMsCH0KaZS9Xkw7sTOWvk81j7ReQSvSF9FvfnVK6XIRSduu+8wsQZAHvoregzvIevNfr43kibSMG4UQ9F8sl93IpTn85h0NQw1TmGRWD6TAkKRrpWKCTT0N+uatVytGQsAQL1KEko+Vtz6NFGxHWTQIgjVGiXBhToKgVRu6aHWCQYNIw1L/neUu2I7HM0c+69V4Ai2yhvpqp1bZPqjRKlFRrX0CvhL1HNJbuBKbS9ks9KTc+56j2nJRDiZAg5x0jb0INBoP25bjHRRgaX/BxZ4vKcqhhPTX4krTHqWEwzzobqsCzIYLXP0kPZHVjvohYgyRa1pqqElm5DFQbADXmWbdkAq9xrBroHo6TtkNsigiZF/+gkqbNPOYPIQt/tYfA3gD6qnqVdcM+DeO43muQG7rlrxkbU8ZwibaIk/yCVv/1SN1BjkKrnO4esp9evkOHcr6pCPmeSpHUUjA03QIELgAwG+w4yKOw/QVYkBtOyxeUkSt2IXXYZwT5JoL7G1fB+GoGQovUO0xx4r/Rhmfq9agd6OqU5vew2S5LfDYgY9IZNJycvN2xFqg2BbgGUPR0g13HLgDzTFLWo7qtKkn/L1aBED2a43kveAdR4/p/mIUxGRJ8zBr2GDJp8ELfCb6HQLy4An9xqVpUMYIE2SsI1LsdaH6Q+JK+eRwukPEWITQjYcX14Mb0BBblssjB60X5HBbHFUWSyjrhuG4tvBSzNFFm+5SMAJ9ZZuXj6AsAbvIdrCpKZFLSRkLLK7FEcRhNWqIrfLzvgUlEZ6GFoeRZ1WrEFR506g6JkvpR4MLLJwpJ1rWxXYUhfUY6lU8OYEAPocH0I/rIzcYsX7JzT4b0i+HNVuRVzMDvNgzENJa0110FWaHcObPWuCsw6gYS+GwJkVI99XuNkw8tUdIv0YpJtkm/pJwfjaiDzyjrzVtmzMo+qmdPheSvlYEYByhn0OdOSpPpm48ui+42KZQcqmNTkKtKcmShLyKqOe7RqeiLSGWFvNKjuy12TJ8prx56M4ICP0pOUGsgll2OBVoE4S87nh7VORTU5zUCh5WZFkQ2z07EzSCypiBZESQ6rKAdT1cutAi7oqQF9VXMww6gvirSNczCupJbF90ZLtOAdVacBopNS1ep/TIXs8sJK3cC+DBLnHnU8fBQooLKBZf3kpJKKIbQ6KLJ0B3ibrmLOzPXBW+mI84DSp3LaLvsaFcw6VaLregaouS/rc4NsUMmW/mnB/aZGwbRUv6zeiBm/3xBJ6PWyWLZu+ig18ymiphzq5p+upLCzUdAeSHLWWErQTG4TgytkAAUjpj9Xo0TJpjXQezKkHnlldTKJHoJYscWP1Ki/ibSBSf51twTIROkWQFdVyU2gzxqPQcJk0mfMugz1VZc/8iYnhlrkJzUUYZkHk6fA0z5BBdslBzNIzmIj0VxREWxzFFm6QT178jwDX+fQ28QoH4uC65oBbm5IeRJXFO5RM0Ncny07Qs8pBTkM21MsyekcLIEO02Xt8aWigukHeeVylP9WFGxFoWUZQkHteoJEbuEHEXGKp8s8rrLvjbRJPJiNQJG5AVpAbBYrshGo6xn03gcRAmXJ1l5O0rTf2p0qYQoJ5KTcdp6nsckUz1a5bxnhPJ1IG6xg1qs4UErQR1BjeCex8cVxdZAobgjolVAcPTR9Milp9SEFbffX0N8YZxcIc3ZUz6rQHjdUUWpqeC0pQEOVtQjp11IW1Gsxs5WEWJVuHMOYNTTI/JQ6IfSoQLA9kvxi5mqgxvjWyjzj56Wo7xETshAz/2UrdEmVEQiJUTXwKwoplHkMeWG/UIPCUN6jFxhHLBVGP9ftztvv80XaeKM5iR7K9lEwoRYbyMO5q2mULmcORZXksyiklQ6b9AwMsksru+1HDwcUVVULaKt0OChC2bkCgyBUB9Is6M0UmvhYNg+mSm+wNOd+82bRdweoaSrKJRWhrGJdxMZHAkpzKSMeeBhpM8KUuem9ITW49EprDbfOfPE0gZttLXqqmytGWQezycIc6QjCOf1Y/lXqTiRn/rlWPI0hh2yLgBeIHkykSBurYFxgKiECvbYc6xfSEbnFnZxwTFd1V23oyn+2HXc5leNS1Op9xDmYYeWmnBKIjRzB2wh4a1Jh9HHIc8irf3BmUmdeDysxCtGFYMqqDsYVtHqxCiQJVHcXNbuMIZWNCREPUq9yy+smYhG9zm3Srr8RsgC1YhGRaWRDtqaRTRNsBKxDl1Oo5ZTyWEUWKrsD2Qzwz83nFgF8DOAsgCXnXC/QUHG7ezD9Wvf9FFpWqY/Jg4uWjbROc54rKcmx3QIpVl6sUzD2tZwxAOkQUXKRsG4tpG7hFedcaoqdI22zEJkoD2IfgIeRzaK/m0rGqcr11KCEinIJqaqr+ARZ5+ImvzOhgvkEwHkALTUNM1F9lLrOuY5Sfg0lJO1rbh3Dav0iyVygI3NouqTTnmUfzTer1sHkgg+4D1ZRtHK8n7wBWFXqGxq8XjOAPuzl9MbqFcyDKSoK3Wm5EGzCJH+D5zgJ1FlF2uIKJmRppiIyRoXydQDPUMHcpUYdOxWqSCskq1M1rfIDAL8BcB3Ag8hGKC8CuICs0eWdyIZ/LbCz8So9pz0ApkRkBVm34zUAs8hGHU8CuCQiJwFc1Ipmi1lyRcK+B6BTMP2vl9MOxg2IMuxQeWuvdlVNAs3zUpKcosq0yjVN81Gfu5MchSp9tLOJtDn4vsNoRU/tdSd6MNsDppwGhjI1GMb6NoB/C+ARCvImspxN3VipKAWTIpuzssT/PwfgKwDOIBuPPIOsRf4j/NwHAL7kte+nQloA8Baylv5HATyGbMTxuwD+FsCvAVxR4ZWkj1ySW+d532mFRpli0HWuIA9lkYKrgdBSFZRV3ms3FE+Bx+QqGB+hPFSTRgcCIJBZALsCZ2EjJrNutnyIbAHvxxkemeLPsnnfdKAeLubYtqAHE4KT7gHwOBXMn3KjoZRRvwLUf3Y3FdUEgEepJA5QWM0DOAbga3zvncjyMg0qnTuUsLkC4AEqKH/fxwG8IyLXRgRQGKUlV9QGpME1a5rkvoaSNwq8iTaAlQAisKwav8XrNsxo2yrt3z3svI4Am6bn/DRDZB6EsgbgPmTh2oPmLJRNE42WMDZlrnGSe/q0iJwnv/g9P8DXJqKC2doKJglYP3cC+AaAp5VyQcFsjypQ1576fEuBBbzAm0KW72kYpmrSq/Gf8TTOv8+ov42peo+G7dtVIx/T78TBYR9AMc+2H8DdIvKFWpseBe4hKu5mwHBo0+tbNB6HlPTnGkc2OvoeAG0RWVSFlzM0BHblQJeXeM3lip2gvYe7F8BTfK5n1ZyXHp//YRoZrYr1OmLGWm/1ERfr5aW4Cq1aatW5BHhgFlkIfg+ycHlPGS7TNB5nooLZugrGF+hZBtnPUNRdCk6cmEOa1BDAGq3WpdDxDHyVAnKZTHaV79vHa5zjzxgFXotezjkKzEkKuQYycMBVfpesc5J/lBXN/vWjAL5DIdxTOY4D9ATvU0rYqVYtp5Eh9q7kwMPzuklP05PtUrAvKmj7bnqZB3OgwosA5gIejCvxKsao0CbU9RpK4e0yBghG1MQx0uhpCll4+yj5RBSEvcm9no7LtPVhyhKwXGf501LCrGhUcVd5Iw0zBz1V8fp5Crt5Mti8UhifU0F0yHRNZMn807yPKaWMLvK1Fv82w/+fpyDtaauvpqKpMidllB2c8/rP3Q3gXwJ4iV5JqsJK+yn0rfD9HMCrDB1eCngwRQJ5F7IcmVcuq3xtjHsxy2t6r8WH6Na4Pxd5n6F6laJ5Iz4HmBZU6ncLanJ2ynRDVxGdh01WxZ+q8OtB8m4a2ONEyR2JYI2tGSJzJU018wTBKi3Ui/x3WTFBSzFGVzHIGrIE/3EqgvuVItJKKDVQ6J5qg+KM4tKdjG+0+ye8eVQudaNg1ny/Aq3Mg/EW3338KaM1ZOCIHwP4RwCfOec6Zk3SgkFkPtm+lz+okF/z9z+HLG/2GbK8DyoMknI5BXxVPRJXwMtJDK9sSni0qzinKHqgWxxFJjmKxFZnJyrs8iGAN/hzmoLEV2mP4+ZY4VVlrXSQxeav8P8PMRS2m++Zp9V8mNZxwtdXaKXfSU8l5XvGARxRSd+DFIa7lMvd7yAwuyZiikbzvI90wOu6gpBVnXufA/A6gB8A+AOARdUZoTtEy7dreGMJGfLvdQAn+f8QJL7IiJECdJwrqf4v6qUmfVaab9YheLKBg72kxmyWqCB2OIpMcmoyQjUyHVrGvwbwEwDvIKtfaatxxy3TvNJRGegiubtwM9E3wdcPqESvL+jcTSU1jSwZ6OPw+1Tie0rljg4AmBGRqwPmX+oKnrzRrxtVCNdmuPGcc+46gQ7NEQge/Z3zyKDmv0EGGb8UQPL1KihM10eXA9dH/7ZIkSKtUyV/URNEZyzjtxl6+S2AeSVE/MyRPIGHnEI9r4xs3yunml+uqu92pi+Vvucx/iS4tXBr0IS/M8/SrTCzR/qcLjqMvZxClsd6XESuOOfOOOe6JkSWDHE8wiL54h8A/JwhOY3iS9gCxO9zXlhOBpgImm6iia0b2VIoUqSt0U3ZMHUPGfT0cwAnnXNzFB7jpn2HFLRP10pjkVZvhwno88hyNA2+1kSGLLukUCX7eQ9XaKFPMkzW4vuue0UUysHYv6kmjLYFS6Nm369UjRVIhliDI0axzSMLGeq19WHJCa5Dgx7fIwC+z7Y7P6c306tg4ev9XuX1OibfJSokuMiw2O8B/Iy8sWQaVZaF5MR0ffAGiM7RNVVNDmp2SJAonLEZ8zNdxVs2/9Y0cPRI21TBwAicZeOp9ACkAQ9BQgKeCfhVZPH56/y+Swy1XVMQ1Sb/f5G/7+f/F/i3KxSkl2ixn+V3zKu8wA3BUqBwbKze19yM5fQFa+TUW6RDGDgW+l5/D5coxD9RhZeCLMx4FFny/yiVrm/1s5ufv8w8zIJRMiGvya/JCoCPkCXsL6p82phSsitc85N87xnn3EpB/UaV5pNz/K5LSmF2+Cy+KLdZoYmmFIR6I62fcZqHjFylUXlB1Wh5kNAkstquOykP4t7tAAXjUVo9AE3G9D2CKC0ZCOZU+/ZU5WsSBY32RZIaMdZSAnNSvb/J904FOkJLXQ+Cis9XqreVAK8ybc8NIcSVV40uau2/pIfwtrLuBFk+6mv8/YBaJz9++kkALwN4L1DNX1RsuQzgj8hyKp8pz2lcPe8KFcEZ59yqUdpSES2n39+mQvsJPWWtYO5AVpj3BJ8z9hzbml6LrpV6C1ke15cneAWzh/us656iF7oDFExHKZkevZHSWhPluaQKcjvrG1jSMp2jlboPGVqsSSump97jCzAP87P383fHUNkhALMicn2AnItXdGMGh59n9SeBaZ39osjyFFmb/dreRgbz1jVMu3k/R5FVwVuaoUDeq5qEItC92R7iZQCfAniTXlNb8aGGibe1V6RmtyAQJgvBhnUY7DIygMAPqWj02t7F/+8n70xWmKYak/yby4PR/HUdGcLxx/SQNVLuII2XJwPFvJG2qYK5BQ7ajwBX9SlOeQktlWNZozIZV17KtGqK5yv6J80oYC9Id/nPKmXWCAzG0lDYHnMnUxTWTyGrJp8ONGyEqb+xQjMdAnotRB2GBi+bEJT3uK7SIuzl5B+mlNJGgYKxIdEFANecc9dKPMBE1SIVGRtFbUWgimg/dc5dNNdYphd3LQdqHXuObZ3GnD5EdgbAB977VXt9FcBXTSg+wp13gIJpFcx+rzJjxnsyKxQmKyru7hP3LSVAFmnVTqjuAqvI8izXKTT3UbEs8fsatHomzBwRmNkgPYV+a9BCfgbAi7ScpgNCMS8UNuj8itD3uhqFsSFFoXNKUzndaaVCp4ekguHgJ44GYdoKxRdK8mtl31D9qELPWTQPptuHkokeznDmH0kfHqQr4em4LztQwVSpvEXFOg0PGOjQaj2jFMwK/70ODiCjcjnA13wXgQkqhjEFAJhG1t7kXhVG8kKtYSZyiqrVOYqsNcpXkSUX81BOY2YvUpWMTwacB1Mk8McATLNgUisIG9JDjhJxFeG9+rNNAOMiMhHoSycFg8X6Feg+Bj8dqNvxLdxDBk70YLYeJYw2TBG+bvvgTcS82s5SMFWqn+tajj0K+CV6K4tUIG1TA9OmMuoqYdJROaEOv8cng/8SwAtcs7a594axkLqqduSA6RAsAUu/afZCt7NpKGu9n/5neQlRp6CbaYWRC1UUmJQoGAsjTfPut0y5qNebBtxheUHXQ4VGCzRqeNAyYE1J9G5G12MPaqRDR51BMb0NY1hsBykYL3C6A31JloOZpECfUBX7h/iMswolNYssie8r/Cd4/Vky4GHVTXlChYKeQtYJGANO+gy1ol81jO8FY0t5Mb0RFNEFPQWGpqqMTBgoN6QGuPXTQLRq6EPs9So+Z573GD2bzU0aLATFY3HfdrCC6fXZY0vISBpC65P5d9BzuYosrzKuWsH4Dr4eE9/h32eQocj2U7js4e+gwhqGlyYGon0BwCl6WjYH0DO5gn4EryuZqdPusztBUrGVissJibohe8ApikOweeG8Ts1ci1QAFkQreePkSZozt2m7dWCICmadk6J+wJRHffkeY77v2CyvM6k8k1nVKn7c5D001DUxSeJuzbVzOXmmLjK47jvIgAd6X9yQwoZlr6UD5HDqfi7JCWmNMsRa5mkVjVCQGOba0qiySDHJ37dFKwrOKsiS8XPI0GCgwP4QWdHeXfRWmsgS/58rRJcfOHYFWVLfK6o9/P88bp+JMqx1W0BWGPY67xPqnloDTh3Ma2eiRyY3cxSf9qCkZg6mG0BljboLr5QADnoFyqIR8MZE5Ygkh1+TKMw2pUFa1qQ0Ggc7zIMZOFzCMNkisnYgP0FWJX4ewPvIUGN3IgtFNZBVn39JpXES2ZjeHv+2RiXlQ2af828aUZaoCuGyxLgEWu+v4uYUzuPIWrV85JxbyAk/DdIyRtBfsrSq5d+PABh2l2fBYF2lXYFyih4MtiSSLIn7FhXMQC6tyhX4WomeiJygJzCjZsV0kYW/fqy8hmVVlDmNLL+yn4poDFm1+Tl6QX5OzKe42c+spyxcZ9rGN5Qy0ZP2GryXq2ra5vtUMtcCobN0wDBZXj7AlQwHK5tJXzYf3XqkYq45lFi4QdalJR5ys8TDyWtvE6oalzgRccMGitXuv6fkRFQwOxymjAEVDTin5HofwmoawDdxc563nwdzhB7OdWRzSeaVsGobJVBFwfSoTHyY7rzut6WepadyPxu17mU1OK7AIy3ySoeN5pE+LdqqnQDiwKtIkbawgtkM1KL38jVklffTphL8BLJJjq+oYkE7TkAKKtpdYBbNsmmg6QrGEmATzgspasu/2ZKxUSHsQDKIyOjBRAUzoBTJEv4N040YgVHNUO1jHLKE/hFk7ekfCHz1bgBXnXNnR3C/W1UAbpUDG+sfIkWKCmaodTWhZphWOPbUe0VNrkxzEvhuBBZWmje4bJ3rBgappq7a32wjKruH1SUi0tav8ndxhk9UMMN0iXP/zh6KupIcZgDaOH9vqOaVTRFpqVkzazUEV26ieMBOyZEiRUKtnFukWGi5oWCDRNU4JKaZZtdU1suwleEGPK8bMkigzFIcSj1CRXRQrH3YfqHXfmHnkaKC2RQta0KCKYGayzJg76xIkSJF2jHu5GaJmbpNrojdBqCe3CZFUIV6q93WXDKCDSLEGZu3+3qkHaBgNpNb3ixRJHGtIkWKFCkqmL7WYSxnwBbQX6v8QepNooW2Mz2cSKOPCsRzFRXMphNEEmspIkWKFGlrKZjNEk8VNfUwDVg6jQqz7UcZr3cbEO8f1d4M+3v7bcffTz2FyynajRTzX5E2qQdzo/nhRhQb8pohBVNnamKkSJEiRcL6wJRDvbmqzIVJ1BjbUVa36+93OQrEBfqVjRqZZbvCDmJ5DWKxlXkZrkIF/cgNA9VNWbZAjmZQZKB9ThmwF1yk4Y59qIu2HKTn345WMK6Gxe9U25ZV51xP1ZmMrBjRV+57ASUiq7jZCXkzzJLYDI0gN0KxbYdeZXmhtbIK87LxCEWfb8R8KkbdAaDK63UVRBlf6PEXUcGoBbPWVZqz0B69NW4WsaELGitYa9IHMzVFpKuU2DiyIWSNHI9C1hFFlqrJmoOG51Iz+KwqqKEf70AqeK/rXfdU9pyhyZ15iCOpkBtzAJwZv+BKpmD6c9Mo+M6iMQiaT9yQxzW4dR4ctxG95VyFs9YoGGV+y0h0te+J+am7r1bBbLk8UnMdk2n+IOv3Jcg6Gd8D4D4RuQZgyc9IGSH1kOVbICLjAO7mPezxVfvGqu1hfVFk62W5DCLok61sWVVYg7RPwyWP/0cZyhMTVo00XM87rbB/KSJMfuQKJsXNaYwWdeVntevNSJBNknwawHf5t49E5Ipzrm1a8KecWulCoTOdr8kLrfE9Cb+ngWyw2P0AXuA97FcjkVMzYRLrPEa6qQR4OgJPyhVYXlW6JYcsr5DLLyM+YINYtQmy3FqzYAS2FAiMkLeWAugaHkxLQnGC8kmfRd5Tp4YBZK3rQfN0w/SARxmCLVMgRSAf/3o3h589SChv2mpaYHT0CvoaipGbW05ZNdfpwDdz4sSOIbL7AHwP2aCv4wDOiMiSqq5PAPREpEcgQKq8odtceRVaQ2ikr4h0+Jl9yIaMfZuKZiwgVGQDNlUrlt6Ie565IU+C3Go5miIl6go88TxBU+bBSB/5IC1opMCw6yFCcUflwXSRX3DdK9nztOR7uwWKrbsBBu6mzsGEYplOWYpirHFHT+IpAHfRk7iMrHtxIyeXUBazlZIckR80to/K7U4qN1v3IioX4tYBDQXjNbkBQnMup27DBSwoey9lHkyq5umkNYXoRtQ+uYpNTkNAFVcg6G1YqpuT8C2rndFrnVawZO1eOhX2TSusxXqsf91ruJoIxrrXlQpyIamBinRGwTT8+ckxCMvCb9tyYF5znQ5z19STpCrX4Q/KLv7cCWBZ/V3MJuQpFFcR/qsP8TSVWwiM4DYQxaFDYkleWHDI16p7kHvr1EJn1EIwL0RRhgZzBbmQhoHYlyWRb1FoAXh+UtIrr9En2CWNhYmVUXotJS8lZ3+cmi1VFdByg6dyBiNGFFkglmwF/iKAOQDzAPbmeCSeJvlTxRvp53WXEz6TgFvrFeHSqNxUk/fQB98z9Rh/7/ZhEW7GWSnDvqaraNXW8agkx7L0nngrxxNIlEBoBlBeZQqmqX5garCmkKEckwIB2Q+KTLC5umwMqwPFMMnveUMZqHry7ViOItAh/rx9bynlFdr3MaPYIooswOhXAHwM4DEAB3M8DymA0/YT/kAJlDTPa9GKzivHzwAsrGNnAR/ySDaw48JOsWDrTEB0Bq4a8uqWAFx3znXU3ztESC4WxNrX+NlF81mIyAKAFWNkOBMhSHLACpFGXw/VBTBv9437Psd97RW0qFoGsBDY9yUVKo+tYoxLp7/7IoDXkSXwl83GbHSXU2es1p4RGG8CeAXApVEUQiq3ODXueJtr1R2xp+AwWDX/Zp/vU/QMSQEAJWR1ptyXtjJMQmijduBaK1QiaY5iavP1TuB1zwsrAUElyMZ892qu+Wb1cKt2kBi2cilCc7W5xp2cmj7/Ogr2XQqUUztn33slAADZiR6M34BUCc95AH9ElsS/F8CjAGaMS5msQxuOsoJNp+CKywA+AfAjAK8CmFO5kFEk3XT8NjU5gnQLtbnfan3bkpwC4JBn06PAWPaJ3YDXezeAR0XkuuK3JrLc4l3ICnoRiPHP8vWHReS0+d4jAA4zTJYEIgUp72tpiLyy0+o3ijyYthmZbsEduwA8ICIXlPwThrfuAXA0Z9+byIBG95JnLhp59hAjPo0BPe9tVwfTUAfLo1vOAvgNX/sGgK9y8Vomjmlj4EkgIZmoTeyapLgrQafYZH/PhD0WkKHYPqbn8o8APuUB9hDpdFhJd+ecb/KZqOdIKUy8Zd3row6mKqIrLx/UGAA95wbMmWx0D6q85GoHwFVkId+7VS7G034AL/Hf63x/wr08iCxEvDtwPV/s+03y4TmTU7kDwHNUNGMauYSbNWb+vnoikjjn0pKx3umAVvCo9rCMZ0fNP5LjZawaT1Ff/xiA7wN4UHkrHh17Fw3q0L5PAniY33+QkR5d2P0QeWaiQPGlG9RiakMUTEstpPiYoog0ufCfA/gZF/IUD44X7OOmit7CQNMAxNli0POsUTvTxRloZ5PXdxQM5wB8xJDeSedcR+VG3Ag6PzsK+FR5fod9km9AZZbXaietcZClj4aKm4XZh1mvswrgPA0Qi3J05P3naLUuKQUzSY99H63dkAdzEFlN1l4CYrSC2UMPaA/fq/e0R6PoErtgCIuI0zh6eGi5uDbXeCkA9XYADgH4FoBHyCNawezmnk7lyMu7yB9Hue9awRym4dEIRGk6AK7lhNa2jYKxmrzJBU3MgjbVRn3JkNkHyuX3FdWiKmYTY0WmpmVDahA6dgNcQMFYIEFXeVwTKqk/T4Za8BahQQKNIhylD/peKt/UXC+RLE4nNd3+NIB66pZUGHdUTqBjKr/TElx/GjAUQns46kmF0mcuSefjUhNP/wLAaf4+o+LkHvFzB4ADxvBpmJ+Qsm7Q85kxoRh/flpKoYjK91yh4XZee6A1oO1SMlVVtknrn6pNJ0PvWWUE5iyygmx9Dprcdx/GtMZxsyQS0CK/7Fb7LirENq4iNTrndppG8OJmBuYM24NZpat+FMCzIvIJgDOmt1gXWQz73BaM0Y4aQdakm/08rd0vKcgwYL+wRiDPdRvTq9BKl9Zam4p3LMA3SUkbmVZAGbdGoKAlkAxNTQi0SosWHYPv2QprepVrVDDv0WM4HICXNgvOVVn+zhWEQ0SFjH34uYssT/guFc0gpQUI9N/rVfxs2kfvLgnsl6vxOWs8VfHK7f2mpuDbmY4g/vdlACeR5ZG/iixfZp930H0fRzhPkyo4s6cFAG8AeBnA9RHnhjdUwdiHugzg94xDf4cL87c8BJHK6R7Gcr9JZf2+Qa+5PvcnVbkcne+xwtcX+bVpKFzNQUTlCW4t7CUHgDFo7F9yqtzX1L1qVFCnoIZIFAKorT7fCfTUS1Qu8Q2GT48ZYdMxSsCZdSgSvEWziXQYTjcZvQbgNd7PXE1jyAVQbz0VjmmXrJs3REKouU5J3Za9blsZQu0Co8BeU9Q9l3nl+vP2eXWbHdviSmjkHaeH+STDWk1jjOR1fijzovP23an7bZroyQUAvwDwS4b0/dlOR9xWakM8GG3hXQXwK2rbF5D1F0tE5DW6cr086znQ+qJKESVGEGpBoIOAjGiok0YZ7QHwLDIAxBgy5NrLAK70aaH42ooVCtApA45oB5KEWvFcocX2G2R5hVn+jKtDamG3qRLYq7TGtWJZUoJhmCGRcR7+kPW/H1neo1FQ6LaLYYpx9ZkJG7rkHrTpmf+En30GWQx+l7EyR0UdCpU5KpdfM1Sy1oe3PUa+q7tufszGLLLckfVKD/KzzQK5s1ddV1//QMF1fYPavQwlhu55vIBPJgv4ZA9fT+x5cM51AcyLyHFkoB8gS74fMCM+MIK8UFOFZxe4778E8Afn3CXK3obK4W4fD4YJRZ+UblCJvM3FaNAS/28A/HN1KMTkM4pmvhRBkfuZEFiU6JaCav+Q8hsmpHsvD+WEQtv9ZxVjbbDRZ66FEvi7cL1PIUPBHeC6e6v+Ii2htdu/yqUsEPs99+0VZL3inmBY6DQ9q3lTp+NRVl/wwN5BgeDReR9RcXUr3H9dPp7MeW2iJDSnZxLpz9jW+6lS9HMAfogs9/EdGgWPI4vDj5pO02N5nf++A+Aq96yoF1ZeyLdVsm5FeYu8ws4prmezoKXOeMFetgrCr81AyFbfcyPQW09/drKkwawriNCcBvAfyccvAfhTnomJddj3j2lQvAngLd7DpkWPDc2DUTBbr0EXReQdbmSbh2+vWYhQ0tnVqGtZj0Z9o76WVWwdCu2XaR2/qSZ8NmsIYVH7cpHft4gsp6MVzDW6/YuhZyUC8KKIXKaS+pyK6jAyJNVx3m/bJME/pfD4gkpNK5iPldIc1rq2ea1fIEvAQoUEuwDOIMuZLAU+63Mqr/DePZ+eYlh3yfB5IiINWrQXuL4LXI+PGDI7UJDIlwG8XFCxvU/l8hqAz51za+i/+vw01+2SuVZK4+Ndwx963U4B+AO/x+Ykzqp9DlnVF3ndR1WYyXvX1yhEQ9dd5vP/HFmT2pYBwnzG/ezkeH5fIEOx3muet02+tXyiUZ0NnokveCauc90+RYbwmzTIQjek6EbK9TrOqMabAM7RoPBjTNLNjLgYdldg//8ZWuX7VVilMwCGfhgezDAUlRuBEvP9iNZo4V9wzi3krW3VfRARHwKZNlahj4Ev6rYmBbN2GiZE1qb3sgigo67XUA1Ex01tkwd3LDJ81hlGvJjKV3tLMAd9lULrkhXGItJSMFId4lrhob7m5xLppK/h8wlef5ZCZqyg1dGgCqajwiRzVHSDdJDw8OddgXVrc90u2gGAXHO/brMBQ3WNwvcaR6GL+fwsMiDQrsBZ9sbP+cB1x6nAdThLr88KlducN84MD+9VysAK8RVe97KaRaXPkpVvu9TzT6jc1bAVjHA957nv1/PuaVsrGD3QizUwW7bF9GYgQqPdRiXu1F7CHta4NzdCwrKRa7PRPLJDz2Sy0V4DleXOlLFDLkCMgizuZdybuEdx37F155GP0vpNcqrBI+XvxQ18/6BWqbK0i4oJC6+jOhjYvbztsznvRag9ybAsbsVrjZyEc5o3GdTwaWL2oFdxbZKSZ5YhnrXbxvAOso60yPMS9Tdm5dRYt9LPVrxuaOy05uci/urleZW0/Bs547Gl6gTZwPMDox8LfkuR8lbxWN06aHq3FdAOm2gfZAioqsoWV53cTpXP5gxNQgDuO4oRB7lvybtmDp+i6iEODBZbt95pQzJACsE0faxbpfUr2bOy6w6y1319to/nH8m+x1BopEiRIkWKFClSpEiRIkWKFClSpEiRIkWKFClSpEiRIkWKFClSpEiRIkWKFClSpEiRIkWKFClSpEiRIkWKFClSpEiRIkWKFClSpEiRIkWKFClSpEiRIkWKFClSpB1L/z93OolfJWqvZAAAAABJRU5ErkJggg==" alt="Группа компаний КРАШМАШ" width="120" height="48">
+    </div>
+    <nav class="tabs" role="tablist" id="tabs-form" hidden>
+      <button role="tab" id="tab-form" aria-selected="true" data-v="form">Рапорт</button>
+      <button role="tab" id="tab-pass" aria-selected="false" data-v="pass">Паспорт</button>
+      <button role="tab" id="tab-sum" aria-selected="false" data-v="sum">Итоги</button>
+      <button role="tab" id="tab-log" aria-selected="false" data-v="log">Журнал</button>
+    </nav>
+    <nav class="tabs" role="tablist" id="tabs-admin" hidden>
+      <button role="tab" id="tab-edit" aria-selected="true" data-a="edit">Объект</button>
+      <button role="tab" id="tab-list" aria-selected="false" data-a="list">Мои объекты</button>
+    </nav>
+  </header>
+
+  <div id="status" class="banner" hidden></div>
+  <section class="card" id="menu" hidden></section>
+
+  <!-- ================= КОНСТРУКТОР ================= -->
+  <div id="v-edit" hidden>
+    <section class="card">
+      <h2>1. Объект</h2>
+      <label class="f">Название и адрес (шапка формы)<input type="text" id="a-name" placeholder="г. Москва, ул. …, д. … — Котлован"></label>
+      <label class="f" style="margin-top:10px">Заголовок<input type="text" id="a-title" placeholder="Рапорт прораба"></label>
+      <label class="f" style="margin-top:10px">«Выполнено ранее» — по состоянию на дату (для текущих объектов)<input type="date" id="a-d0date"></label>
+      <label class="f" style="margin-top:10px">Сведения для паспорта объекта (заказчик, РП, сроки — по строке)<textarea id="a-info" rows="3" placeholder="Заказчик: …&#10;Руководитель проекта: …&#10;Сроки: 01.09–12.11.2026"></textarea></label>
+      <div class="hint">Код объекта: <span class="code" id="a-pid"></span> — по нему на телефоне прораба разделяются рапорты разных объектов.</div>
+    </section>
+
+    <section class="card">
+      <h2>2. Виды работ и объёмы по проекту</h2>
+      <div class="hint" style="margin:0 0 4px">В строке: наименование; ниже — код, единица, объём по проекту; ещё ниже — выполнено ранее (для текущих объектов) и источник.</div>
+      <div id="a-works"></div>
+      <div class="row" style="margin-top:8px">
+        <button type="button" class="btn small" id="a-work-add">+ Добавить работу</button>
+        <button type="button" class="btn small" id="a-paste-toggle">Вставить из Excel</button>
+      </div>
+      <div id="a-paste" hidden style="margin-top:10px">
+        <label class="f">Скопируйте из Excel строки (столбцы: Наименование · Ед. · Объём по проекту · Выполнено ранее — последний можно не указывать; или с кодом впереди) и вставьте сюда<textarea id="a-paste-text" rows="6" placeholder="Разработка грунта	м3	215650&#10;Обратная засыпка	м3	23410"></textarea></label>
+        <div class="row" style="margin-top:6px"><button type="button" class="btn small primary" id="a-paste-go">Добавить строки</button><span class="hint" id="a-paste-msg"></span></div>
+      </div>
+      <div class="hint">Это паспорт объекта (бюджет): прораб видит его на вкладке «Паспорт», а в рапорте сам выбирает работы из этого списка. «Источник» под строкой: материал вывоза — объём считается из раздела «Вывоз»; «моточасы» — из моточасов техники.</div>
+    </section>
+
+    <section class="card">
+      <h2>3. Разделы формы</h2>
+      <div class="toggles">
+        <label><input type="checkbox" id="sec-haul" checked> Вывоз</label>
+        <label><input type="checkbox" id="sec-subs" checked> Субподрядчики</label>
+        <label><input type="checkbox" id="sec-mach" checked> Техника</label>
+        <label><input type="checkbox" id="sec-dt" checked> Простои</label>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="f">Раздел «Вывоз» называется<input type="text" id="a-hlt" placeholder="Вывоз"></label>
+        <label class="f">Вместо «Перевозчик»<input type="text" id="a-hlc" placeholder="Перевозчик"></label>
+      </div>
+      <div class="toggles" style="margin-top:8px"><label><input type="checkbox" id="a-hltn"> В разделе «Вывоз» учитывать тонны</label></div>
+      <div class="hint">Для площадок переработки: например, «Продажа», «Покупатель» и тонны.</div>
+    </section>
+
+    <section class="card">
+      <h2>4. Справочники-подсказки <span>по строке на пункт</span></h2>
+      <div class="row">
+        <label class="f">Материалы вывоза<textarea id="a-mats" rows="6"></textarea></label>
+        <label class="f">Субподрядчики<textarea id="a-subs" rows="6"></textarea></label>
+        <label class="f">Техника<textarea id="a-mach" rows="6"></textarea></label>
+        <label class="f">Перевозчики<textarea id="a-carr" rows="6"></textarea></label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>5. База данных (Google Таблица)</h2>
+      <label class="f">URL веб-приложения Apps Script<input type="url" id="a-dburl" placeholder="https://script.google.com/macros/s/…/exec"></label>
+      <label class="f" style="margin-top:10px">Ключ объекта (у каждого объекта свой — выдаёт Claude; не ключ кабинета!)<input type="text" id="a-dbkey" placeholder="ключ объекта"></label>
+      <div class="row" style="margin-top:8px"><button type="button" class="btn small" id="a-dbtest">Проверить связь</button><span class="hint" id="a-dbmsg"></span></div>
+      <div class="hint">Настройка общая для всех объектов. Если база указана, рапорты всех прорабов пишутся в таблицу, а история не теряется при смене телефона. Без базы рапорты хранятся только на телефоне.</div>
+    </section>
+
+    <section class="card">
+      <h2>6. Ссылка для прораба</h2>
+      <button type="button" class="btn primary" id="a-make" style="width:100%">Сохранить и сформировать ссылку</button>
+      <div id="a-out" hidden>
+        <div class="hint" id="a-out-msg"></div>
+        <div class="linkbox" id="a-link" style="margin-top:8px"></div>
+        <div class="sendgrid" style="margin-top:10px">
+          <a class="btn send max" id="a-send-max" href="https://web.max.ru/" target="_blank" rel="noopener">MAX</a>
+          <a class="btn send tg" id="a-send-tg" href="https://t.me/" target="_blank" rel="noopener">Telegram</a>
+          <a class="btn send wa" id="a-send-wa" href="https://wa.me/" target="_blank" rel="noopener">WhatsApp</a>
+          <button type="button" class="btn send" id="a-copy">Скопировать ссылку</button>
+        </div>
+        <a class="btn" id="a-open" href="#" target="_blank" rel="noopener" style="display:flex;align-items:center;justify-content:center;margin-top:8px;text-decoration:none">Открыть форму прораба</a>
+        <div class="qr" id="a-qr"></div>
+        <div class="hint" style="text-align:center">QR-код можно распечатать и повесить в прорабской.</div>
+      </div>
+      <div class="hint">Объёмы по проекту зашиты в ссылку: прораб их не меняет. Если поправите объёмы — сформируйте ссылку заново и разошлите; накопленные рапорты на телефонах сохранятся (код объекта прежний).</div>
+    </section>
+  </div>
+
+  <div id="v-list" hidden>
+    <section class="card">
+      <h2>Мои объекты <span>на этом устройстве</span></h2>
+      <div id="l-projects"></div>
+      <div class="row" style="margin-top:10px">
+        <button type="button" class="btn small primary" id="a-new">+ Новый объект</button>
+        <button type="button" class="btn small" id="a-demo">Заполнить примером</button>
+        <button type="button" class="btn small" id="a-fromdb">Загрузить объекты из базы</button>
+      </div>
+      <div class="hint" id="a-fromdb-msg"></div>
+    </section>
+    <section class="card">
+      <h2>Открыть по ссылке</h2>
+      <label class="f">Вставьте ссылку на форму объекта, чтобы отредактировать его<input type="text" id="a-import" placeholder="https://…#p=…"></label>
+      <button type="button" class="btn small" id="a-import-go" style="margin-top:8px">Загрузить в конструктор</button>
+      <span class="hint" id="a-import-msg"></span>
+    </section>
+  </div>
+
+  <!-- ================= ФОРМА ПРОРАБА ================= -->
+  <div id="v-form" hidden>
+    <section class="card">
+      <h2>Смена</h2>
+      <div class="row">
+        <label class="f">Дата<input type="date" id="f-date"></label>
+        <div class="f" style="display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)">Смена
+          <div class="seg" id="f-shift">
+            <button type="button" data-s="D" aria-pressed="true">День</button>
+            <button type="button" data-s="N" aria-pressed="false">Ночь</button>
+          </div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <label class="f">Прораб (Фамилия И.О.)<input type="text" id="f-foreman" autocomplete="name" list="foreman-list" placeholder="Иванов И.И."><datalist id="foreman-list"></datalist></label>
+      </div>
+      <div id="f-exists" class="hint" hidden></div>
+    </section>
+
+    <section class="card" id="c-works">
+      <h2><span>1. Работы за смену</span><span>объём</span></h2>
+      <label class="idle"><input type="checkbox" id="f-idle"> Работ не было (простой, выходной)</label>
+      <button type="button" class="btn prevfill" id="f-prev" hidden></button>
+      <div id="f-works"></div>
+      <button type="button" class="btn small" id="f-work-add" style="margin-top:6px">+ Добавить работу</button>
+      <div class="hint">Выберите работу и впишите объём. Кнопка под работой: «за смену» — сколько сделано сегодня, «всего на сегодня» — итог с начала работ, форма сама вычтет то, что было раньше.</div>
+      <div class="hint" id="f-autohint" hidden></div>
+      <label class="f" style="margin-top:8px">Примечание<textarea id="f-other" placeholder="Что важно знать руководителю"></textarea></label>
+    </section>
+
+    <section class="card" id="c-haul">
+      <h2><span><span class="num"></span>. <span id="h-haul-t">Вывоз</span></span></h2>
+      <div class="haul-hd" id="h-haul-hd"><span>Перевозчик, ниже — материал</span><span>Рейсов</span><span>м³</span><span></span></div>
+      <div id="f-haul"></div>
+      <datalist id="carrier-list"></datalist><datalist id="unit-list"><option value="м³"><option value="м²"><option value="т"><option value="шт"><option value="п.м."><option value="%"><option value="маш.-ч"><option value="рейс"></datalist>
+      <button type="button" class="btn small" id="f-haul-add" style="margin-top:6px">+ Добавить перевозчика</button>
+      <div class="hint" id="f-haul-hint" hidden>Перевозчики подставлены из прошлой смены — впишите рейсы и объём.</div>
+    </section>
+
+    <section class="card" id="c-mdi">
+      <h2><span><span class="num"></span>. Люди</span><span>чел.</span></h2>
+      <div class="row"><label class="f">Свои рабочие и ИТР на объекте<input id="p-mdi" inputmode="numeric" placeholder="0"></label></div>
+    </section>
+
+    <section class="card" id="c-subs">
+      <h2><span><span class="num"></span>. Субподрядчики</span><span>чел.</span></h2>
+      <div class="mach-hd"><span>Субподрядчик</span><span>Людей</span><span></span></div>
+      <div id="f-subs"></div>
+      <datalist id="sub-list"></datalist>
+      <button type="button" class="btn small" id="f-sub-add" style="margin-top:6px">+ Добавить субподрядчика</button>
+      <div class="hint" id="f-sub-hint" hidden>Список подставлен из прошлой смены — проверьте количество людей.</div>
+    </section>
+
+    <section class="card" id="c-mach">
+      <h2><span><span class="num"></span>. Техника на объекте</span><span>ед.</span></h2>
+      <div class="tech-hd"><span>Техника (тип или марка), ниже:</span><span>Кол-во, ед.</span><span>Моточасы</span></div>
+      <div id="f-mach"></div>
+      <datalist id="mach-list"></datalist>
+      <button type="button" class="btn small" id="f-mach-add" style="margin-top:6px">+ Добавить технику</button>
+      <div class="hint" id="f-mach-hint" hidden>Список подставлен из прошлой смены — проверьте количество.</div>
+    </section>
+
+    <section class="card" id="c-dt">
+      <h2><span><span class="num"></span>. Простои и ремонт</span></h2>
+      <div id="f-dt"></div>
+      <button type="button" class="btn small" id="f-dt-add">+ Добавить простой / ремонт</button>
+      <div class="hint">Вид: простой, ремонт или ТО. Укажите, что стояло, сколько часов и причину. У простоя обязательно — по чьей вине: простои по вине генподрядчика и заказчика — основание для продления срока.</div>
+    </section>
+
+    <section class="card" id="c-done">
+      <h2><span><span class="num"></span>. Завершение объекта</span></h2>
+      <label class="donebox"><input type="checkbox" id="f-done"> Работы на объекте завершены</label>
+      <div class="hint">Ставьте галочку только в последнем рапорте, когда все работы на объекте закончены. Руководство получит уведомление, проверит и подтвердит. Если поставили по ошибке — снимите и сохраните рапорт заново.</div>
+    </section>
+
+    <section class="card" id="c-send">
+      <h2><span><span class="num"></span>. Отправить рапорт в чат</span></h2>
+      <div class="sendgrid">
+        <a class="btn send max" id="send-max" href="https://web.max.ru/" target="_blank" rel="noopener">MAX</a>
+        <a class="btn send tg" id="send-tg" href="https://t.me/" target="_blank" rel="noopener">Telegram</a>
+        <a class="btn send wa" id="send-wa" href="https://wa.me/" target="_blank" rel="noopener">WhatsApp</a>
+        <button type="button" class="btn send" id="send-copy">Скопировать текст</button>
+      </div>
+      <div class="hint" id="send-msg">Кнопка сохраняет рапорт и открывает мессенджер с готовым текстом — выберите рабочий чат и отправьте. Для MAX текст копируется: откройте чат и вставьте.</div>
+      <pre class="gp" id="send-preview" hidden></pre>
+    </section>
+  </div>
+
+  <div id="v-pass" hidden>
+    <section class="card">
+      <h2>Паспорт объекта</h2>
+      <div class="passinfo" id="p-info"></div>
+      <div class="hint" id="p-asof"></div>
+    </section>
+    <section class="card">
+      <h2>Работы по бюджету <span>план · выполнено · остаток</span></h2>
+      <div id="p-works"></div>
+      <div class="hint">Справочно, менять нельзя. «Выполнено» — сумма всех рапортов плюс выполненное до начала рапортов.</div>
+    </section>
+    <section class="card" id="p-extra-card" hidden>
+      <h2>Новые работы объекта <span>с начала</span></h2>
+      <div class="tablewrap"><table id="p-extra"><thead><tr><th>Работа</th><th>Ед.</th><th>Выполнено</th></tr></thead><tbody></tbody></table></div>
+    </section>
+  </div>
+
+  <div id="v-sum" hidden>
+    <section class="card">
+      <h2>Итоги на дату</h2>
+      <label class="f">Дата<input type="date" id="s-date"></label>
+      <div class="hint" id="s-count"></div>
+    </section>
+    <section class="card">
+      <h2>Выполнение <span>сутки · месяц · с начала</span></h2>
+      <div class="tablewrap"><table id="s-works"><thead><tr><th>Работа</th><th>Сутки</th><th>Месяц</th><th>С начала</th><th>По проекту</th><th>Остаток</th><th>%</th></tr></thead><tbody></tbody></table></div>
+      <div class="hint">Сутки = день + ночь. «С начала» включает выполненное до начала рапортов, если оно указано в объекте. Если подключена база — итоги по всем прорабам объекта, иначе — по рапортам на этом телефоне.</div>
+    </section>
+    <section class="card"><h2>За сутки</h2><div class="kpis" id="s-kpi"></div></section>
+    <section class="card" id="cs-haul"><h2><span id="hs-haul-t">Вывоз</span> <span id="hs-haul-u">рейсов / м³</span></h2>
+      <div class="tablewrap"><table id="s-haul"><thead><tr><th id="hs-haul-c">Материал / перевозчик</th><th>Сутки</th><th>Месяц</th><th>С начала</th></tr></thead><tbody></tbody></table></div></section>
+    <section class="card" id="cs-subs"><h2>Субподрядчики <span>чел.-смены</span></h2>
+      <div class="tablewrap"><table id="s-subs"><thead><tr><th>Субподрядчик</th><th>Сутки</th><th>Месяц</th><th>С начала</th></tr></thead><tbody></tbody></table></div></section>
+    <section class="card" id="cs-mach"><h2>Техника <span>машино-смены</span></h2>
+      <div class="tablewrap"><table id="s-mach"><thead><tr><th>Техника</th><th>Сутки</th><th>Месяц</th><th>С начала</th></tr></thead><tbody></tbody></table></div></section>
+    <section class="card" id="cs-dt"><h2>Простои <span>часы</span></h2>
+      <div class="tablewrap"><table id="s-dt"><thead><tr><th>По чьей вине</th><th>Сутки</th><th>Месяц</th><th>С начала</th></tr></thead><tbody></tbody></table></div></section>
+    <section class="card"><h2>Дни без рапорта <span>последние 14 дней</span></h2><div class="chips" id="s-miss"></div></section>
+    <section class="card">
+      <h2>Сводка за сутки</h2>
+      <pre class="gp" id="s-gp"></pre>
+      <button type="button" class="btn primary" id="s-copy" style="margin-top:10px">Скопировать текст</button>
+      <span id="s-copied" class="hint ok" hidden>Скопировано</span>
+    </section>
+  </div>
+
+  <div id="v-log" hidden>
+    <section class="card">
+      <h2>Все рапорты <span id="l-count"></span></h2>
+      <div class="log" id="l-list"></div>
+    </section>
+  </div>
+
+  <div class="foot" id="foot"></div>
+</div>
+
+<div class="savebar" id="savebar" hidden>
+  <div class="in">
+    <div class="msg" id="save-msg">Заполните и сохраните рапорт за смену</div>
+    <button type="button" class="btn primary" id="save">Сохранить рапорт</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const fmt=(v,d)=>{if(v===null||v===undefined||v===""||isNaN(v))return "—";return Number(v).toLocaleString("ru-RU",{maximumFractionDigits:d===undefined?2:d});};
+const num=s=>{if(s===null||s===undefined)return null;const t=String(s).replace(/\s/g,"").replace(",",".");if(t==="")return null;const v=Number(t);return isFinite(v)?v:null;};
+const todayISO=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().slice(0,10);};
+const ruDate=s=>s?s.slice(8,10)+"."+s.slice(5,7)+"."+s.slice(0,4):"";
+const sget=k=>{try{return localStorage.getItem(k)}catch(e){return null}};
+const sset=(k,v)=>{try{localStorage.setItem(k,v);return true}catch(e){return false}};
+const lines=t=>String(t||"").split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+const rid=()=>Math.random().toString(36).slice(2,8);
+const BASE=location.href.split("#")[0];
+
+// ---------- кодирование настроек объекта в ссылку ----------
+function b64u(bytes){let s="";bytes.forEach(b=>s+=String.fromCharCode(b));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
+function unb64u(str){str=str.replace(/-/g,"+").replace(/_/g,"/");while(str.length%4)str+="=";const s=atob(str);const a=new Uint8Array(s.length);for(let i=0;i<s.length;i++)a[i]=s.charCodeAt(i);return a;}
+async function streamBytes(bytes,ctor){const cs=new ctor("deflate-raw");const w=cs.writable.getWriter();w.write(bytes);w.close();return new Uint8Array(await new Response(cs.readable).arrayBuffer());}
+async function encodeCfg(cfg){
+  const raw=new TextEncoder().encode(JSON.stringify(cfg));
+  if(window.CompressionStream){try{return "z"+b64u(await streamBytes(raw,CompressionStream));}catch(e){}}
+  return "j"+b64u(raw);
+}
+async function decodeCfg(s){
+  const kind=s[0],body=s.slice(1);let bytes=unb64u(body);
+  if(kind==="z"){if(!window.DecompressionStream)throw new Error("old");bytes=await streamBytes(bytes,DecompressionStream);}
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+const menuParam=h=>{const m=/[#&]m=([A-Za-z0-9_\-]+)/.exec(h||"");return m?m[1]:null;};
+const cfgParam=h=>{const m=/[#&]p=([A-Za-z0-9_\-]+)/.exec(h||"");return m?m[1]:null;};
+
+// ---------- значения по умолчанию ----------
+const DEF_MATS=["Грунт","Ж/Б","Кирпич","Песок","Строительный мусор","Другое"];
+const DEF_SUBS=[];
+const DEF_MACH=["Экскаватор","Мини-экскаватор","Бульдозер","Фронтальный погрузчик","Каток","Самосвал","Автокран","Кран гусеничный","Буровая установка","Автобетоносмеситель"];
+const FAULT=["Свои","Субподрядчик","Генподрядчик","Заказчик","Погода","Прочее"];
+function blankCfg(){return {v:1,pid:rid(),name:"",title:"Рапорт прораба",works:[],mats:DEF_MATS.slice(),subs:DEF_SUBS.slice(),mach:DEF_MACH.slice(),sec:{haul:1,subs:1,mach:1,dt:1}};}
+const DEMO={v:1,pid:"demo",name:"Пример объекта — Котлован",title:"Рапорт прораба",
+ works:[{c:"ПЛ",n:"Вертикальная планировка",u:"м³",t:5000},{c:"ШП",n:"Шпунт погружено",u:"шт",t:500},
+ {c:"ЗР",n:"Разработка грунта (механизир.)",u:"м³",t:100000},{c:"РС",n:"Распорная система смонтирована",u:"т",t:1000},
+ {c:"ВЫВ",n:"Вывоз и утилизация грунта",u:"м³",t:90000,src:"Грунт"}],
+ mats:DEF_MATS.slice(),subs:["Субподрядчик 1","Субподрядчик 2"],mach:DEF_MACH.slice(),sec:{haul:1,subs:1,mach:1,dt:1}};
+
+// ---------- хранилище конструктора ----------
+const PKEY="raport2-projects";
+function loadProjects(){try{return JSON.parse(sget(PKEY)||"{}")||{};}catch(e){return {};}}
+function saveProject(cfg){const m=loadProjects();m[cfg.pid]={cfg:cfg,at:new Date().toISOString()};return sset(PKEY,JSON.stringify(m));}
+function delProject(pid){const m=loadProjects();delete m[pid];sset(PKEY,JSON.stringify(m));}
+
+// ---------- база (Apps Script) ----------
+const DBKEY="raport2-db";
+function dbSettings(){try{return JSON.parse(sget(DBKEY)||"null");}catch(e){return null;}}
+async function dbGet(db,params){
+  const u=db.u+(db.u.includes("?")?"&":"?")+new URLSearchParams(Object.assign({k:db.k},params)).toString();
+  const r=await fetch(u,{method:"GET",redirect:"follow"});const j=await r.json();if(!j.ok)throw new Error(j.error||"db");return j;
+}
+async function dbPost(db,payload){
+  const body=JSON.stringify(Object.assign({k:db.k},payload));
+  try{const r=await fetch(db.u,{method:"POST",body:body,redirect:"follow"});const j=await r.json();if(!j.ok)throw new Error(j.error||"db");return "ok";}
+  catch(e){if(e&&e.message==="key")throw e;
+    try{await fetch(db.u,{method:"POST",body:body,mode:"no-cors"});return "sent";}catch(e2){throw e2;}}
+}
+// =====================================================================
+// КОНСТРУКТОР
+// =====================================================================
+let A=null;
+function startAdmin(cfg){
+  document.title="Конструктор рапорта — ГК «КРАШМАШ»";
+  $("mode-pill").hidden=false;$("tabs-admin").hidden=false;
+  $("hdr-obj").textContent="Новый объект: виды работ и объёмы";$("hdr-title").textContent="Конструктор рапорта";
+  $("foot").textContent="Конструктор хранит объекты в этом браузере. Прорабы получают только ссылку.";
+  A=cfg||blankCfg();fillAdmin();showA(cfg?"edit":(Object.keys(loadProjects()).length?"list":"edit"));
+}
+function showA(v){["edit","list"].forEach(x=>{$("v-"+x).hidden=x!==v;$("tab-"+x).setAttribute("aria-selected",String(x===v));});if(v==="list")renderProjects();window.scrollTo(0,0);}
+function addWorkRow(w){
+  w=w||{};
+  const r=document.createElement("div");r.className="wt";
+  r.innerHTML='<input type="text" class="wn" placeholder="Наименование работы"><button type="button" class="btn del" aria-label="Удалить">×</button><input type="text" placeholder="Код" maxlength="6"><input type="text" placeholder="Ед."><input inputmode="decimal" placeholder="Объём по проекту" style="text-align:right;font-family:var(--f-num)"><input class="d0" inputmode="decimal" placeholder="Выполнено ранее" style="text-align:right;font-family:var(--f-num)"><select class="src"></select>';
+  const q=r.querySelectorAll("input");const ins=[q[1],q[0],q[2],q[3]];ins[0].value=w.c||"";ins[1].value=w.n||"";ins[2].value=w.u||"";ins[3].value=w.t!=null?String(w.t).replace(".",","):"";
+  q[4].value=w.d0?String(w.d0).replace(".",","):"";q[4].setAttribute("aria-label","Выполнено ранее");
+  ins[0].setAttribute("aria-label","Код");ins[1].setAttribute("aria-label","Наименование");ins[2].setAttribute("aria-label","Единица");ins[3].setAttribute("aria-label","Объём по проекту");
+  const sel=r.querySelector("select");sel.setAttribute("aria-label","Источник объёма");fillSrc(sel,w.src||"");
+  r.querySelector("button").onclick=()=>r.remove();
+  $("a-works").appendChild(r);
+}
+function fillSrc(sel,val){
+  const mats=lines($("a-mats").value);sel.innerHTML="";
+  const o=document.createElement("option");o.value="";o.textContent="Объём вносит прораб";sel.appendChild(o);
+  mats.forEach(m=>{const x=document.createElement("option");x.value=m;x.textContent="Считать из вывоза: "+m+", м³";sel.appendChild(x);});
+  mats.forEach(m=>{const x=document.createElement("option");x.value="trips:"+m;x.textContent="Считать рейсы вывоза: "+m;sel.appendChild(x);});
+  if($("a-hltn").checked)mats.forEach(m=>{const x=document.createElement("option");x.value="tons:"+m;x.textContent="Считать тонны: "+m;sel.appendChild(x);});
+  const mach=lines($("a-mach").value);
+  mach.forEach(m=>{const x=document.createElement("option");x.value="mach:"+m;x.textContent="Считать моточасы: "+m;sel.appendChild(x);});
+  const inM=s=>s.split("|").every(z=>mats.includes(z));
+  const ok=(!val.startsWith("mach:")&&inM(val.replace(/^(trips|tons):/,""))&&(!val.startsWith("tons:")||$("a-hltn").checked))||(val.startsWith("mach:")&&val.slice(5).split("|").every(z=>mach.includes(z)));
+  if(!ok&&val){const x=document.createElement("option");x.value=val;x.textContent=val.startsWith("mach:")?"Моточасы: "+val.slice(5).split("|").join(" + ")+(val.slice(5).split("|").every(z=>mach.includes(z))?"":" (нет в справочнике)"):(val.startsWith("trips:")?"Рейсы вывоза: ":val.startsWith("tons:")?"Тонны: ":"Из вывоза, м³: ")+val.replace(/^(trips|tons):/,"").split("|").join(" + ")+(inM(val.replace(/^(trips|tons):/,""))?"":" (нет в справочнике)");sel.appendChild(x);}
+  sel.value=val||"";
+}
+function fillAdmin(){
+  $("a-name").value=A.name||"";$("a-title").value=A.title||"Рапорт прораба";$("a-d0date").value=A.d0date||"";$("a-pid").textContent=A.pid;$("a-info").value=(A.info||[]).join("\n");
+  $("a-mats").value=(A.mats||[]).join("\n");$("a-subs").value=(A.subs||[]).join("\n");$("a-mach").value=(A.mach||[]).join("\n");$("a-carr").value=(A.carr||[]).join("\n");
+  ["haul","subs","mach","dt"].forEach(k=>$("sec-"+k).checked=!A.sec||A.sec[k]!==0);
+  {const hl=A.hl||{};$("a-hlt").value=hl.t||"";$("a-hlc").value=hl.c||"";$("a-hltn").checked=!!hl.tn;}
+  $("a-works").innerHTML="";(A.works||[]).forEach(addWorkRow);if(!A.works||!A.works.length)addWorkRow();
+  $("a-out").hidden=true;
+  const db=dbSettings();$("a-dburl").value=db?db.u:"";$("a-dbkey").value=db?db.k:"";
+}
+function readAdmin(){
+  const c={v:1,pid:A.pid,d0date:$("a-d0date").value||"",name:$("a-name").value.trim(),title:$("a-title").value.trim()||"Рапорт прораба",works:[],
+    mats:lines($("a-mats").value),subs:lines($("a-subs").value),mach:lines($("a-mach").value),carr:lines($("a-carr").value),info:lines($("a-info").value),sec:{}};
+  ["haul","subs","mach","dt"].forEach(k=>c.sec[k]=$("sec-"+k).checked?1:0);
+  {const ht=$("a-hlt").value.trim(),hc=$("a-hlc").value.trim(),tn=$("a-hltn").checked;if(ht||hc||tn){c.hl={};if(ht)c.hl.t=ht;if(hc)c.hl.c=hc;if(tn)c.hl.tn=1;}}
+  const used=new Set();
+  document.querySelectorAll("#a-works .wt").forEach((row,i)=>{
+    const q=row.querySelectorAll("input");const ins=[q[1],q[0],q[2],q[3]];const n=ins[1].value.trim();if(!n)return;
+    let code=(ins[0].value.trim()||("Р"+(i+1))).slice(0,6);while(used.has(code))code=code+"·";used.add(code);
+    const w={c:code,n:n,u:ins[2].value.trim()||"ед.",t:num(ins[3].value)||0};
+    const d0=num(q[4].value);if(d0)w.d0=d0;
+    const old=(A.works||[]).find(z=>z.c===code);if(old&&old.ro)w.ro=old.ro;
+    const s=row.querySelector("select").value;if(s&&(s.startsWith("mach:")?c.sec.mach:c.sec.haul))w.src=s;
+    c.works.push(w);
+  });
+  if(A.cu)c.cu=A.cu;c.ts=Date.now();
+  const u=$("a-dburl").value.trim(),k=$("a-dbkey").value.trim();
+  if(u&&k){c.db={u:u,k:k};sset(DBKEY,JSON.stringify(c.db));}
+  return c;
+}
+async function makeLink(){
+  const c=readAdmin();const msg=$("a-out-msg");
+  if(!c.name){alertA("Укажите название объекта.");return;}
+  if(!c.works.length){alertA("Добавьте хотя бы один вид работ.");return;}
+  A=c;saveProject(c);
+  if(c.db){dbPost(c.db,{a:"cfg",cfg:c}).catch(()=>{});}
+  const link=BASE+"#p="+(await encodeCfg(c));
+  $("a-out").hidden=false;$("a-link").textContent=link;$("a-open").href=link;
+  msg.textContent="Объект сохранён. Работ: "+c.works.length+". "+(c.db?"Рапорты будут писаться в базу.":"База не указана — рапорты останутся на телефонах.")+" Длина ссылки: "+link.length+" символов.";msg.className="hint "+(c.db?"ok":"warnc");
+  const text="Рапорт прораба — "+c.name+"\nОткройте ссылку на телефоне и добавьте на главный экран:\n"+link;
+  $("a-send-wa").href="https://wa.me/?text="+encodeURIComponent(text);
+  $("a-send-tg").href="https://t.me/share/url?url="+encodeURIComponent(link)+"&text="+encodeURIComponent("Рапорт прораба — "+c.name);
+  $("a-qr").innerHTML="";
+  if(window.QRCode){try{new QRCode($("a-qr"),{text:link,width:220,height:220,correctLevel:QRCode.CorrectLevel.L});}catch(e){$("a-qr").textContent="Ссылка слишком длинная для QR-кода";}}
+  else{$("a-qr").textContent="QR-код недоступен без интернета";}
+  $("a-out").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function alertA(t){const m=$("a-out-msg");$("a-out").hidden=false;$("a-link").textContent="";m.textContent=t;m.className="hint bad";}
+function copyText(t){try{if(navigator.clipboard&&navigator.clipboard.writeText)return navigator.clipboard.writeText(t).then(()=>true,()=>false);}catch(e){}return Promise.resolve(false);}
+function pasteRows(){
+  const rows=lines($("a-paste-text").value);let n=0;
+  rows.forEach(line=>{
+    let p=line.split("\t").map(s=>s.trim());if(p.length<2)p=line.split(/;|\s{2,}/).map(s=>s.trim());
+    p=p.filter((x,i)=>x!==""||i===0);
+    let w=null;
+    if(p.length>=4&&num(p[2])===null&&num(p[3])!==null)w={c:p[0].slice(0,6),n:p[1],u:p[2],t:num(p[3]),d0:p.length>=5?num(p[4]):null};
+    else if(p.length>=4&&num(p[2])!==null&&num(p[3])!==null)w={c:"",n:p[0],u:p[1],t:num(p[2]),d0:num(p[3])};
+    else if(p.length>=3&&num(p[2])!==null)w={c:"",n:p[0],u:p[1],t:num(p[2])};
+    else if(p.length>=2&&num(p[p.length-1])!==null)w={c:"",n:p[0],u:"ед.",t:num(p[p.length-1])};
+    if(w&&w.n){
+      const first=$("a-works").querySelector(".wt");
+      if(first&&!first.querySelector(".wn").value.trim()&&$("a-works").children.length===1)first.remove();
+      addWorkRow(w);n++;
+    }
+  });
+  $("a-paste-msg").textContent=n?"Добавлено строк: "+n:"Не удалось распознать строки — нужны столбцы Наименование · Ед. · Объём";
+  $("a-paste-msg").className="hint "+(n?"ok":"bad");if(n)$("a-paste-text").value="";
+}
+function renderProjects(){
+  const m=loadProjects();const el=$("l-projects");el.innerHTML="";
+  const ks=Object.keys(m).sort((a,b)=>(m[b].at||"").localeCompare(m[a].at||""));
+  if(!ks.length){const p=document.createElement("div");p.className="empty";p.textContent="Пока нет объектов. Нажмите «Новый объект» или загрузите пример.";el.appendChild(p);return;}
+  ks.forEach(k=>{
+    const c=m[k].cfg;const r=document.createElement("div");r.className="proj";
+    r.innerHTML='<div class="nm"><b></b><small></small></div><button type="button" class="btn small">Изменить</button><button type="button" class="btn small del">×</button>';
+    r.querySelector("b").textContent=c.name||"(без названия)";
+    r.querySelector("small").textContent="Работ: "+(c.works||[]).length+" · код "+c.pid+" · "+new Date(m[k].at).toLocaleDateString("ru-RU");
+    const bs=r.querySelectorAll("button");bs[0].onclick=()=>{A=c;fillAdmin();showA("edit");};
+    bs[1].onclick=()=>{if(bs[1].dataset.sure){delProject(k);renderProjects();}else{bs[1].dataset.sure="1";bs[1].textContent="Удалить?";setTimeout(()=>{bs[1].dataset.sure="";bs[1].textContent="×";},3000);}};
+    el.appendChild(r);
+  });
+}
+function bindAdmin(){
+  document.querySelectorAll("#tabs-admin button").forEach(b=>b.onclick=()=>showA(b.dataset.a));
+  $("a-work-add").onclick=()=>addWorkRow();
+  $("a-paste-toggle").onclick=()=>{$("a-paste").hidden=!$("a-paste").hidden;};
+  $("a-paste-go").onclick=pasteRows;
+  ["a-mats","a-mach","a-hltn"].forEach(id=>$(id).addEventListener("change",()=>document.querySelectorAll("#a-works select.src").forEach(s=>fillSrc(s,s.value))));
+  $("a-make").onclick=makeLink;
+  $("a-copy").onclick=()=>{const t=$("a-link").textContent;copyText(t).then(ok=>{$("a-out-msg").textContent=ok?"Ссылка скопирована":"Выделите ссылку и скопируйте вручную";$("a-out-msg").className="hint "+(ok?"ok":"warnc");});};
+  $("a-send-max").addEventListener("click",()=>{copyText("Рапорт прораба — "+A.name+"\n"+$("a-link").textContent).then(ok=>{$("a-out-msg").textContent=ok?"Ссылка скопирована — вставьте её в чат MAX":"Скопируйте ссылку вручную";});});
+  $("a-dbtest").onclick=async()=>{const m=$("a-dbmsg");const db={u:$("a-dburl").value.trim(),k:$("a-dbkey").value.trim()};
+    if(!db.u||!db.k){m.textContent="Укажите URL и ключ";m.className="hint bad";return;}
+    m.textContent="Проверяю…";m.className="hint";
+    try{await dbGet(db,{a:"ping"});sset(DBKEY,JSON.stringify(db));m.textContent="Связь есть, база подключена";m.className="hint ok";}
+    catch(e){m.textContent=e&&e.message==="key"?"Неверный ключ":"Нет связи: проверьте URL и что развёрнуто с доступом «Все»";m.className="hint bad";}};
+  $("a-fromdb").onclick=async()=>{const m=$("a-fromdb-msg");const db=dbSettings();
+    if(!db){m.textContent="Сначала укажите базу во вкладке «Объект» (раздел 5) и проверьте связь.";m.className="hint bad";return;}
+    m.textContent="Загружаю…";m.className="hint";
+    try{const j=await dbGet(db,{a:"objects"});(j.objects||[]).forEach(saveProject);renderProjects();m.textContent="Загружено объектов: "+(j.objects||[]).length;m.className="hint ok";}
+    catch(e){m.textContent="Не удалось загрузить: "+(e.message||"ошибка");m.className="hint bad";}};
+  $("a-new").onclick=()=>{A=blankCfg();fillAdmin();showA("edit");};
+  $("a-demo").onclick=()=>{A=JSON.parse(JSON.stringify(DEMO));fillAdmin();showA("edit");};
+  $("a-import-go").onclick=async()=>{const p=cfgParam($("a-import").value);const m=$("a-import-msg");
+    if(!p){m.textContent="В ссылке нет настроек объекта";m.className="hint bad";return;}
+    try{A=await decodeCfg(p);fillAdmin();showA("edit");}catch(e){m.textContent="Ссылка повреждена";m.className="hint bad";}};
+}
+
+// =====================================================================
+// ФОРМА ПРОРАБА
+// =====================================================================
+let HL={t:"Вывоз",c:"Перевозчик",tn:0};
+let C=null, WORKS=[], MATS=[], reports={}, shift="D", dirty=false, LKEY="", OKEY="";
+const slug=s=>nrm(s).replace(/[^a-zа-яё0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"x";
+function startForm(cfg){
+  {const bm=$("back-menu");let ok=false;try{const m=JSON.parse(sget("raport2-menu")||"null");ok=Array.isArray(m)&&m.some(x=>x&&x.pid===cfg.pid);}catch(e){}bm.hidden=!ok;bm.onclick=()=>{location.hash="#menu";};}
+  C=cfg;WORKS=(cfg.works||[]).map(w=>Object.assign({k:"w_"+String(w.c).replace(/[^\wА-Яа-яЁё]/g,"_")},w));
+  MATS=(cfg.mats&&cfg.mats.length?cfg.mats:DEF_MATS);LKEY="raport2-"+cfg.pid;OKEY="raport2-outbox-"+cfg.pid;
+  document.title=(cfg.title||"Рапорт прораба")+" — "+(cfg.name||"");
+  $("hdr-obj").textContent=cfg.name||"";$("hdr-title").textContent=cfg.title||"Рапорт прораба";
+  $("tabs-form").hidden=false;$("savebar").hidden=false;
+  // разделы
+  const sec=cfg.sec||{};const on=k=>sec[k]!==0;
+  $("c-haul").hidden=!on("haul");$("c-subs").hidden=!on("subs");$("c-mach").hidden=!on("mach");$("c-dt").hidden=!on("dt");
+  $("cs-haul").hidden=!on("haul");$("cs-subs").hidden=!on("subs");$("cs-mach").hidden=!on("mach");$("cs-dt").hidden=!on("dt");
+  HL=Object.assign({t:"Вывоз",c:"Перевозчик",tn:0},cfg.hl||{});
+  $("h-haul-t").textContent=HL.t;$("hs-haul-t").textContent=HL.t;$("hs-haul-c").textContent="Материал / "+HL.c.toLowerCase();$("hs-haul-u").textContent=HL.tn?"рейсов / м³ / т":"рейсов / м³";
+  $("f-haul-add").textContent="+ Добавить: "+HL.c.toLowerCase();$("f-haul-hint").textContent="Строки подставлены из прошлой смены — впишите объёмы.";
+  {const hd=$("h-haul-hd");if(HL.tn){hd.innerHTML="<span></span>";hd.style.display="block";hd.firstChild.textContent=HL.c+", ниже — материал, ниже — рейсов · м³ · т";}else hd.firstChild.textContent=HL.c+", ниже — материал";}
+  let n=1;["c-haul","c-mdi","c-subs","c-mach","c-dt","c-done","c-send"].forEach(id=>{if(!$(id).hidden){n++;$(id).querySelector(".num").textContent=n;}});
+  // подсказки
+  const dl=(id,arr)=>{const d=$(id);d.innerHTML="";arr.forEach(v=>{const o=document.createElement("option");o.value=v;d.appendChild(o);});};
+  dl("sub-list",cfg.subs||[]);dl("mach-list",(cfg.mach&&cfg.mach.length)?cfg.mach:DEF_MACH);
+  $("foot").innerHTML="";
+  reports=loadLocal();
+  Object.keys(reports).forEach(k=>{const r=reports[k];if(r&&!r.id){r.id=r.date+"_"+r.shift+"_"+slug(r.foreman);if(r.id!==k){reports[r.id]=r;delete reports[k];}}});saveAllLocal();
+  buildForm();bindForm();
+  checkCfgUpdate();
+  $("f-date").value=todayISO();$("s-date").value=todayISO();
+  loadForm();
+  const t0=sget("raport2-tab");if(t0==="sum"||t0==="log"||t0==="pass")show(t0);else show("form");
+}
+const b64u8=s=>Uint8Array.from(atob(s),ch=>ch.charCodeAt(0));
+async function openCfg(j){if(!C.db||!C.db.k||!crypto.subtle)return null;
+  const raw=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("raport-cu|"+C.db.k+"|"+C.pid));
+  const key=await crypto.subtle.importKey("raw",raw,"AES-GCM",false,["decrypt"]);
+  const d=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64u8(j.iv)},key,b64u8(j.d));return JSON.parse(new TextDecoder().decode(d));}
+async function checkCfgUpdate(){
+  if(!C.cu)return;
+  try{const r=await fetch(new URL(C.cu,BASE).href+"?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;
+    let j=await r.json();if(j&&j.e)j=await openCfg(j);if(!j||j.pid!==C.pid||!((j.ts||0)>(C.ts||0)))return;
+    if(C.db&&!j.db)j.db=C.db;
+    const link=BASE+"#p="+(await encodeCfg(j));
+    if(dirty){syncStatus("Паспорт объекта обновлён руководителем. Сохраните рапорт и откройте форму заново.","");return;}
+    location.replace(link);location.reload();
+  }catch(e){}
+}
+function loadLocal(){try{const t=localStorage.getItem(LKEY);return t?JSON.parse(t)||{}:{};}catch(e){return {};}}
+function saveLocal(o){try{const m=loadLocal();m[o.id]=o;localStorage.setItem(LKEY,JSON.stringify(m));return true;}catch(e){return false;}}
+function saveAllLocal(){try{localStorage.setItem(LKEY,JSON.stringify(reports));}catch(e){}}
+const outbox=()=>{try{return JSON.parse(sget(OKEY)||"[]");}catch(e){return [];}};
+const setOutbox=a=>sset(OKEY,JSON.stringify(Array.from(new Set(a))));
+let syncing=false,linkDead=false;
+const DEAD_MSG="Эта ссылка больше не действует. Попросите у руководителя новую ссылку на рапорт — сохранённые рапорты не пропадут, они отправятся по новой ссылке.";
+function syncStatus(t,cls){const s=$("status");s.hidden=false;s.className="banner"+(cls?" "+cls:"");s.textContent=t;}
+async function flush(){
+  if(!C.db||syncing)return;syncing=true;let sent=0,left=0;
+  try{
+    for(const id of outbox()){const r=reports[id];if(!r){setOutbox(outbox().filter(x=>x!==id));continue;}
+      try{const res=await dbPost(C.db,{a:"save",r:r,cfg:C});if(res==="ok"){setOutbox(outbox().filter(x=>x!==id));}sent++;}
+      catch(e){left++;}}
+  }finally{syncing=false;}
+  return {sent:sent,left:left};
+}
+async function pull(){
+  if(!C.db)return;
+  const j=await dbGet(C.db,{a:"list",pid:C.pid});let n=0;const ob=outbox();
+  {const onSrv=new Set((j.reports||[]).map(r=>r&&r.id));Object.keys(reports).forEach(id=>{if(!onSrv.has(id)&&!ob.includes(id))delete reports[id];});}
+  (j.reports||[]).forEach(r=>{if(!r||!r.id)return;const mine=reports[r.id];
+    if(!mine||(r.savedAt||"")>=(mine.savedAt||"")){reports[r.id]=r;n++;}
+    if(ob.includes(r.id)&&mine&&(r.savedAt||"")>=(mine.savedAt||""))setOutbox(outbox().filter(x=>x!==r.id));});
+  saveAllLocal();return (j.reports||[]).length;
+}
+async function sync(){
+  if(!C.db){syncStatus("Рапорты сохраняются только на этом телефоне. После заполнения отправьте рапорт в рабочий чат кнопкой внизу формы.");return;}
+  syncStatus("Синхронизация с базой…");
+  try{await flush();const total=await pull();const left=outbox().length;
+    {const ck="raport2-cfgday-"+C.pid,td=todayISO();if(sget(ck)!==td){dbPost(C.db,{a:"cfg",cfg:C}).then(()=>sset(ck,td)).catch(()=>{});}}
+    syncStatus(left?"В базе: "+total+" рапорт(ов). Не отправлено: "+left+" — отправятся, когда появится связь.":"Синхронизировано с базой: "+total+" рапорт(ов) по объекту от всех прорабов.",left?"":"okb");
+    if(!dirty)loadForm();updProg();if(!$("v-sum").hidden)renderSum();if(!$("v-log").hidden)renderLog();if(!$("v-pass").hidden)renderPass();}
+  catch(e){if(e&&e.message==="key"){linkDead=true;syncStatus(DEAD_MSG,"bad");return;}
+    syncStatus("Нет связи с базой. Рапорты сохраняются на телефоне и отправятся позже. Не отправлено: "+outbox().length,"");}
+}
+const list=()=>Object.values(reports).filter(r=>r&&r.date&&r.id!==renameFrom);
+const haulOf=r=>Array.isArray(r&&r.haul)?r.haul:[];
+const subsOf=r=>Array.isArray(r&&r.subs)?r.subs:[];
+const machOf=r=>Array.isArray(r&&r.mach)?r.mach:[];
+const pplOf=r=>r?((r.people&&+r.people.own)||0)+subsOf(r).reduce((a,x)=>a+(+x.p||0),0):0;
+const docId=()=>$("f-date").value+"_"+shift+"_"+slug($("f-foreman").value||sget("raport2-foreman")||"");
+
+const secOn=k=>!C.sec||C.sec[k]!==0;
+const isMachSrc=x=>!!x.src&&String(x.src).startsWith("mach:")&&secOn("mach");
+const isHaulSrc=x=>!!x.src&&!String(x.src).startsWith("mach:")&&secOn("haul");
+const isAuto=x=>isMachSrc(x)||isHaulSrc(x);
+const isTrips=x=>String(x.src||"").startsWith("trips:");
+const isTons=x=>String(x.src||"").startsWith("tons:");
+const srcMat=x=>String(x.src||"").replace(/^(trips|tons):/,"");
+const srcLabel=x=>isMachSrc(x)?"моточасы «"+x.src.slice(5).split("|").join("» + «")+"»":(isTrips(x)?"рейсы «":isTons(x)?"тонны «":"«")+srcMat(x).split("|").join("» + «")+"»"+(isTrips(x)||isTons(x)?"":", м³");
+const manual=()=>WORKS.filter(x=>!isAuto(x)&&!x.ro);
+function buildForm(){
+  $("f-works").innerHTML="";
+  const au=WORKS.filter(isAuto);const h=$("f-autohint");
+  h.hidden=!au.length;const hl=au.filter(x=>!isMachSrc(x)&&!/^в т\.ч\./i.test(x.n)).map(x=>x.n.replace(/ — всего.*$/i,"")),ml=au.filter(isMachSrc).length?["моточасы техники"]:[];
+  h.textContent=au.length?"Не вносите здесь — посчитается само: "+[hl.length?hl.join(", ")+" (из раздела «"+HL.t+"»)":"",ml.length?"моточасы (из раздела «Техника»)":""].filter(Boolean).join("; ")+".":"";
+}
+const xKey=(n,u)=>nrm(n)+"|"+nrm(u);
+function usedExtras(){const m={},pw=new Set(WORKS.map(w=>xKey(w.n,w.u)));list().forEach(r=>(r.extra||[]).forEach(e=>{const k=xKey(e.n,e.u);if(!m[k]&&!pw.has(k))m[k]={n:e.n,u:e.u};}));return Object.values(m).sort((a,b)=>a.n.localeCompare(b.n,"ru"));}
+function extraDone(n,u,D,me){return list().filter(q=>q.date<=D&&q.id!==me).reduce((a,q)=>a+(q.extra||[]).filter(e=>xKey(e.n,e.u)===xKey(n,u)).reduce((s,e)=>s+(+e.v||0),0),0);}
+function rowHint(r){
+  const h=r.querySelector(".wh");const c=r.querySelector("select").value;h.className="wh";
+  if(c==="__other"){h.textContent="Новая работа — впишите название и единицу (м³, м², т, шт…). В следующий раз она будет в списке.";return;}
+  if(c.startsWith("__x:")){const [n,u]=c.slice(4).split("\u0001");const done=extraDone(n,u,$("f-date").value,docId());h.textContent="Было выполнено "+fmt(done)+" "+u;
+    const qv=num(r.querySelector(".wq").value);if(r.dataset.m==="t"&&qv!==null){const d=qv-done;h.textContent+=d<0?" · ВСЕГО меньше, чем уже было — проверьте":d===0?" · за смену: 0":" · за смену получится: "+fmt(d)+" "+u;if(d<0)h.className="wh bad";}return;}
+  const x=WORKS.find(w=>w.c===c);if(!x){h.textContent="";return;}
+  const D=$("f-date").value,me=docId();const done=cumWorks(list().filter(q=>q.date<=D&&q.id!==me))[x.k]||0;
+  h.textContent="По бюджету "+(x.t?fmt(x.t)+" "+x.u:"не задан")+" · было выполнено "+fmt(done)+" "+x.u+(x.t?" ("+fmt(done/x.t*100,1)+"%)":"");
+  if(x.t&&done>x.t)h.className="wh bad";
+  if(r.dataset.auto==="1"&&r.dataset.m==="d")h.textContent+=" · число меньше итога — считаю как объём за смену";
+  const qv=num(r.querySelector(".wq").value);
+  if(r.dataset.m==="t"&&qv!==null){const d=qv-done;h.textContent+=d<0?" · ВСЕГО меньше, чем уже было — проверьте":d===0?" · за смену: 0 (итог не изменился)":" · за смену получится: "+fmt(d)+" "+x.u;if(d<0)h.className="wh bad";}
+}
+function addWork(d){d=d||{};
+  const r=document.createElement("div");r.className="wrow";
+  r.innerHTML='<select aria-label="Работа"></select><input class="wq" inputmode="decimal" placeholder="0" aria-label="Объём"><button type="button" class="btn del" aria-label="Удалить строку">×</button><input type="text" class="won" placeholder="Что сделано" hidden><input type="text" class="wou" placeholder="ед.: м³, м², т, шт" list="unit-list" hidden><div class="wm"><button type="button" data-m="d" aria-pressed="true">за смену</button><button type="button" data-m="t" aria-pressed="false">всего на сегодня</button></div><div class="wh"></div>';
+  const sel=r.querySelector("select");
+  const add=(v,t)=>{const o=document.createElement("option");o.value=v;o.textContent=t;sel.appendChild(o);};
+  add("","— выберите работу —");manual().forEach(x=>add(x.c,x.c+" · "+x.n+", "+x.u));usedExtras().forEach(e=>add("__x:"+e.n+"\u0001"+e.u,e.n+", "+e.u));add("__other","+ Новая работа (вписать название)…");
+  const q=r.querySelector(".wq"),on=r.querySelector(".won"),ou=r.querySelector(".wou");
+  const wm=r.querySelector(".wm"),setM=m=>{r.dataset.m=m;wm.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.m===m)));q.placeholder=m==="t"?"всего":"0";rowHint(r);};
+  wm.querySelectorAll("button").forEach(b=>b.onclick=()=>{r.dataset.auto="";setM(b.dataset.m);dirty=true;});
+  const upd=()=>{const o=sel.value==="__other";on.hidden=!o;ou.hidden=!o;wm.hidden=o||!sel.value;const x=WORKS.find(w=>w.c===sel.value);if(!r.dataset.touched)setM(x&&String(x.u).trim()==="%"?"t":"d");rowHint(r);};
+  sel.onchange=()=>{upd();dirty=true;};
+  q.addEventListener("input",()=>{r.dataset.touched="1";rowHint(r);});
+  q.addEventListener("change",()=>{if(r.dataset.m!=="t")return;const x=WORKS.find(w=>w.c===sel.value),v=num(q.value);if(!x||v===null)return;
+    const D=$("f-date").value,me=docId();const done=cumWorks(list().filter(z=>z.date<=D&&z.id!==me))[x.k]||0;
+    if(v<done&&(!x.t||done+v<=x.t*1.0001)){setM("d");r.dataset.auto="1";rowHint(r);}});
+  if(d.other){const xv="__x:"+d.n+"\u0001"+d.u;if([...sel.options].some(o=>o.value===xv))sel.value=xv;else{sel.value="__other";on.value=d.n||"";ou.value=d.u||"";}}else sel.value=d.c&&manual().some(x=>x.c===d.c)?d.c:"";
+  q.value=d.v!=null?String(d.v).replace(".",","):"";if(d.v!=null)r.dataset.touched="1";
+  r.querySelector("button.del").onclick=()=>{r.remove();dirty=true;if(!$("f-works").children.length)addWork();};
+  $("f-works").appendChild(r);upd();return r;
+}
+function readWorks(){
+  const works={},extra=[],bad=[];
+  document.querySelectorAll("#f-works .wrow").forEach((r,i)=>{
+    const c=r.querySelector("select").value,v=num(r.querySelector(".wq").value),n=i+1;
+    if(c==="__other"){const nm=r.querySelector(".won").value.trim(),u=r.querySelector(".wou").value.trim();
+      if(!nm&&v===null)return;if(!nm)bad.push("работа "+n+": наименование");if(v===null)bad.push("работа "+n+": объём");
+      if(nm&&!u)bad.push("работа "+n+" («"+nm+"»): единица измерения (м³, м², т, шт…)");
+      if(nm&&u&&v!==null)extra.push({n:nm,u:u,v:v});return;}
+    if(c.startsWith("__x:")){const [nm,u]=c.slice(4).split("\u0001");if(v===null){bad.push("работа "+n+" («"+nm+"»): объём");return;}
+      let dv=v;if(r.dataset.m==="t"){const done=extraDone(nm,u,$("f-date").value,docId());dv=Math.round((v-done)*1000)/1000;if(dv<0)dv=v;if(dv===0)return;}
+      const ex=extra.find(e=>xKey(e.n,e.u)===xKey(nm,u));if(ex)ex.v+=dv;else extra.push({n:nm,u:u,v:dv});return;}
+    if(!c){if(v!==null)bad.push("работа "+n+": выберите вид работ");return;}
+    if(v===null){bad.push("работа "+n+": объём");return;}
+    let dv=v;if(r.dataset.m==="t"){const x=WORKS.find(w=>w.c===c);const D=$("f-date").value,me=docId();const done=cumWorks(list().filter(q=>q.date<=D&&q.id!==me))[x.k]||0;dv=Math.round((v-done)*1000)/1000;
+      if(dv<0&&(!x.t||done+v<=x.t*1.0001))dv=v;
+      else if(dv<0){bad.push("работа "+n+" («"+x.n+"»): всего "+fmt(v)+" меньше, чем уже было ("+fmt(done)+")");return;}if(dv===0)return;}
+    works[c]=(works[c]||0)+dv;
+  });
+  return {works:works,extra:extra,bad:bad};
+}
+function mkRow(cls,html){const r=document.createElement("div");r.className=cls;r.innerHTML=html;r.querySelector("button.del").onclick=()=>{r.remove();dirty=true;};return r;}
+function addSub(d){d=d||{};const r=mkRow("mach",'<input type="text" list="sub-list" placeholder="Субподрядчик"><input inputmode="numeric" placeholder="0"><button type="button" class="btn del" aria-label="Удалить строку">×</button>');
+  const i=r.querySelectorAll("input");i[0].value=d.n||"";i[1].value=d.p!=null?String(d.p):"";$("f-subs").appendChild(r);}
+function addMach(d){d=d||{};const r=mkRow("mach tech",'<input type="text" class="tn" list="mach-list" placeholder="Например, экскаватор CAT 336"><input class="tq" inputmode="numeric" placeholder="шт" aria-label="Количество, шт"><input class="th" inputmode="decimal" placeholder="часы" aria-label="Моточасы"><button type="button" class="btn del" aria-label="Удалить строку">×</button>');
+  const i=r.querySelectorAll("input");i[0].value=d.n||"";i[1].value=d.q!=null?String(d.q):"";i[2].value=d.h!=null?String(d.h).replace(".",","):"";$("f-mach").appendChild(r);}
+function addHaul(d){d=d||{};const r=mkRow(HL.tn?"haul tn":"haul",'<input type="text" class="cr" list="carrier-list"><button type="button" class="btn del" aria-label="Удалить строку">×</button><select></select><input inputmode="numeric" placeholder="0"><input inputmode="decimal" placeholder="0">'+(HL.tn?'<input inputmode="decimal" placeholder="т" aria-label="Тонн">':''));
+  r.querySelector(".cr").placeholder=HL.c;if(HL.tn){const q=r.querySelectorAll("input");q[1].placeholder="рейсов";q[2].placeholder="м³";q[3].value=d.w!=null?String(d.w).replace(".",","):"";}
+  const sel=r.querySelector("select");MATS.forEach(m=>{const o=document.createElement("option");o.value=m;o.textContent=m;sel.appendChild(o);});
+  const i=r.querySelectorAll("input");i[0].value=d.c||"";sel.value=d.m&&MATS.includes(d.m)?d.m:MATS[0];i[1].value=d.t!=null?String(d.t):"";i[2].value=d.v!=null?String(d.v).replace(".",","):"";
+  $("f-haul").appendChild(r);}
+function addDt(d){d=d||{};const r=document.createElement("div");r.className="dt";
+  r.innerHTML='<div class="dtk full" role="group" aria-label="Вид"><button type="button" data-k="Простой">Простой</button><button type="button" data-k="Ремонт">Ремонт</button><button type="button" data-k="ТО">ТО</button></div><input type="text" class="full" list="mach-list" placeholder="Что стояло (техника, бригада)"><select class="dtf"><option value="">По чьей вине…</option></select><input inputmode="decimal" placeholder="часов"><input type="text" class="full" placeholder="Причина / что ремонтировали"><button type="button" class="btn small full">Удалить</button>';
+  const sel=r.querySelector("select");FAULT.forEach(f=>{const o=document.createElement("option");o.value=f;o.textContent=f;sel.appendChild(o);});
+  const setK=k=>{r.dataset.k=k;r.querySelectorAll(".dtk button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.k===k)));sel.options[0].textContent=k==="Простой"?"По чьей вине…":"Вина (если есть)";};
+  r.querySelectorAll(".dtk button").forEach(b=>b.onclick=()=>{setK(b.dataset.k);dirty=true;});setK(d.k||"Простой");
+  const i=r.querySelectorAll("input");i[0].value=d.what||"";i[1].value=d.h!=null?String(d.h).replace(".",","):"";i[2].value=d.why||"";sel.value=d.fault||"";
+  r.querySelector("button").onclick=()=>{r.remove();dirty=true;};$("f-dt").appendChild(r);}
+function readHaul(){const a=[];document.querySelectorAll("#f-haul .haul").forEach(row=>{const i=row.querySelectorAll("input");const c=i[0].value.trim(),m=row.querySelector("select").value,t=num(i[1].value),v=num(i[2].value),w=i[3]?num(i[3].value):null;if(t!==null||v!==null||w!==null){const o={c:c,m:m,t:t,v:v};if(HL.tn)o.w=w;a.push(o);}});return a;}
+function cumWorks(rs){const dd=C&&C.d0date;const o=sumWorks(dd?rs.filter(r=>r.date>dd):rs);WORKS.forEach(x=>{if(x.d0)o[x.k]+=x.d0;});return o;}// рапорты до даты «выполнено ранее» включительно уже учтены в d0 — только история
+function sumWorks(rs){const o={};WORKS.forEach(x=>o[x.k]=0);rs.forEach(r=>{WORKS.forEach(x=>{const v=r.works&&r.works[x.c];if(typeof v==="number")o[x.k]+=v;});});return o;}
+function updProg(){
+  document.querySelectorAll("#f-works .wrow").forEach(rowHint);
+  if(!$("v-pass").hidden)renderPass();
+}
+function setShift(s){shift=s;dirty=false;document.querySelectorAll("#f-shift button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.s===s)));loadForm();}
+const val=(id,v)=>{const e=$(id);if(e)e.value=(v===null||v===undefined)?"":(typeof v==="number"?String(v).replace(".",","):v);};
+function prevWith(fn){const me=slug($("f-foreman").value||sget("raport2-foreman")||"");const cur=$("f-date").value+shift;
+  const c=list().filter(x=>fn(x).length&&(x.date+x.shift)<cur).sort((a,b)=>(b.date+b.shift).localeCompare(a.date+a.shift));
+  return c.find(x=>slug(x.foreman)===me)||c[0];}
+function fillForemen(){const d=$("foreman-list");if(!d)return;d.innerHTML="";Array.from(new Set(list().map(r=>(r.foreman||"").trim()).filter(Boolean))).sort().forEach(n=>{const o=document.createElement("option");o.value=n;d.appendChild(o);});}
+let loadedId=null,renameFrom=null;
+function loadForm(){fillForemen();
+  const r=reports[docId()];loadedId=r?r.id:null;renameFrom=null;
+  $("f-works").innerHTML="";
+  if(r){Object.keys(r.works||{}).forEach(c=>{const x=WORKS.find(w=>w.c===c);if(x&&!isAuto(x))addWork({c:c,v:r.works[c]});});
+    (r.extra||[]).forEach(e=>addWork({other:true,n:e.n,u:e.u,v:e.v}));}
+  if(!$("f-works").children.length)addWork();
+  val("p-mdi",r&&r.people?r.people.own:null);
+  $("f-done").checked=!!(r&&r.done);
+  {const idle=!!(r&&r.idle);$("f-idle").checked=idle;document.body.classList.toggle("is-idle",idle);val("f-other",r?(idle?String(r.other||"").replace(/^Работ не было\.? ?/,""):r.other):"");}
+  const fill=(box,hint,arr,add,fn,strip)=>{$(box).innerHTML="";$(hint).hidden=true;
+    if(r)arr(r).forEach(add);else{const p=prevWith(arr);if(p){arr(p).forEach(d=>add(strip(d)));$(hint).hidden=false;}}
+    if(!$(box).children.length)add();};
+  fill("f-subs","f-sub-hint",subsOf,addSub,null,d=>({n:d.n,p:d.p}));
+  fill("f-mach","f-mach-hint",machOf,addMach,null,d=>({n:d.n,q:d.q}));
+  {const cs=new Map();(C.carr||[]).forEach(v=>cs.set(v.toLowerCase(),v));list().forEach(x=>haulOf(x).forEach(h=>{if(h.c&&!cs.has(h.c.toLowerCase()))cs.set(h.c.toLowerCase(),h.c);}));const d=$("carrier-list");d.innerHTML="";cs.forEach(v=>{const o=document.createElement("option");o.value=v;d.appendChild(o);});}
+  fill("f-haul","f-haul-hint",haulOf,addHaul,null,d=>({c:d.c,m:d.m}));
+  $("f-dt").innerHTML="";(r&&r.downtime||[]).forEach(addDt);
+  updProg();
+  const ex=$("f-exists");
+  if(r){val("f-foreman",r.foreman||sget("raport2-foreman")||"");ex.hidden=false;ex.textContent="Рапорт за эту смену уже сохранён"+(r.savedAt?" ("+new Date(r.savedAt).toLocaleString("ru-RU",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+")":"")+". Изменения перезапишут его.";}
+  else{if(!$("f-foreman").value.trim())val("f-foreman",sget("raport2-foreman")||"");ex.hidden=true;}
+  {const wl=x=>Object.keys(x.works||{}).filter(c=>{const w=WORKS.find(z=>z.c===c);return w&&!isAuto(w);}).concat((x.extra||[]).map(e=>e.n));
+    const p=r?null:prevWith(wl),b=$("f-prev");b.hidden=!p;
+    if(p){b.textContent="↺ Заполнить работы по рапорту за "+ruDate(p.date)+(p.foreman?" ("+p.foreman+")":"")+" — останется вписать объёмы";
+      b.onclick=()=>{document.querySelectorAll("#f-works .wrow").forEach(row=>{if(!row.querySelector("select").value&&!row.querySelector(".wq").value)row.remove();});
+        Object.keys(p.works||{}).forEach(c=>{const w=WORKS.find(z=>z.c===c);if(w&&!isAuto(w)&&![...document.querySelectorAll("#f-works .wrow select")].some(sl=>sl.value===c))addWork({c:c});});
+        (p.extra||[]).forEach(e=>addWork({other:true,n:e.n,u:e.u}));
+        if(!$("f-works").children.length)addWork();b.hidden=true;dirty=true;const f=$("f-works").querySelector(".wq");if(f)f.focus();};}}
+  $("save-msg").textContent=r?"Редактирование сохранённого рапорта":"Новый рапорт: "+ruDate($("f-date").value)+", "+(shift==="D"?"день":"ночь");$("save-msg").className="msg";
+}
+function collect(){
+  const o={id:"",pid:C.pid,date:$("f-date").value,shift:shift,foreman:$("f-foreman").value.trim(),works:{},people:{},subs:[],mach:[],haul:[],downtime:[]};
+  {const w=readWorks();o.works=w.works;o.extra=w.extra;o._bad=w.bad;}
+  {const v=num($("p-mdi").value);if(v!==null)o.people.own=v;}
+  if(!$("c-subs").hidden)document.querySelectorAll("#f-subs .mach").forEach(row=>{const i=row.querySelectorAll("input");const n=i[0].value.trim(),p=num(i[1].value);if(n||p!==null)o.subs.push({n:n,p:p});});
+  if(!$("c-mach").hidden)document.querySelectorAll("#f-mach .mach").forEach(row=>{const i=row.querySelectorAll("input");const n=i[0].value.trim(),q=num(i[1].value),h=num(i[2].value);if(n&&(q||h)){const m={n:n,q:q||1};if(h!==null)m.h=h;o.mach.push(m);}});
+  if(!$("c-haul").hidden)o.haul=readHaul();
+  WORKS.filter(isHaulSrc).forEach(x=>{const f=isTrips(x)?"t":isTons(x)?"w":"v",mt=srcMat(x).split("|");const g=Math.round(o.haul.filter(h=>mt.includes(h.m)).reduce((s,h)=>s+(h[f]||0),0)*1000)/1000;if(g)o.works[x.c]=g;else delete o.works[x.c];});
+  WORKS.filter(isMachSrc).forEach(x=>{const ks=x.src.slice(5).split("|").map(nrm);const g=Math.round(o.mach.filter(m=>ks.includes(nrm(m.n))).reduce((s,m)=>s+(m.h||0),0)*1000)/1000;if(g)o.works[x.c]=g;else delete o.works[x.c];});
+  o.trips=o.haul.reduce((s,h)=>s+(h.t||0),0)||null;
+  if(!$("c-dt").hidden)document.querySelectorAll("#f-dt .dt").forEach(row=>{const i=row.querySelectorAll("input");const sel=row.querySelector("select");const d={k:row.dataset.k||"Простой",what:i[0].value.trim(),h:num(i[1].value),why:i[2].value.trim(),fault:sel.value};if(d.what||d.h||d.why)o.downtime.push(d);});
+  o.other=$("f-other").value.trim();
+  if($("f-done").checked)o.done=true;
+  if($("f-idle").checked){o.idle=true;o.works={};o.extra=[];o.haul=[];o.trips=null;o._bad=[];o.other="Работ не было"+(o.other?". "+o.other:"");}
+  o.id=o.date+"_"+o.shift+"_"+slug(o.foreman);
+  return o;
+}
+function validate(o){
+  const e=(o._bad||[]).slice();if(!o.date)e.push("дата");if(!o.foreman)e.push("ФИО прораба");
+  if(o.people.own==null&&!o.subs.length&&!o.idle)e.push("люди на объекте (если никого не было — 0)");
+  o.haul.forEach((h,i)=>{if(!h.c)e.push(HL.t.toLowerCase()+" "+(i+1)+": "+HL.c.toLowerCase());if(HL.tn?(h.v===null&&h.w===null):(h.t===null&&h.v===null))e.push(HL.t.toLowerCase()+" "+(i+1)+": "+(HL.tn?"м³ или т":"рейсы или м³"));});
+  o.subs.forEach((x,i)=>{if(!x.n)e.push("субподрядчик "+(i+1)+": название");if(x.p===null)e.push("субподрядчик "+(i+1)+": людей");});
+  o.mach.forEach((m,i)=>{if(m.q>3&&m.h==null)e.push("техника "+(i+1)+" («"+m.n+"»): в «шт» стоит "+m.q+" — это часы? Перенесите в поле «часы», в «шт» — количество машин");});
+  o.downtime.forEach((d,i)=>{const k=(d.k||"Простой").toLowerCase();if(!d.fault&&k==="простой")e.push("простой "+(i+1)+": по чьей вине");if(d.h===null)e.push(k+" "+(i+1)+": часы");if(!d.what)e.push(k+" "+(i+1)+": что стояло");});
+  {const pct=WORKS.filter(x=>String(x.u).trim()==="%"&&typeof o.works[x.c]==="number");
+   if(pct.length){const cum=cumWorks(list().filter(r=>r.date<=o.date&&r.id!==o.id).concat([o]));
+    pct.forEach(x=>{const v=o.works[x.c];if(v>100)e.push(x.n+": "+fmt(v)+"% за смену — больше 100%");else if(cum[x.k]>100.5)e.push(x.n+": с начала получится "+fmt(cum[x.k],1)+"% — проверьте, сколько % сделано за смену");});}}
+  return e;
+}
+let warnAck="";
+function popup(kind,title,text,items,btns){let ov=$("pop");if(!ov){ov=document.createElement("div");ov.id="pop";ov.className="pop";document.body.appendChild(ov);}
+  ov.innerHTML="";const c=document.createElement("div");c.className="popc "+kind;
+  const ic={ok:"✓",warn:"!",bad:"✕",info:"…"}[kind]||"";const h=document.createElement("div");h.className="popi";h.textContent=ic;c.appendChild(h);
+  const t=document.createElement("div");t.className="popt";t.textContent=title;c.appendChild(t);
+  if(text){const d=document.createElement("div");d.className="popx";d.textContent=text;c.appendChild(d);}
+  if(items&&items.length){const ul=document.createElement("ul");items.forEach(x=>{const li=document.createElement("li");li.textContent=x;ul.appendChild(li);});c.appendChild(ul);}
+  if(btns&&btns.length){const bb=document.createElement("div");bb.className="popb";btns.forEach(b=>{const e=document.createElement("button");e.type="button";e.className="btn"+(b.p?" primary":"");e.textContent=b.t;e.onclick=()=>{ov.hidden=true;if(b.f)b.f();};bb.appendChild(e);});c.appendChild(bb);}
+  ov.appendChild(c);ov.hidden=false;try{if(navigator.vibrate&&kind!=="info")navigator.vibrate(kind==="ok"?60:[80,60,80]);}catch(e){}}
+function softWarn(o){const w=[];
+  {const same=list().filter(r=>r.date===o.date&&r.shift===o.shift&&r.id!==o.id);if(same.length)w.push("За эту смену уже есть рапорт: "+same.map(r=>r.foreman).join(", ")+". Если это тот же прораб — впишите ФИО точно так же (выберите из подсказки), тогда рапорт заменится. Если это второй прораб на объекте — просто сохраните ещё раз.");}const cum=cumWorks(list().filter(r=>r.date<=o.date&&r.id!==o.id).concat([o]));
+  WORKS.filter(x=>x.t&&!isAuto(x)&&typeof o.works[x.c]==="number").forEach(x=>{const v=o.works[x.c];
+    if(String(x.u).trim()!=="%"&&cum[x.k]>=x.t*0.999&&v>x.t*0.03)w.push("«"+x.n+"»: "+fmt(v)+" "+x.u+" за смену — работа закрывается на 100%. Это объём за смену, а не остаток?");
+    else if(String(x.u).trim()!=="%"&&v>x.t*0.25)w.push("«"+x.n+"»: "+fmt(v)+" "+x.u+" за смену — это "+fmt(v/x.t*100,0)+"% всего объёма по проекту.");});
+  return w;}
+function checkForm(ctx){const m=$("save-msg");const o=collect();const e=validate(o);if(e.length){m.textContent="Заполните или исправьте: "+e.join("; ");m.className="msg bad";warnAck="";
+    popup("bad","Рапорт НЕ сохранён","Заполните или исправьте:",e,[{t:"Понятно, исправлю",p:1}]);return null;}
+  {const w=softWarn(o),key=JSON.stringify(w)+JSON.stringify(o.works);if(w.length&&warnAck!==key){warnAck=key;m.textContent="Проверьте: "+w.join(" ")+" Если всё верно — нажмите «Сохранить рапорт» ещё раз.";m.className="msg warnc";
+    popup("warn","Проверьте перед сохранением","Рапорт ещё НЕ сохранён. Посмотрите:",w,ctx==="save"?[{t:"Исправить"},{t:"Всё верно — сохранить",p:1,f:()=>{const o2=checkForm("save");if(o2)persist(o2);}}]:[{t:"Понятно",p:1}]);return null;}}delete o._bad;o.savedAt=new Date().toISOString();sset("raport2-foreman",o.foreman);return o;}
+function persist(o){
+  if(renameFrom&&renameFrom!==o.id){o.replaces=renameFrom;delete reports[renameFrom];try{const m=loadLocal();delete m[renameFrom];localStorage.setItem(LKEY,JSON.stringify(m));}catch(e){}setOutbox(outbox().filter(x=>x!==renameFrom));renameFrom=null;loadedId=o.id;}
+  const ok=saveLocal(o);reports=loadLocal();if(!ok)reports[o.id]=o;dirty=false;
+  const when=ruDate(o.date)+", "+(o.shift==="D"?"дневная":"ночная")+" смена";
+  if(C.db){setOutbox(outbox().concat([o.id]));popup("info","Отправляем рапорт…",when,[],[]);
+    flush().then(()=>{const left=outbox().length;
+      if(linkDead){syncStatus(DEAD_MSG,"bad");popup("bad","Ссылка не действует",DEAD_MSG,[],[{t:"Понятно",p:1}]);return;}
+      syncStatus(left?"Рапорт сохранён на телефоне, в базу отправится при появлении связи (в очереди: "+left+").":"Рапорт записан в базу.",left?"":"okb");
+      if(left)popup("warn","Сохранено на телефоне",when+". Связи с базой сейчас нет — рапорт отправится сам, когда появится интернет. Откройте форму ещё раз, когда будет связь.",[],[{t:"Хорошо",p:1}]);
+      else popup("ok","Рапорт сохранён",when+". Рапорт записан в базу — руководитель его видит. Исправить можно в любой момент: откройте ту же дату и сохраните снова.",[],[{t:"Готово",p:1}]);}).catch(()=>{popup("warn","Сохранено на телефоне",when+". Отправится в базу, когда появится связь.",[],[{t:"Хорошо",p:1}]);});}
+  else popup("ok","Рапорт сохранён на телефоне",when+". Не забудьте отправить его в рабочий чат кнопкой внизу формы.",[],[{t:"Готово",p:1}]);
+  const m=$("save-msg");m.textContent=(ok?"Сохранено на телефоне: ":"Принято (не сохранилось на телефоне): ")+ruDate(o.date)+", "+(o.shift==="D"?"день":"ночь")+" · "+new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});m.className="msg "+(ok?"ok":"warnc");
+  updProg();if(!$("v-sum").hidden)renderSum();if(!$("v-log").hidden)renderLog();
+}
+const plur=(n,a,b,c)=>{n=Math.abs(Math.round(n));const m=n%10,h=n%100;return m===1&&h!==11?a:m>=2&&m<=4&&(h<12||h>14)?b:c;};
+function shiftText(o){
+  const id=o.id;const prev=list().filter(r=>r.date<=o.date&&r.id!==id);const cum=cumWorks(prev.concat([o]));
+  const L=[];L.push((C.title||"Рапорт прораба").toUpperCase());L.push(C.name);
+  L.push(ruDate(o.date)+", "+(o.shift==="D"?"дневная":"ночная")+" смена");L.push((C.hl&&C.hl.t?"Мастер":"Прораб")+": "+o.foreman);L.push("");
+  // работы: ручные + авто с планом (остальное видно в разделе вывоза и технике)
+  const done=WORKS.filter(x=>o.works[x.c]&&!isMachSrc(x)&&(!isAuto(x)||x.t));
+  if(o.idle){L.push("РАБОТ НЕ БЫЛО");}else{L.push("ВЫПОЛНЕНО ЗА СМЕНУ");if(!done.length&&!(o.extra||[]).length)L.push("• объёмов нет");}
+  done.forEach(x=>{L.push("• "+x.n+" — "+fmt(o.works[x.c])+" "+x.u);L.push("   с начала "+fmt(cum[x.k])+(x.t?" из "+fmt(x.t)+" "+x.u+" ("+fmt(cum[x.k]/x.t*100,1)+"%)":" "+x.u));});
+  if(!o.idle)(o.extra||[]).forEach(e=>{const t=extraDone(e.n,e.u,o.date,o.id)+(+e.v||0);L.push("• "+e.n+" — "+fmt(e.v)+" "+e.u);L.push("   с начала "+fmt(t)+" "+e.u);});
+  if(o.haul.length){const tt=o.haul.reduce((a,h)=>a+(h.t||0),0),tv=o.haul.reduce((a,h)=>a+(h.v||0),0),tw=o.haul.reduce((a,h)=>a+(h.w||0),0);
+    L.push("");L.push(HL.t.toUpperCase()+": "+(tt?fmt(tt,0)+" "+plur(tt,"рейс","рейса","рейсов")+", ":"")+fmt(tv)+" м³"+(HL.tn&&tw?" / "+fmt(tw)+" т":""));
+    o.haul.forEach(h=>L.push("• "+h.m+": "+(h.c||"—")+" — "+(h.t!=null?fmt(h.t,0)+" "+plur(h.t,"рейс","рейса","рейсов")+", ":"")+fmt(h.v)+" м³"+(HL.tn&&h.w!=null?" / "+fmt(h.w)+" т":"")));}
+  L.push("");
+  const pp=[];if(o.people.own!=null)pp.push("свои "+o.people.own);o.subs.forEach(x=>pp.push(x.n+" "+(x.p!=null?x.p:"?")));
+  L.push("ЛЮДИ: "+(pp.length?pplOf(o)+" чел. ("+pp.join(", ")+")":"не указаны"));
+  if(!$("c-mach").hidden){if(!o.mach.length)L.push("ТЕХНИКА: нет");else{L.push("ТЕХНИКА: "+fmt(o.mach.reduce((a,m)=>a+(m.h||0),0))+" маш.-ч");o.mach.forEach(m=>L.push("• "+m.n+(m.q>1?" ×"+m.q:"")+" — "+(m.h!=null?fmt(m.h)+" ч":"часы не указаны")));}}
+  if(!$("c-dt").hidden){if(!o.downtime.length)L.push("ПРОСТОЕВ И РЕМОНТОВ НЕТ");else{L.push("ПРОСТОИ И РЕМОНТ: "+fmt(o.downtime.reduce((a,d)=>a+(d.h||0),0))+" ч");o.downtime.forEach(d=>L.push("• "+(d.k||"Простой")+": "+(d.what||"")+" — "+fmt(d.h)+" ч"+(d.why?", "+d.why:"")+(d.fault?" (вина: "+d.fault+")":"")));}}
+  if(o.done){L.push("");L.push("РАБОТЫ НА ОБЪЕКТЕ ЗАВЕРШЕНЫ");}
+  {const ot=o.idle?o.other.replace(/^Работ не было\.? ?/,""):o.other;if(ot){L.push("");L.push("ПРИМЕЧАНИЕ: "+ot);}}
+  return L.join("\n");
+}
+function sendTo(kind,ev){
+  const o=checkForm();if(!o){ev.preventDefault();return;}
+  const t=shiftText(o),enc=encodeURIComponent(t),a=ev.currentTarget;
+  if(kind==="wa")a.href="https://wa.me/?text="+enc;
+  if(kind==="tg")a.href="https://t.me/share/url?url="+encodeURIComponent(" ")+"&text="+enc;
+  if(kind==="max")a.href="https://web.max.ru/";
+  if(kind==="copy"||kind==="max"){copyText(t).then(ok=>{const p=$("send-preview");p.textContent=t;p.hidden=false;
+    if(!ok){const rg=document.createRange();rg.selectNodeContents(p);const s=window.getSelection();s.removeAllRanges();s.addRange(rg);}
+    $("send-msg").textContent=ok?"Текст скопирован — вставьте его в рабочий чат"+(kind==="max"?" MAX.":"."):"Текст выделен ниже — скопируйте вручную.";$("send-msg").className="hint "+(ok?"ok":"warnc");});}
+  persist(o);
+}
+// ---------- паспорт ----------
+function renderPass(){
+  const all=list();const sc=cumWorks(all);
+  const inf=$("p-info");inf.innerHTML="";
+  [C.name].concat(C.info||[]).forEach((s,i)=>{const d=document.createElement("div");if(i===0){const b=document.createElement("b");b.textContent=s;d.appendChild(b);}else d.textContent=s;inf.appendChild(d);});
+  $("p-asof").textContent="Рапортов"+(C.db?" в базе":" на телефоне")+": "+all.length+(C.d0date?" · выполненное до "+ruDate(C.d0date)+" учтено":"");
+  const pw=$("p-works");pw.innerHTML="";
+  if(!WORKS.length){const d=document.createElement("div");d.className="empty";d.textContent="Бюджет объекта не задан";pw.appendChild(d);}
+  WORKS.forEach(x=>{const d=sc[x.k]||0,pct=x.t?d/x.t:0;const el=document.createElement("div");el.className="pw";
+    el.innerHTML='<div class="pn"><span class="code"></span> <span class="nm"></span></div><div class="pv"><span>план <b class="a"></b></span><span>выполнено <b class="b"></b></span><span>остаток <b class="c"></b></span><span><b class="e"></b></span></div><div class="bar"><i></i></div>';
+    el.querySelector(".code").textContent=x.c;el.querySelector(".nm").textContent=x.n+", "+x.u;
+    if(isAuto(x)){const s=document.createElement("small");s.textContent="считается: "+srcLabel(x);el.querySelector(".pn").appendChild(s);}
+    if(x.ro){const s=document.createElement("small");s.textContent=typeof x.ro==="string"?x.ro:"справочно — в рапорте не заполняется";el.querySelector(".pn").appendChild(s);}
+    el.querySelector(".a").textContent=x.t?fmt(x.t):"не задан";el.querySelector(".b").textContent=fmt(d);
+    el.querySelector(".c").textContent=x.t?fmt(Math.max(0,x.t-d)):"—";el.querySelector(".e").textContent=x.t?fmt(pct*100,1)+"%":"";
+    if(x.t&&d>x.t)el.querySelector(".b").className="b bad";
+    el.querySelector(".bar i").style.width=Math.min(100,pct*100)+"%";if(!x.t)el.querySelector(".bar").remove();pw.appendChild(el);});
+  const ex={};all.forEach(r=>(r.extra||[]).forEach(e=>{const k=nrm(e.n)+"|"+nrm(e.u);if(!ex[k])ex[k]={n:e.n,u:e.u,v:0};ex[k].v+=+e.v||0;}));
+  const ks=Object.keys(ex);$("p-extra-card").hidden=!ks.length;
+  const eb=$("p-extra").querySelector("tbody");eb.innerHTML="";
+  ks.sort((a,b)=>ex[a].n.localeCompare(ex[b].n,"ru")).forEach(k=>{const tr=document.createElement("tr");tr.innerHTML='<td></td><td></td><td class="n"></td>';tr.children[0].textContent=ex[k].n;tr.children[1].textContent=ex[k].u;tr.children[2].textContent=fmt(ex[k].v);eb.appendChild(tr);});
+}
+// ---------- итоги ----------
+const sumField=(rs,f)=>rs.reduce((a,r)=>a+(typeof r[f]==="number"?r[f]:0),0);
+function periods(D){const all=list();return{day:all.filter(r=>r.date===D),month:all.filter(r=>r.date.slice(0,7)===D.slice(0,7)&&r.date<=D),cum:all.filter(r=>r.date<=D)};}
+function trow(tb,label,a,b,c,cls){const tr=document.createElement("tr");tr.innerHTML='<td></td><td class="n"></td><td class="n"></td><td class="n"></td>';tr.children[0].textContent=label;if(cls)tr.children[0].className=cls;tr.children[1].textContent=a;tr.children[2].textContent=b;tr.children[3].textContent=c;tb.appendChild(tr);}
+function emptyRow(tb,t){const tr=document.createElement("tr");tr.innerHTML='<td colspan="4" class="empty"></td>';tr.firstChild.textContent=t;tb.appendChild(tr);}
+const nrm=s=>(s||"").trim().replace(/\s+/g," ").toLowerCase();
+function groupTable(id,P,arr,key,valf,emptyT){
+  const tb=$(id).querySelector("tbody");tb.innerHTML="";const names={};
+  P.cum.forEach(r=>arr(r).forEach(x=>{const k=nrm(x[key]);if(k&&!names[k])names[k]=x[key].trim();}));
+  const s=(rs,k)=>rs.reduce((a,r)=>a+arr(r).filter(x=>nrm(x[key])===k).reduce((q,x)=>q+(+x[valf]||0),0),0);
+  const ks=Object.keys(names).sort((a,b)=>s(P.cum,b)-s(P.cum,a));
+  if(!ks.length)emptyRow(tb,emptyT);ks.forEach(k=>trow(tb,names[k],fmt(s(P.day,k),0),fmt(s(P.month,k),0),fmt(s(P.cum,k),0)));
+}
+function renderSum(){
+  const D=$("s-date").value||todayISO();const P=periods(D);
+  $("s-count").textContent="Рапортов на телефоне: "+list().length+" · на "+ruDate(D)+": "+P.day.length;
+  const sd=sumWorks(P.day),sm=sumWorks(P.month),sc=cumWorks(P.cum);
+  const tb=$("s-works").querySelector("tbody");tb.innerHTML="";
+  WORKS.forEach(x=>{const pct=x.t?sc[x.k]/x.t:0;const tr=document.createElement("tr");
+    tr.innerHTML='<td></td><td class="n"></td><td class="n"></td><td class="n"></td><td class="n"></td><td class="n"></td><td class="n"><div></div><div class="bar"><i></i></div></td>';
+    const td=tr.children;td[0].innerHTML='<span class="code"></span> ';td[0].querySelector(".code").textContent=x.c;td[0].appendChild(document.createTextNode(x.n+", "+x.u));
+    td[1].textContent=fmt(sd[x.k]);td[2].textContent=fmt(sm[x.k]);td[3].textContent=fmt(sc[x.k]);td[4].textContent=x.t?fmt(x.t):"—";td[5].textContent=x.t?fmt(Math.max(0,x.t-sc[x.k])):"—";
+    td[6].firstChild.textContent=x.t?fmt(pct*100,1)+"%":"—";td[6].querySelector("i").style.width=Math.min(100,pct*100)+"%";tb.appendChild(tr);});
+  const dR=P.day.filter(r=>r.shift==="D"),nR=P.day.filter(r=>r.shift==="N");
+  const pd=dR.length?dR:null,pn=nR.length?nR:null;
+  const mq=rs=>rs.reduce((s,r)=>s+machOf(r).reduce((a,m)=>a+(+m.q||0),0),0);
+  const pq=rs=>rs.reduce((s,r)=>s+pplOf(r),0);
+  const k=$("s-kpi");k.innerHTML="";
+  [["Люди день / ночь",(pd?pq(pd):"—")+" / "+(pn?pq(pn):"—")],["Рейсов: "+HL.t.toLowerCase(),fmt(sumField(P.day,"trips"),0)],
+   [HL.t+", м³",fmt(P.day.reduce((a,r)=>a+haulOf(r).reduce((s,h)=>s+(+h.v||0),0),0))]].concat(HL.tn?[[HL.t+", т",fmt(P.day.reduce((a,r)=>a+haulOf(r).reduce((s,h)=>s+(+h.w||0),0),0))]]:[]).concat([["Техника день / ночь",(pd?mq(pd):"—")+" / "+(pn?mq(pn):"—")],
+   ["Простои и ремонт, ч",fmt(P.day.reduce((a,r)=>a+(r.downtime||[]).reduce((s,d)=>s+(+d.h||0),0),0))]])
+   .forEach(([a,b])=>{const d=document.createElement("div");d.className="kpi";d.innerHTML="<small></small><b></b>";d.firstChild.textContent=a;d.lastChild.textContent=b;k.appendChild(d);});
+  // вывоз
+  {const hb=$("s-haul").querySelector("tbody");hb.innerHTML="";const hs=(rs,f)=>{let t=0,v=0,w=0;rs.forEach(r=>haulOf(r).filter(f).forEach(h=>{t+=+h.t||0;v+=+h.v||0;w+=+h.w||0;}));return fmt(t,0)+" / "+fmt(v)+(HL.tn?" / "+fmt(w):"");};
+   const mats=[];P.cum.forEach(r=>haulOf(r).forEach(h=>{if(h.m&&!mats.includes(h.m))mats.push(h.m);}));
+   const carr={};P.cum.forEach(r=>haulOf(r).forEach(h=>{const kk=nrm(h.c);if(kk&&!carr[kk])carr[kk]=h.c;}));
+   if(!mats.length)emptyRow(hb,"Вывоз пока не вносился");
+   mats.forEach(m=>trow(hb,m,hs(P.day,h=>h.m===m),hs(P.month,h=>h.m===m),hs(P.cum,h=>h.m===m)));
+   Object.keys(carr).forEach(kk=>trow(hb,"· "+carr[kk],hs(P.day,h=>nrm(h.c)===kk),hs(P.month,h=>nrm(h.c)===kk),hs(P.cum,h=>nrm(h.c)===kk),"muted"));}
+  groupTable("s-subs",P,subsOf,"n","p","Субподрядчики пока не вносились");
+  groupTable("s-mach",P,machOf,"n","q","Техника пока не вносилась");
+  {const dtb=$("s-dt").querySelector("tbody");dtb.innerHTML="";const byF=(rs,f)=>rs.reduce((a,r)=>a+(r.downtime||[]).filter(d=>d.fault===f).reduce((s,d)=>s+(+d.h||0),0),0);
+   let any=false;FAULT.forEach(f=>{const c=byF(P.cum,f);if(c>0){any=true;trow(dtb,f,fmt(byF(P.day,f)),fmt(byF(P.month,f)),fmt(c),(f==="Генподрядчик"||f==="Заказчик")?"warnc":"");}});if(!any)emptyRow(dtb,"Простоев не было");}
+  {const ms=$("s-miss");ms.innerHTML="";const dates=new Set(list().map(r=>r.date));const first=list().map(r=>r.date).sort()[0];let miss=0;
+   for(let i=13;i>=0;i--){const d=new Date(D+"T12:00:00");d.setDate(d.getDate()-i);const s=d.toISOString().slice(0,10);if(!first||s<first)continue;if(!dates.has(s)){miss++;const c=document.createElement("span");c.className="chip miss";c.textContent=ruDate(s).slice(0,5);ms.appendChild(c);}}
+   if(!miss){const c=document.createElement("span");c.className="chip";c.textContent=list().length?"Все дни закрыты рапортами":"Рапортов пока нет";ms.appendChild(c);}}
+  $("s-gp").textContent=dayText(D,P,sd,sm,sc,pd,pn);
+}
+function dayText(D,P,sd,sm,sc,pd,pn){
+  if(!P.day.length)return "За "+ruDate(D)+" рапортов нет.";
+  const L=[C.name,"Сводка за "+ruDate(D),""];
+  const pp=r=>{const a=[];if(r.people&&r.people.own!=null)a.push("свои "+r.people.own);subsOf(r).forEach(x=>a.push(x.n+" "+(x.p!=null?x.p:"?")));return a.join(", ")+" — всего "+pplOf(r);};
+  (pd||[]).forEach(r=>L.push("Люди, день ("+r.foreman+"): "+pp(r)));(pn||[]).forEach(r=>L.push("Люди, ночь ("+r.foreman+"): "+pp(r)));L.push("");
+  L.push("Выполнено (сутки / месяц / с начала):");
+  WORKS.forEach(x=>{if(sc[x.k]>0)L.push("— "+x.n+": "+fmt(sd[x.k])+" / "+fmt(sm[x.k])+" / "+fmt(sc[x.k])+" "+x.u+(x.t?" из "+fmt(x.t)+" ("+fmt(sc[x.k]/x.t*100,1)+"%)":""));});
+  P.day.forEach(r=>(r.extra||[]).forEach(e=>L.push("— "+e.n+": "+fmt(e.v)+" "+e.u+" ("+r.foreman+")")));
+  const dts=[];P.day.forEach(r=>(r.downtime||[]).forEach(d=>dts.push((d.k||"Простой")+": "+(d.what||"")+" — "+fmt(d.h)+" ч"+(d.fault?" (вина: "+d.fault+")":""))));
+  if(!$("c-dt").hidden){L.push("");L.push("Простои: "+(dts.length?"":"нет"));dts.forEach(s=>L.push("— "+s));}
+  return L.join("\n");
+}
+function renderLog(){
+  const rs=list().sort((a,b)=>(b.date+b.shift).localeCompare(a.date+a.shift));$("l-count").textContent=rs.length?String(rs.length):"";
+  const el=$("l-list");el.innerHTML="";
+  if(!rs.length){const p=document.createElement("div");p.className="empty";p.textContent="Здесь появятся сохранённые рапорты — по одному на смену.";el.appendChild(p);return;}
+  rs.slice(0,150).forEach(r=>{const b=document.createElement("button");b.type="button";b.className="item";
+    const m=document.createElement("div");m.className="meta";const t=document.createElement("span");t.textContent=ruDate(r.date)+" · "+(r.shift==="D"?"день":"ночь")+(r.foreman?" · "+r.foreman:"");m.appendChild(t);
+    if((r.downtime||[]).length){const f=document.createElement("span");f.className="flag";f.style.background="var(--warn)";f.textContent=(r.downtime||[]).some(d=>d.k==="Ремонт"||d.k==="ТО")?"ремонт/простой":"простой";m.appendChild(f);}
+    b.appendChild(m);const s=document.createElement("div");s.className="sum";
+    const parts=WORKS.filter(x=>r.works&&r.works[x.c]).map(x=>x.c+" "+fmt(r.works[x.c])+" "+x.u);(r.extra||[]).forEach(e=>parts.push(e.n+" "+fmt(e.v)+" "+e.u));if(r.trips)parts.push("рейсов "+fmt(r.trips,0));const p=pplOf(r);if(p)parts.push("люди "+p);
+    s.textContent=parts.join(" · ")||"без объёмов";b.appendChild(s);
+    b.onclick=()=>{$("f-date").value=r.date;setShift(r.shift);show("form");window.scrollTo(0,0);};el.appendChild(b);});
+}
+function show(v){["form","pass","sum","log"].forEach(x=>{$("v-"+x).hidden=x!==v;$("tab-"+x).setAttribute("aria-selected",String(x===v));});$("savebar").hidden=v!=="form";if(v==="pass")renderPass();if(v==="sum")renderSum();if(v==="log")renderLog();sset("raport2-tab",v);}
+function bindForm(){
+  $("f-idle").onchange=()=>{document.body.classList.toggle("is-idle",$("f-idle").checked);dirty=true;};
+  $("f-date").addEventListener("change",()=>{dirty=false;loadForm();});
+  $("f-foreman").addEventListener("change",()=>{
+    const src=renameFrom||loadedId,nid=docId();
+    if(src&&src!==nid&&reports[src]&&!reports[nid]&&reports[src].date===$("f-date").value){renameFrom=src;dirty=true;
+      const ex=$("f-exists");if(ex){ex.hidden=false;ex.textContent="ФИО изменено: рапорт сохранится под новым ФИО, рапорт «"+reports[src].foreman+"» за эту смену будет удалён.";}return;}
+    renameFrom=null;if(!dirty)loadForm();});
+  window.addEventListener("online",()=>sync());
+  $("s-date").addEventListener("change",renderSum);
+  $("v-form").addEventListener("input",e=>{if(e.target.id!=="f-date"&&e.target.id!=="f-foreman")dirty=true;});
+  document.querySelectorAll("#f-shift button").forEach(b=>b.onclick=()=>setShift(b.dataset.s));
+  document.querySelectorAll("#tabs-form button").forEach(b=>b.onclick=()=>show(b.dataset.v));
+  $("f-dt-add").onclick=()=>{addDt();dirty=true;};$("f-mach-add").onclick=()=>{addMach();dirty=true;};$("f-sub-add").onclick=()=>{addSub();dirty=true;};$("f-haul-add").onclick=()=>{addHaul();dirty=true;};
+  $("f-work-add").onclick=()=>{addWork();dirty=true;};
+  $("save").onclick=()=>{const o=checkForm("save");if(o)persist(o);};
+  window.addEventListener("beforeunload",ev=>{if(dirty){ev.preventDefault();ev.returnValue="";}});
+  ["wa","tg","max","copy"].forEach(k=>$("send-"+k).addEventListener("click",e=>sendTo(k,e)));
+  $("s-copy").onclick=()=>{const t=$("s-gp").textContent;copyText(t).then(ok=>{$("s-copied").hidden=false;$("s-copied").textContent=ok?"Скопировано":"Выделите текст вручную";setTimeout(()=>$("s-copied").hidden=true,2500);});};
+  sync();
+}
+
+// ---------- пароль конструктора ----------
+const ADM_SALT="6e7ee92de3397291c1d458ec84eaba79",ADM_HASH="0e69da4217b22b38058f5e56853dad46b4234aa4d46ff0cc783452247374ab13";
+async function admHash(pw){const km=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveBits"]);
+  const b=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:Uint8Array.from(ADM_SALT.match(/../g),x=>parseInt(x,16)),iterations:200000},km,256);
+  return Array.from(new Uint8Array(b),x=>x.toString(16).padStart(2,"0")).join("");}
+function adminLock(go){
+  document.title="Конструктор рапорта — ГК «КРАШМАШ»";$("hdr-title").textContent="Конструктор рапорта";$("hdr-obj").textContent="Вход для руководителя";
+  const st=$("status");st.hidden=false;st.className="banner";st.innerHTML="";
+  const f=document.createElement("form");f.style.cssText="display:flex;flex-wrap:wrap;gap:8px;align-items:center";
+  const l=document.createElement("label");l.textContent="Пароль конструктора";l.style.cssText="width:100%;font-weight:600";
+  const i=document.createElement("input");i.type="password";i.autocomplete="current-password";i.style.cssText="flex:1;min-width:160px;padding:10px;font-size:16px;border:1px solid #c9d1c3;border-radius:8px";l.htmlFor=i.id="adm-pw";
+  const b=document.createElement("button");b.type="submit";b.className="btn";b.textContent="Войти";
+  const m=document.createElement("div");m.style.cssText="width:100%;color:#8a1f17;font-size:14px";
+  f.append(l,i,b,m);st.appendChild(f);i.focus();
+  f.onsubmit=async ev=>{ev.preventDefault();b.disabled=true;m.textContent="";
+    try{if(await admHash(i.value)===ADM_HASH){sset("raport2-adm",ADM_HASH);st.hidden=true;st.innerHTML="";go();}else m.textContent="Неверный пароль";}
+    catch(e){m.textContent="Браузер не поддерживает вход. Откройте в Chrome или Safari.";}
+    b.disabled=false;};
+}
+
+// ---------- меню объектов руководителя проекта ----------
+function showMenu(arr){
+  document.title="Рапорт прораба — выбор объекта";
+  $("hdr-obj").textContent="Выберите объект";$("hdr-title").textContent="Рапорт прораба";
+  const M=$("menu");M.hidden=false;M.innerHTML="";const td=todayISO();
+  arr.forEach(c=>{if(!c||!c.pid)return;
+    let today=false;try{const r=JSON.parse(sget("raport2-"+c.pid)||"{}")||{};today=Object.keys(r).some(k=>String(k).slice(0,10)===td);}catch(e){}
+    const b=document.createElement("button");b.type="button";b.className="btn mitem";
+    const t=document.createElement("span");t.textContent=c.name||c.pid;
+    const sm=document.createElement("small");sm.textContent=today?"Сегодня рапорт сохранён ✓":"Сегодня рапорта ещё нет";t.appendChild(sm);b.appendChild(t);
+    const ar=document.createElement("span");ar.textContent="›";b.appendChild(ar);
+    b.onclick=async()=>{location.hash="#p="+await encodeCfg(c);};
+    M.appendChild(b);});
+}
+// ---------- запуск ----------
+(async function(){
+  bindAdmin();
+  const h=location.hash;const p=cfgParam(h);const mp=menuParam(h);
+  if((mp||h==="#menu")&&!/admin/.test(h)){
+    try{let arr=null;
+      if(mp){arr=await decodeCfg(mp);sset("raport2-menu",JSON.stringify(arr));}else arr=JSON.parse(sget("raport2-menu")||"null");
+      if(!Array.isArray(arr)||!arr.length)throw new Error("empty");
+      showMenu(arr);
+    }catch(e){$("status").hidden=false;$("status").className="banner bad";$("status").textContent=e&&e.message==="old"?"Браузер устарел и не может открыть ссылку. Обновите браузер (Chrome или Safari) и откройте ссылку снова.":"Список объектов не найден. Откройте ссылку руководителя заново.";}
+    return;
+  }
+  if(p&&!/admin/.test(h)){
+    try{startForm(await decodeCfg(p));}
+    catch(e){$("status").hidden=false;$("status").className="banner bad";$("status").textContent=e&&e.message==="old"?"Браузер устарел и не может открыть ссылку. Обновите браузер (Chrome или Safari) и откройте ссылку снова.":"Ссылка повреждена — попросите руководителя прислать её заново.";}
+    return;
+  }
+  let cfg=null;if(p){try{cfg=await decodeCfg(p);}catch(e){}}
+  if(sget("raport2-adm")===ADM_HASH)startAdmin(cfg);else adminLock(()=>startAdmin(cfg));
+})();
+window.addEventListener("hashchange",()=>location.reload());
+})();
+</script>
+</body>
+</html>
