@@ -249,6 +249,7 @@ var ROLE_NAMES={foreman:'прораб',dispatcher:'диспетчер',approver:
 function tabsFor(m){
   var t=baseTabs(m);if(!m||m.kind==='foreman')return t;
   var F=CFG().features,ex=[['salary','Зарплата'],['econ','Экономика Renault']];
+  if(m.kind==='approver'||m.kind==='admin')ex.unshift(['qa','Вопросы']);
   if(F.plan)ex.push(['plan','План/факт']);if(F.adv)ex.push(['adv','Авансы']);
   var i=-1;t.forEach(function(x,k){if(x[0]==='admin')i=k});
   if(i<0)return t.concat(ex);return t.slice(0,i).concat(ex,t.slice(i));
@@ -352,7 +353,8 @@ function lastPrice(car,obj){
   return best?best.p:any?any.p:'';
 }
 function rub(x){return fmt(x,0)+' ₽'}
-function itemAccrual(it){var f=it.fact,s=0,np=0;if(!f)return {sum:0,np:0};(f.hired||[]).forEach(function(h){var v=num(h.vol);if(!v||!h.carrier||h.nodebt)return;var p=num(h.price);if(p>0)s+=v*p;else np++});return {sum:s,np:np}}
+function ndb(h,x){if(h.nodebt)return true;if(CFG().ecoDebt)return false;var n=(x&&(x.note||(x.fact&&x.fact.note)))||'';return /^экология/i.test(n)}
+function itemAccrual(it){var f=it.fact,s=0,np=0;if(!f)return {sum:0,np:0};(f.hired||[]).forEach(function(h){var v=num(h.vol);if(!v||!h.carrier||ndb(h,it))return;var p=num(h.price);if(p>0)s+=v*p;else np++});return {sum:s,np:np}}
 function dayFact(day){
   var vol=0,own=0,hired=0,trips=0,km=0;
   dayRequests(day).forEach(function(r){(r.items||[]).forEach(function(it){var t=factTotals(it);vol+=t.vol;own+=t.own;hired+=t.hired;trips+=t.trips;km+=t.km})});
@@ -414,7 +416,7 @@ function recalcFact(){
   if(F.rapOwn!==undefined&&F.rapOwn!==''&&F.own.length){var d1=vo-num(F.rapOwn);dif+='<br>Рено: прораб написал <b>'+r1(num(F.rapOwn))+'</b>, диспетчер принял <b>'+r1(vo)+'</b>'+(Math.abs(d1)>0.01?' → <span class="'+(d1>0?'':'')+'" style="color:var(--warn);font-weight:600">изменено на '+(d1>0?'+':'')+r1(d1)+' м³</span>':' (совпадает)')}
   var dh=0,hasDh=false;F.hired.forEach(function(h){if(h.rap!==undefined&&h.rap!==''){hasDh=true;dh+=num(h.vol)-num(h.rap)}});
   if(hasDh)dif+='<br>Перевозчики: разница «принято − рапорт» <b>'+(dh>0?'+':'')+r1(dh)+' м³</b>';
-  var acs=0,acn=0;F.hired.forEach(function(h){var v=num(h.vol);if(!v||!h.carrier||h.nodebt)return;if(num(h.price)>0)acs+=v*num(h.price);else acn++});
+  var acs=0,acn=0;F.hired.forEach(function(h){var v=num(h.vol);if(!v||!h.carrier||ndb(h,F))return;if(num(h.price)>0)acs+=v*num(h.price);else acn++});
   if(acs>0||acn)dif+='<br>Начислено перевозчикам: <b>'+rub(acs)+'</b>'+(acn?' · <span style="color:var(--warn)">без цены строк: '+acn+'</span>':'');
   if(el)el.innerHTML='Вывезено (принято диспетчером): <b>'+r1(vo+vh)+' м³</b> (Рено '+r1(vo)+', перевозчики '+r1(vh)+') · рейсов Рено: <b>'+tr+'</b>'+(num(F.km)&&tr?' · пробег ≈ <b>'+Math.round(num(F.km)*tr*ROUTE_K)+' км</b>':'')+dif;
 }
@@ -478,7 +480,7 @@ function saveFact(){
 }
 
 /* ---------- настройки расчёта ---------- */
-var CFG_DEF={amort:12,fuelPrice:80,fuelNorm:68,kmK:2.2,shift:2000,hourRate:650,placeRate:3300,idleMin:0,targetDay:40000,targetMargin:35,
+var CFG_DEF={amort:12,fuelPrice:80,fuelNorm:68,kmK:2.2,shift:2000,hourRate:650,placeRate:3300,idleMin:0,targetDay:40000,targetMargin:35,ecoDebt:1,
   tariff:[[9,1100],[20,1350],[30,1600],[39,2000],[50,2500],[60,2700],[70,3000],[90,3500],[150,4000]],features:{adv:true,plan:true,times:true}};
 var _cfgKey=null,_cfg=null;
 function CFG(){
@@ -634,7 +636,7 @@ function renderAdv(){
   var canP=finCan('payments'),ps=(S.payments||[]).filter(function(p){return p.kind==='adv'});
   var M={};
   ps.forEach(function(p){var x=M[p.carrier]=M[p.carrier]||{car:p.carrier,adv:0,first:'9999-99-99',list:[]};x.adv+=num(p.amount);if(p.date<x.first)x.first=p.date;x.list.push(p)});
-  Object.keys(M).forEach(function(k){var x=M[k];x.work=0;S.requests.forEach(function(r){if(r.date<x.first)return;(r.items||[]).forEach(function(it){var f=it.fact;if(!f)return;(f.hired||[]).forEach(function(h){if(h.carrier!==k||h.nodebt)return;var v=num(h.vol),p=num(h.price);if(v&&p>0)x.work+=v*p})})});x.after=x.work;x.work=Math.min(x.adv,x.work);x.left=x.adv-x.work});
+  Object.keys(M).forEach(function(k){var x=M[k];x.work=0;S.requests.forEach(function(r){if(r.date<x.first)return;(r.items||[]).forEach(function(it){var f=it.fact;if(!f)return;(f.hired||[]).forEach(function(h){if(h.carrier!==k||ndb(h,it))return;var v=num(h.vol),p=num(h.price);if(v&&p>0)x.work+=v*p})})});x.after=x.work;x.work=Math.min(x.adv,x.work);x.left=x.adv-x.work});
   var keys=Object.keys(M).sort(function(a,b){return M[b].left-M[a].left});
   var T={adv:0,work:0,left:0};keys.forEach(function(k){T.adv+=M[k].adv;T.work+=M[k].work;T.left+=M[k].left});
   var h='<h2 style="margin:0 0 4px">Авансы перевозчикам</h2><div class="small muted intro" style="margin-bottom:12px">Отдельный блок: авансы в долг не входят и из него не вычитаются. «Отработано» — принятый объём × цена по этому перевозчику с даты первого аванса, но не больше выданного. Блок можно выключить в «Справочники → Настройки расчёта».</div>';
@@ -692,8 +694,37 @@ function saveCfg(){
   ['amort','fuelPrice','fuelNorm','kmK','shift','hourRate','placeRate','idleMin','targetDay','targetMargin'].forEach(function(k){o[k]=num(d[k])});
   o.tariff=d.tariff.filter(function(t){return num(t[0])>0&&num(t[1])>0}).map(function(t){return [num(t[0]),num(t[1])]}).sort(function(a,b){return a[0]-b[0]});
   if(!o.tariff.length){toast('Тариф не может быть пустым');return}
-  o.features=d.features;
+  o.features=d.features;o.ecoDebt=CFG().ecoDebt?1:0;
   put('settings','calc',{val:JSON.stringify(o),by:(me()||{}).name||'',at:nowStr()}).then(function(){toast('Настройки сохранены');render()});
+}
+
+
+/* ---------- Вопросы коммерческому директору ---------- */
+var QA_WHO=[['','— выберите —'],['fom','Фоминых В.В.'],['disp','Диспетчеры (Варакутина Т., Головинская С.)'],['pto','Отдел ПТО'],['fore','Прорабы'],['adm','Администратор (Грецкий А.В.)'],['none','Не нужно, блок отключить']];
+function qaDoc(){var d=byId(S.settings||[],'qa'),o={};try{o=d&&d.val?JSON.parse(d.val):{}}catch(e){}o._d=d;return o}
+function ecoStat(){var s=0,n=0,rows=0;S.requests.forEach(function(r){(r.items||[]).forEach(function(it){var f=it.fact;if(!f||!/^экология/i.test(it.note||f.note||''))return;(f.hired||[]).forEach(function(h){var v=num(h.vol),p=num(h.price);if(!v||!h.carrier||h.nodebt)return;rows++;if(p>0)s+=v*p})})});return {sum:s,rows:rows}}
+function renderQA(){
+  var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
+  var q=qaDoc(),d=st.qaDraft||(st.qaDraft={eco:q.eco||'',planWho:q.planWho||'',planNote:q.planNote||'',timesWho:q.timesWho||'',timesNote:q.timesNote||'',ecoNote:q.ecoNote||''});
+  var es=ecoStat(),canE=ME&&(ME.kind==='approver'||ME.kind==='admin');
+  function who(k){return '<select data-inp="qa_'+k+'">'+QA_WHO.map(function(w){return '<option value="'+w[0]+'"'+(d[k]===w[0]?' selected':'')+'>'+esc(w[1])+'</option>'}).join('')+'</select>'}
+  var h='<h2 style="margin:0 0 4px">Вопросы коммерческому директору</h2><div class="small muted intro" style="margin-bottom:12px">Три вопроса, без ответа на которые нельзя закончить настройку. Ответьте, нажмите «Сохранить ответы» — всё применится сразу.</div>';
+  h+='<div class="card"><h3>1. Экология: это долг перед перевозчиками?</h3><div class="small muted" style="margin-bottom:8px">В Excel диспетчера вывоз «Экология (контейнеры, ломовоз)» помечен «в долг». Сейчас в системе таких строк '+es.rows+', на сумму '+rub(es.sum)+' (по ценам перевозчиков). Вы писали, что экология в долг не идёт. Как считать?</div>';
+  h+='<div class="chips"><button class="chip" data-act="qaEco" data-v="nodebt" aria-pressed="'+(d.eco==='nodebt')+'"><b>Не в долг</b><small>экологию из долга убрать</small></button><button class="chip" data-act="qaEco" data-v="debt" aria-pressed="'+(d.eco==='debt')+'"><b>В долг</b><small>оставить, как в Excel</small></button></div>';
+  h+='<label class="f" for="qa_ecoNote">Комментарий (необязательно)</label><textarea id="qa_ecoNote" data-inp="qa_ecoNote">'+esc(d.ecoNote)+'</textarea></div>';
+  h+='<div class="card" style="margin-top:12px"><h3>2. Плановые объёмы по объектам: кто вносит?</h3><div class="small muted" style="margin-bottom:8px">Вкладка «План/факт» сравнивает план с фактом вывоза. Кто будет вносить план по объектам и откуда его брать?</div><label class="f">Кто вносит</label>'+who('planWho')+'<label class="f" for="qa_planNote">Откуда берётся план, как часто обновляется</label><textarea id="qa_planNote" data-inp="qa_planNote">'+esc(d.planNote)+'</textarea></div>';
+  h+='<div class="card" style="margin-top:12px"><h3>3. Время приезда, выезда и простоя: кто вносит?</h3><div class="small muted" style="margin-bottom:8px">Нужны, чтобы видеть простои на погрузке и выгрузке по Renault. Поля в факте необязательные. Кто сможет их заполнять?</div><label class="f">Кто вносит</label>'+who('timesWho')+'<label class="f" for="qa_timesNote">Откуда данные (путевые листы, GPS, сообщения водителей)</label><textarea id="qa_timesNote" data-inp="qa_timesNote">'+esc(d.timesNote)+'</textarea></div>';
+  h+='<div style="display:flex;gap:10px;align-items:center;margin-top:14px;flex-wrap:wrap"><button class="btn pri" data-act="qaSave"'+(canE?'':' disabled')+'>Сохранить ответы</button>'+(q._d&&q._d.at?'<span class="small muted intro">Ответы сохранены: '+esc(q._d.by||'')+', '+esc(q._d.at)+'</span>':'<span class="small muted intro">Ответов пока нет</span>')+'</div>';
+  el.innerHTML=h;
+}
+function saveQA(){
+  var d=st.qaDraft;if(!d)return;var by=(me()||{}).name||'',at=nowStr();
+  var o={eco:d.eco,ecoNote:d.ecoNote,planWho:d.planWho,planNote:d.planNote,timesWho:d.timesWho,timesNote:d.timesNote};
+  var p=[put('settings','qa',{val:JSON.stringify(o),by:by,at:at})];
+  if(d.eco){var dd=byId(S.settings||[],'calc'),u={};try{u=dd&&dd.val?JSON.parse(dd.val):{}}catch(e){}
+    if(!u.tariff){var C=CFG();u={amort:C.amort,fuelPrice:C.fuelPrice,fuelNorm:C.fuelNorm,kmK:C.kmK,shift:C.shift,hourRate:C.hourRate,placeRate:C.placeRate,idleMin:C.idleMin,targetDay:C.targetDay,targetMargin:C.targetMargin,tariff:C.tariff,features:C.features}}
+    u.ecoDebt=d.eco==='debt'?1:0;p.push(put('settings','calc',{val:JSON.stringify(u),by:by,at:at}))}
+  Promise.all(p).then(function(){toast('Ответы сохранены');st.qaDraft=null;render()})
 }
 
 /* ---------- Долги и сверка ---------- */
@@ -703,14 +734,14 @@ function stageName(k){for(var i=0;i<STAGES.length;i++)if(STAGES[i][0]===(k||''))
 function stageIdx(k){for(var i=0;i<STAGES.length;i++)if(STAGES[i][0]===(k||''))return i;return 0}
 function mondayOf(day){return weekOf(day)[0]}
 function reconId(wk,car){return 'rc-'+wk+'-'+slug(car)}
-function finCan(coll){var k=ME&&ME.kind;if(k==='admin'||k==='dispatcher')return true;return k==='approver'&&(coll==='recon'||coll==='plans'||coll==='adjust')}
+function finCan(coll){var k=ME&&ME.kind;if(k==='admin'||k==='dispatcher')return true;return k==='approver'&&(coll==='recon'||coll==='plans'||coll==='adjust'||coll==='payments')}
 function priceStart(){var d='9999-99-99';S.requests.forEach(function(r){if(r.date>=d)return;(r.items||[]).forEach(function(it){var f=it.fact;if(f)(f.hired||[]).forEach(function(h){if(num(h.price)>0&&r.date<d)d=r.date})})});return d}
 function carFin(from,to){
   var m={},ps=priceStart();
   S.requests.forEach(function(r){if(r.date<from||r.date>to)return;(r.items||[]).forEach(function(it){var f=it.fact;if(!f)return;(f.hired||[]).forEach(function(h){
     if(!h.carrier)return;var x=m[h.carrier]=m[h.carrier]||{vol:0,rap:0,rapAll:true,sum:0,np:0};
     var v=num(h.vol);x.vol+=v;if(h.rap!==undefined&&h.rap!=='')x.rap+=num(h.rap);else if(v)x.rapAll=false;
-    var p=num(h.price);if(h.nodebt){}else if(p>0)x.sum+=v*p;else if(v&&r.date>=ps)x.np++;
+    var p=num(h.price);if(ndb(h,it)){}else if(p>0)x.sum+=v*p;else if(v&&r.date>=ps)x.np++;
   })})});
   return m;
 }
@@ -720,7 +751,7 @@ function debtTable(){
   (S.payments||[]).forEach(function(p){if(p.kind==='open'){var x=g(p.carrier);if(!x.openDate||p.date>x.openDate){x.openDate=p.date;x.open=num(p.amount)}}});
   S.requests.forEach(function(r){(r.items||[]).forEach(function(it){var f=it.fact;if(!f)return;(f.hired||[]).forEach(function(h){
     if(!h.carrier)return;var v=num(h.vol);if(!v)return;var x=m[h.carrier];if(x&&x.openDate&&r.date<=x.openDate)return;
-    x=g(h.carrier);var p=num(h.price);if(h.nodebt){}else if(p>0)x.acc+=v*p;else if(r.date>=ps)x.np++;
+    x=g(h.carrier);var p=num(h.price);if(ndb(h,it)){}else if(p>0)x.acc+=v*p;else if(r.date>=ps)x.np++;
   })})});
   (S.payments||[]).forEach(function(p){var x=g(p.carrier);if(p.kind==='pay'){if(!x.openDate||p.date>x.openDate)x.paid+=num(p.amount)}else if(p.kind==='adv')x.adv+=num(p.amount)});
   Object.keys(m).forEach(function(k){var x=m[k];x.debt=x.open+x.acc-x.paid});
@@ -1565,7 +1596,7 @@ function runImport(){
 function render(){
   renderHeader();
   var t=st.tab;
-  if(t==='foreman')renderForeman();else if(t==='dispatcher')renderDispatcher();else if(t==='director')renderDirector();else if(t==='svodka')renderSvodka();else if(t==='debts')renderDebts();else if(t==='salary')renderSalary();else if(t==='econ')renderEcon();else if(t==='plan')renderPlan();else if(t==='adv')renderAdv();else renderAdmin();
+  if(t==='foreman')renderForeman();else if(t==='dispatcher')renderDispatcher();else if(t==='director')renderDirector();else if(t==='svodka')renderSvodka();else if(t==='debts')renderDebts();else if(t==='salary')renderSalary();else if(t==='econ')renderEcon();else if(t==='plan')renderPlan();else if(t==='adv')renderAdv();else if(t==='qa')renderQA();else renderAdmin();
   if(t==='admin'&&ME&&ME.kind==='admin'){appendLinks();appendImport()}
   if(t==='admin'&&ME&&(ME.kind==='admin'||ME.kind==='dispatcher'))appendSettings();
   renderModalIfOpen();
@@ -1650,6 +1681,8 @@ document.addEventListener('click',function(e){
     case 'planEdit':openPlan(v);break;
     case 'planDel':confirmTwice('planDel:'+v,function(){del('plans',v)});break;
     case 'cfgSave':saveCfg();break;
+    case 'qaEco':if(st.qaDraft){st.qaDraft.eco=v;renderQA()}break;
+    case 'qaSave':saveQA();break;
     case 'cfgReset':confirmTwice('cfgReset',function(){put('settings','calc',{val:'{}',by:(me()||{}).name||'',at:nowStr()}).then(function(){toast('Возвращены значения по умолчанию');render()})});break;
     case 'dbBack':case 'dbFwd':st.dbWeek=dkey(addDays(parseKey(st.dbWeek||mondayOf(today())),a==='dbBack'?-7:7));renderDebts();break;
     case 'dbNow':st.dbWeek=mondayOf(today());renderDebts();break;
@@ -1688,6 +1721,7 @@ document.addEventListener('input',function(e){
   var t=e.target;var c=t.getAttribute&&t.getAttribute('data-inp');if(!c)return;var d=st.draft;
   switch(c){
     case 'comment':d.comment=t.value;break;
+    case 'qa_ecoNote':case 'qa_planNote':case 'qa_timesNote':case 'qa_planWho':case 'qa_timesWho':if(st.qaDraft)st.qaDraft[c.slice(3)]=t.value;break;
     case 'item':d.items[+t.getAttribute('data-i')][t.getAttribute('data-f')]=t.value;break;
     case 'mNote':st.modal.note=t.value;break;
     case 'fKm':st.modal.f.km=t.value;recalcFact();break;
@@ -1722,7 +1756,7 @@ function afterData(){
   if(st.modal){renderHeader();renderModal();if(st.tab!=='foreman')renderMainOnly();else renderMine();return}
   render();
 }
-function renderMainOnly(){var t=st.tab;if(t==='dispatcher')renderDispatcher();else if(t==='director')renderDirector();else if(t==='svodka')renderSvodka();else if(t==='debts')renderDebts();else if(t==='salary')renderSalary();else if(t==='econ')renderEcon();else if(t==='plan')renderPlan();else if(t==='adv')renderAdv();else if(t==='admin')renderAdmin()}
+function renderMainOnly(){var t=st.tab;if(t==='dispatcher')renderDispatcher();else if(t==='director')renderDirector();else if(t==='svodka')renderSvodka();else if(t==='debts')renderDebts();else if(t==='salary')renderSalary();else if(t==='econ')renderEcon();else if(t==='plan')renderPlan();else if(t==='adv')renderAdv();else if(t==='qa')renderQA();else if(t==='admin')renderAdmin()}
 function refresh(force){
   if(inflight>0&&!force)return;
   api({op:'boot',v:force?null:VER}).then(function(r){
