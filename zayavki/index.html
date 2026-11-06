@@ -259,7 +259,7 @@ function baseTabs(m){
   if(!m)return [];
   if(m.kind==='foreman')return [['foreman','Заявка']];
   if(m.kind==='dispatcher')return [['dispatcher','Диспетчер'],['foreman','Новая заявка'],['debts','Долги и сверка'],['admin','Справочники']];
-  if(m.kind==='approver')return [['dispatcher','Расстановка'],['svodka','Сводка'],['director','По дням'],['debts','Долги и сверка']];
+  if(m.kind==='approver')return [['dispatcher','Расстановка'],['svodka','Сводка'],['director','По дням'],['debts','Долги и сверка'],['admin','Справочники']];
   if(m.kind==='director')return [['svodka','Сводка'],['director','По дням'],['debts','Долги и сверка']];
   return [['dispatcher','Диспетчер'],['foreman','Новая заявка'],['svodka','Сводка'],['director','По дням'],['debts','Долги и сверка'],['admin','Справочники']];
 }
@@ -1369,8 +1369,8 @@ function renderAdmin(){
   });
   h+='<div style="display:flex;gap:8px;margin-top:10px"><input type="text" id="addF" placeholder="Новый прораб, например Иванов И.И." style="flex:1"><button class="btn" data-act="addF">Добавить</button></div></div>';
   h+='<div class="card"><h3>Диспетчеры и утверждающий</h3>';
-  S.staff.filter(function(s){return s.role!=='pm'}).forEach(function(s){h+='<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--line)"><span><b>'+esc(s.name)+'</b> <span class="muted small">'+(s.role==='approver'?'утверждает расстановку':'диспетчер')+(s.title?', '+esc(s.title):'')+'</span></span><button class="link" data-act="delS" data-v="'+s.id+'" style="color:var(--bad)">'+(st.pending==='delS:'+s.id?'точно?':'убрать')+'</button></div>'});
-  h+='<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input type="text" id="addS" placeholder="Фамилия И.О." style="flex:1;min-width:140px"><select id="addSr"><option value="dispatcher">диспетчер</option><option value="approver">утверждает</option></select><button class="btn" data-act="addS">Добавить</button></div></div></div>';
+  S.staff.filter(function(s){return s.role!=='pm'}).forEach(function(s){h+='<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--line)"><span><b>'+esc(s.name)+'</b> <span class="muted small">'+(s.role==='approver'?'утверждает расстановку':'диспетчер')+(s.title?', '+esc(s.title):'')+'</span></span>'+(ME.kind==='admin'?'<button class="link" data-act="delS" data-v="'+s.id+'" style="color:var(--bad)">'+(st.pending==='delS:'+s.id?'точно?':'убрать')+'</button>':'')+'</div>'});
+  if(ME.kind!=='admin')h+='</div></div>';else h+='<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input type="text" id="addS" placeholder="Фамилия И.О." style="flex:1;min-width:140px"><select id="addSr"><option value="dispatcher">диспетчер</option><option value="approver">утверждает</option></select><button class="btn" data-act="addS">Добавить</button></div></div></div>';
   if(ME.kind==='admin'){
     h+='<div class="card" style="margin-top:16px"><h3>Руководители проектов</h3><div class="small muted" style="margin-bottom:8px">У каждого своя ссылка и пароль. Видят только свои объекты, без цен. Пароль виден только вам.</div>';
     S.staff.filter(function(s){return s.role==='pm'}).forEach(function(p){
@@ -1681,7 +1681,7 @@ function render(){
   var t=st.tab;
   if(t==='foreman')renderForeman();else if(t==='dispatcher')renderDispatcher();else if(t==='director')renderDirector();else if(t==='svodka')renderSvodka();else if(t==='debts')renderDebts();else if(t==='salary')renderSalary();else if(t==='econ')renderEcon();else if(t==='plan')renderPlan();else if(t==='adv')renderAdv();else if(t==='qa')renderQA();else if(t==='totals')renderTotals();else renderAdmin();
   if(t==='admin'&&ME&&ME.kind==='admin'){appendLinks();appendImport()}
-  if(t==='admin'&&ME&&(ME.kind==='admin'||ME.kind==='dispatcher'))appendSettings();
+  if(t==='admin'&&ME&&(ME.kind==='admin'||ME.kind==='dispatcher'||ME.kind==='approver'))appendSettings();
   renderModalIfOpen();
 }
 function linkFor(tok){return location.origin+location.pathname+'?t='+tok}

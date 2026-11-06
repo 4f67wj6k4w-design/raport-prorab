@@ -188,7 +188,7 @@ function allowed_(me, kind, coll, id, data, existing) {
   var k = me.kind;
   if (k === 'admin') return true;
   if (k === 'director') return false;
-  if (k === 'approver') return ['approvals', 'recon', 'adjust', 'plans', 'payments', 'settings', 'carriers', 'objects', 'drivers', 'routes', 'places'].indexOf(coll) >= 0;
+  if (k === 'approver') return ['approvals', 'recon', 'adjust', 'plans', 'payments', 'settings', 'carriers', 'objects', 'drivers', 'routes', 'places', 'foremen', 'fleet'].indexOf(coll) >= 0;
   if (k === 'dispatcher') return ['requests', 'carriers', 'fleet', 'foremen', 'objects', 'drivers', 'routes', 'places', 'payments', 'recon', 'settings', 'adjust', 'plans'].indexOf(coll) >= 0;
   if (k === 'foreman') {
     if (coll === 'plans') {
