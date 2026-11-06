@@ -16,7 +16,7 @@ var SPEC = {
   recon:     {sheet:'Сверка',       cols:[['id','s'],['week','s'],['carrier','s'],['regVol','n'],['invSum','n'],['upd','s'],['stage','s'],['transferDate','s'],['transferTo','s'],['note','s'],['by','s'],['at','s']]},
   settings:  {sheet:'Настройки',    cols:[['id','s'],['val','s'],['by','s'],['at','s']]},
   adjust:    {sheet:'Корректировки',cols:[['id','s'],['month','s'],['driver','s'],['amount','n'],['note','s'],['by','s']]},
-  plans:     {sheet:'План',         cols:[['id','s'],['object','s'],['from','s'],['to','s'],['vol','n'],['note','s'],['by','s']]}
+  plans:     {sheet:'План',         cols:[['id','s'],['object','s'],['from','s'],['to','s'],['vol','n'],['note','s'],['by','s'],['month','s'],['savedAt','s'],['hist','j']]}
 };
 var TYPES = {vyvoz:'Вывоз', mesto:'По месту', samo:'Самовывоз', polivo:'Поливомоечная'};
 
@@ -130,7 +130,14 @@ function boot_(me, b) {
   var data = {};
   Object.keys(SPEC).forEach(function (c) { data[c] = readColl_(c); });
   if (me.kind === 'foreman') data.requests = data.requests.filter(function (r) { return r.foremanId === me.id; });
-  if (me.kind === 'foreman') { data.payments = []; data.recon = []; data.adjust = []; data.plans = []; data.settings = []; }
+  if (me.kind === 'foreman') {
+    var fo = data.foremen.filter(function (f) { return f.id === me.id; })[0], myObj = (fo && fo.objects) || [];
+    data.payments = []; data.recon = []; data.adjust = [];
+    data.plans = data.plans.filter(function (p) { return myObj.indexOf(p.object) >= 0; });
+    var cd = data.settings.filter(function (x) { return x.id === 'calc'; })[0], ft = {};
+    try { ft = JSON.parse(cd.val).features || {}; } catch (e) {}
+    data.settings = [{id: 'calc', val: JSON.stringify({features: ft}), by: '', at: ''}];
+  }
   if (me.kind !== 'admin') { data.foremen.forEach(function (f) { delete f.token; }); data.staff.forEach(function (f) { delete f.token; }); }
   data.foremen = data.foremen.filter(function (f) { return me.kind === 'admin' || me.kind === 'dispatcher' ? true : f.active !== false; });
   return {ok: true, ver: ver, me: me, data: data};
@@ -143,6 +150,15 @@ function allowed_(me, kind, coll, id, data, existing) {
   if (k === 'approver') return ['approvals', 'recon', 'adjust', 'plans', 'payments', 'settings', 'carriers', 'objects', 'drivers', 'routes', 'places'].indexOf(coll) >= 0;
   if (k === 'dispatcher') return ['requests', 'carriers', 'fleet', 'foremen', 'objects', 'drivers', 'routes', 'places', 'payments', 'recon', 'settings', 'adjust', 'plans'].indexOf(coll) >= 0;
   if (k === 'foreman') {
+    if (coll === 'plans') {
+      if (kind === 'delete') return false;
+      var fo = readColl_('foremen').filter(function (f) { return f.id === me.id; })[0], mine = (fo && fo.objects) || [];
+      var obj = existing ? existing.object : (data && data.object);
+      if (mine.indexOf(obj) < 0) return false;
+      if (existing && data && (data.object !== existing.object || data.month !== existing.month)) return false;
+      if (existing && data && Number(data.vol) !== Number(existing.vol) && !(data.hist && data.hist.length > (existing.hist || []).length)) return false;
+      return true;
+    }
     if (coll !== 'requests') return false;
     if (kind === 'set' && !existing) return data && data.foremanId === me.id;
     return !!existing && existing.foremanId === me.id && (kind === 'delete' || !data || !data.foremanId || data.foremanId === me.id);

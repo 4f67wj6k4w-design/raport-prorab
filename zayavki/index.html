@@ -247,7 +247,7 @@ function canAssign(m){return m&&(m.kind==='dispatcher'||m.kind==='admin')}
 function canApprove(m){return m&&(m.kind==='approver'||m.kind==='admin')}
 var ROLE_NAMES={foreman:'прораб',dispatcher:'диспетчер',approver:'коммерческий директор',director:'генеральный директор',admin:'администратор'};
 function tabsFor(m){
-  var t=baseTabs(m);if(!m||m.kind==='foreman')return t;
+  var t=baseTabs(m);if(!m)return t;if(m.kind==='foreman')return CFG().features.plan?t.concat([['plan','План вывоза']]):t;
   var F=CFG().features,ex=[['salary','Зарплата'],['econ','Экономика Renault']];
   if(m.kind==='approver'||m.kind==='admin')ex.unshift(['qa','Вопросы']);
   if(F.plan)ex.push(['plan','План/факт']);if(F.adv)ex.push(['adv','Авансы']);
@@ -287,6 +287,7 @@ function reqStatus(r){
   return 'new';
 }
 function statusPill(s){return s==='done'?'<span class="pill done">Назначена</span>':s==='part'?'<span class="pill part">Частично</span>':'<span class="pill new">Новая</span>'}
+function slotsText(it){var a=(it.slots||[]).filter(function(x){return +x.n>0&&x.t}).map(function(x){return x.n+' к '+x.t});return a.length?' · подача: '+a.join(', '):''}
 function itemTitle(it){
   var t=TYPES[it.type]+': ';
   if(it.type==='polivo')return t+(it.note||'Поливомоечная');
@@ -294,7 +295,7 @@ function itemTitle(it){
   if(it.type==='samo'){if(it.volume)t+=' · '+it.volume+(/\D/.test(it.volume)?'':' м³');if(+it.count)t+=' · '+it.count+' маш.';return t}
   if(it.allOwn)t+=' · все свои Renault';else t+=' · '+(+it.count||0)+' маш.';
   if(it.type==='vyvoz'&&it.dest&&it.dest!=='На усмотрение диспетчера')t+=' → '+it.dest;
-  return t;
+  return t+slotsText(it);
 }
 function assignText(it){
   var a=it.assigned||{};var p=[];
@@ -653,28 +654,56 @@ function renderAdv(){
 }
 
 /* ---------- План / факт (отключаемый блок) ---------- */
+function planObjects(){
+  var m=ME||{};
+  if(m.kind==='foreman'){var f=byId(S.foremen,m.id);return ((f&&f.objects)||[]).map(function(c){return byId(S.objects,c)}).filter(Boolean)}
+  var seen={},o=[];S.foremen.forEach(function(f){(f.objects||[]).forEach(function(c){if(!seen[c]){seen[c]=1;var x=byId(S.objects,c);if(x)o.push(x)}})});
+  return o.length?o:S.objects.slice();
+}
+function planDue(ym){
+  var p=ym.split('-'),y=+p[0],m=+p[1]-1,py=m===0?y-1:y,pm=m===0?11:m-1;
+  var last=new Date(py,pm+1,0).getDate(),d=new Date(py,pm,Math.min(30,last));
+  if(d.getDay()===0||d.getDay()===6){d=new Date(py,pm+1,0);while(d.getDay()!==5)d.setDate(d.getDate()-1)}
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+var WD=['вс','пн','вт','ср','чт','пт','сб'];
+function planFact(p){var f=0;S.requests.forEach(function(r){if(r.object!==p.object)return;if(p.from&&r.date<p.from)return;if(p.to&&r.date>p.to)return;(r.items||[]).forEach(function(it){if(!it.fact)return;(it.fact.own||[]).forEach(function(o){f+=num(o.vol)});(it.fact.hired||[]).forEach(function(x){f+=num(x.vol)})})});return f}
+function planStatusCard(){
+  var ym=monthShift(today().slice(0,7),1),due=planDue(ym),objs=planObjects(),have={};
+  (S.plans||[]).forEach(function(p){if(p.month===ym)have[p.object]=1});
+  var miss=objs.filter(function(o){return !have[o.id]}),late=today()>due;
+  var dd=parseKey(due);
+  var h='<div class="card"><h3 style="margin:0 0 6px">Планы вывоза на '+esc(monthLabel(ym))+'</h3><div class="small" style="margin-bottom:8px">Срок подачи: <b>'+dmy(due)+' ('+WD[dd.getDay()]+')</b>'+(late&&miss.length?' · <span style="color:var(--bad)"><b>срок прошёл</b></span>':'')+'. Если 30-е выпадает на выходной, срок — последняя пятница месяца. Руководитель проекта вносит план по своим объектам; после сохранения план фиксируется, изменить его можно только корректировкой с комментарием.</div>';
+  if(!objs.length)h+='<div class="small muted">За вами не закреплён ни один объект.</div>';
+  else{
+    h+='<div class="chips">'+objs.map(function(o){return '<span class="chip" style="'+(have[o.id]?'background:color-mix(in srgb,var(--ok) 18%,var(--card));color:var(--ok)':'background:color-mix(in srgb,var(--bad) 14%,var(--card));color:var(--bad)')+'">'+(have[o.id]?'✓ ':'нет плана · ')+esc(o.short||o.name)+'</span>'}).join('')+'</div>';
+    h+='<div class="small muted" style="margin-top:6px">Подано '+(objs.length-miss.length)+' из '+objs.length+'.</div>';
+  }
+  return h+'</div>';
+}
 function renderPlan(){
   var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
-  var canE=finCan('plans'),pl=sortBy(S.plans||[],function(p){return (p.object||'')+(p.from||'')});
-  var h='<h2 style="margin:0 0 4px">План / факт по объектам</h2><div class="small muted intro" style="margin-bottom:12px">План вывоза по объекту на период вносится вручную (источник: проект, график, руководитель). Факт — принятый объём (Renault и перевозчики). Блок можно выключить в «Справочники → Настройки расчёта».</div>';
-  h+='<div class="card"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">Планы</h3>'+(canE?'<button class="btn sm pri" data-act="planAdd">+ План</button>':'')+'</div>';
-  if(!pl.length)h+='<div class="empty" style="margin-top:10px">Планов пока нет. Нажмите «+ План».</div>';
+  var canE=finCan('plans'),adm=ME&&ME.kind==='admin',mine={};planObjects().forEach(function(o){mine[o.id]=1});
+  var pl=sortBy((S.plans||[]).filter(function(p){return !ME||ME.kind!=='foreman'||mine[p.object]}),function(p){return (p.month||'0')+' '+(p.object||'')}).reverse();
+  var h='<h2 style="margin:0 0 4px">'+(ME&&ME.kind==='foreman'?'План вывоза':'План / факт по объектам')+'</h2><div class="small muted intro" style="margin-bottom:12px">План вывоза на месяц вносят руководители проектов. Факт — принятый объём (Renault и перевозчики).</div>';
+  h+=planStatusCard();
+  h+='<div class="card" style="margin-top:12px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">Планы</h3>'+(canE?'<button class="btn sm pri" data-act="planAdd">+ План на месяц</button>':'')+'</div>';
+  if(!pl.length)h+='<div class="empty" style="margin-top:10px">Планов пока нет. Нажмите «+ План на месяц».</div>';
   else{
     h+='<div class="tablewrap" style="margin-top:8px"><table class="t"><thead><tr><th class="l">Объект</th><th class="l">Период</th><th class="n">План, м³</th><th class="n">Факт, м³</th><th class="n">Выполнено</th><th class="n">Осталось, м³</th><th class="l"></th></tr></thead><tbody>';
     pl.forEach(function(p){
-      var f=0;S.requests.forEach(function(r){if(r.object!==p.object)return;if(p.from&&r.date<p.from)return;if(p.to&&r.date>p.to)return;(r.items||[]).forEach(function(it){if(!it.fact)return;(it.fact.own||[]).forEach(function(o){f+=num(o.vol)});(it.fact.hired||[]).forEach(function(x){f+=num(x.vol)})})});
-      var pv=num(p.vol),pc=pv>0?f/pv*100:0;
-      h+='<tr><td class="l"><b>'+esc(objName(p.object))+'</b>'+(p.note?'<div class="small muted">'+esc(p.note)+'</div>':'')+'</td><td class="l">'+(p.from?dmy(p.from):'…')+' — '+(p.to?dmy(p.to):'…')+'</td><td class="n">'+fmt(pv,0)+'</td><td class="n">'+fmt(f,0)+'</td><td class="n"><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end"><span style="display:inline-block;width:70px;height:8px;border-radius:4px;background:var(--line,#8884);overflow:hidden"><i style="display:block;height:100%;width:'+Math.min(100,pc)+'%;background:var(--accent)"></i></span><b>'+fmt(pc,0)+'%</b></div></td><td class="n">'+fmt(Math.max(0,pv-f),0)+'</td><td class="l">'+(canE?'<button class="link" data-act="planEdit" data-v="'+esc(p.id)+'">изменить</button> <button class="link" data-act="planDel" data-v="'+esc(p.id)+'">'+(st.pending==='planDel:'+p.id?'точно удалить?':'удалить')+'</button>':'')+'</td></tr>';
+      var f=planFact(p),pv=num(p.vol),pc=pv>0?f/pv*100:0,hist=p.hist||[];
+      h+='<tr><td class="l"><b>'+esc(objName(p.object))+'</b>'+(p.note?'<div class="small muted">'+esc(p.note)+'</div>':'')+(p.savedAt?'<div class="small muted">внёс: '+esc(p.by||'')+', '+esc(p.savedAt)+'</div>':'')+hist.map(function(x){return '<div class="small" style="color:var(--warn)">корректировка '+esc(x.t)+' ('+esc(x.who)+'): '+fmt(x.was,0)+' → '+fmt(x.now,0)+' м³. '+esc(x.c)+'</div>'}).join('')+'</td><td class="l">'+(p.month?esc(monthLabel(p.month)):((p.from?dmy(p.from):'…')+' — '+(p.to?dmy(p.to):'…')))+'</td><td class="n">'+fmt(pv,0)+'</td><td class="n">'+fmt(f,0)+'</td><td class="n"><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end"><span style="display:inline-block;width:70px;height:8px;background:var(--sunk);border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:'+Math.min(100,pc)+'%;background:var(--accent)"></i></span>'+fmt(pc,0)+'%</div></td><td class="n">'+fmt(Math.max(0,pv-f),0)+'</td><td class="l">'+(canE?(p.month?'<button class="btn sm" data-act="planFix" data-v="'+esc(p.id)+'">Корректировка</button>':'<button class="btn sm" data-act="planEdit" data-v="'+esc(p.id)+'">Изменить</button>')+(adm?' <button class="btn sm" data-act="planDel" data-v="'+esc(p.id)+'">'+(st.pending==='planDel:'+p.id?'Точно удалить?':'×')+'</button>':''):'')+'</td></tr>';
     });
     h+='</tbody></table></div>';
   }
   h+='</div>';
   el.innerHTML='<div class="sv">'+h+'</div>';
 }
-function openPlan(id){
+function openPlan(id,fix){
   if(!finCan('plans'))return;
-  var p=id?byId(S.plans||[],id):null;
-  st.modal={fin:'plan',id:id||'',d:{object:p?p.object:'',from:p?p.from:'',to:p?p.to:'',vol:p?p.vol:'',note:p?p.note||'':''}};renderModal();
+  var p=id?byId(S.plans||[],id):null,ym=monthShift(today().slice(0,7),1);
+  st.modal={fin:'plan',id:id||'',fix:!!fix,d:{object:p?p.object:'',month:p?(p.month||''):ym,from:p?p.from:'',to:p?p.to:'',vol:fix?'':(p?p.vol:''),note:p?p.note||'':'',c:''}};renderModal();
 }
 
 /* ---------- Настройки расчёта (в «Справочниках») ---------- */
@@ -734,7 +763,7 @@ function stageName(k){for(var i=0;i<STAGES.length;i++)if(STAGES[i][0]===(k||''))
 function stageIdx(k){for(var i=0;i<STAGES.length;i++)if(STAGES[i][0]===(k||''))return i;return 0}
 function mondayOf(day){return weekOf(day)[0]}
 function reconId(wk,car){return 'rc-'+wk+'-'+slug(car)}
-function finCan(coll){var k=ME&&ME.kind;if(k==='admin'||k==='dispatcher')return true;return k==='approver'&&(coll==='recon'||coll==='plans'||coll==='adjust'||coll==='payments')}
+function finCan(coll){var k=ME&&ME.kind;if(k==='admin'||k==='dispatcher')return true;if(k==='foreman')return coll==='plans';return k==='approver'&&(coll==='recon'||coll==='plans'||coll==='adjust'||coll==='payments')}
 function priceStart(){var d='9999-99-99';S.requests.forEach(function(r){if(r.date>=d)return;(r.items||[]).forEach(function(it){var f=it.fact;if(f)(f.hired||[]).forEach(function(h){if(num(h.price)>0&&r.date<d)d=r.date})})});return d}
 function carFin(from,to){
   var m={},ps=priceStart();
@@ -835,10 +864,17 @@ function renderFinModal(){
     h+='<label class="f" for="fa4">За что</label><input id="fa4" type="text" data-inp="finF" data-f="note" value="'+esc(D.note)+'" style="width:100%" placeholder="например: штраф ДТП 12.10, премия за выходной">';
     h+='<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button class="btn pri" data-act="finSave">Сохранить</button></div>';
   }else if(M.fin==='plan'){
-    h+='<div style="display:flex;justify-content:space-between;gap:8px"><b>План вывоза по объекту</b><button class="link" data-act="closeModal">закрыть</button></div>';
-    h+='<label class="f" for="fl1">Объект</label><select id="fl1" data-chg="finF" data-f="object" style="width:100%"><option value="">— выберите —</option>'+sortBy(S.objects,function(o){return o.name}).map(function(o){return '<option value="'+esc(o.id)+'"'+(o.id===D.object?' selected':'')+'>'+esc(o.name)+'</option>'}).join('')+'</select>';
-    h+='<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div><label class="f" for="fl2">С даты</label><input id="fl2" type="date" data-inp="finF" data-f="from" value="'+esc(D.from)+'" style="width:100%"></div><div><label class="f" for="fl3">По дату</label><input id="fl3" type="date" data-inp="finF" data-f="to" value="'+esc(D.to)+'" style="width:100%"></div><div><label class="f" for="fl4">План, м³</label><input id="fl4" type="number" step="1" min="0" data-inp="finF" data-f="vol" value="'+esc(D.vol)+'" style="width:100%"></div></div>';
-    h+='<label class="f" for="fl5">Примечание (откуда план)</label><input id="fl5" type="text" data-inp="finF" data-f="note" value="'+esc(D.note)+'" style="width:100%">';
+    var pold=M.id?byId(S.plans||[],M.id):null,legacy=pold&&!pold.month&&!M.fix,objsP=planObjects();
+    h+='<div style="display:flex;justify-content:space-between;gap:8px"><b>'+(M.fix?'Корректировка плана':'План вывоза на месяц')+'</b><button class="link" data-act="closeModal">закрыть</button></div>';
+    if(M.fix)h+='<div class="note" style="margin-top:8px">'+esc(objName(pold.object))+', '+esc(monthLabel(pold.month))+'. Сейчас в плане <b>'+fmt(pold.vol,0)+' м³</b>. Прежнее значение сохранится в истории с датой и временем.</div>';
+    else{
+      h+='<label class="f" for="fl1">Объект</label><select id="fl1" data-chg="finF" data-f="object" style="width:100%"'+(M.id?' disabled':'')+'><option value="">— выберите —</option>'+sortBy(objsP,function(o){return o.name}).map(function(o){return '<option value="'+esc(o.id)+'"'+(o.id===D.object?' selected':'')+'>'+esc(o.name)+'</option>'}).join('')+'</select>';
+      if(!legacy)h+='<label class="f" for="fl2">Месяц</label><input id="fl2" type="month" data-inp="finF" data-f="month" value="'+esc(D.month)+'" style="width:100%"'+(M.id?' disabled':'')+'>';
+      else h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><div><label class="f" for="fl2">С даты</label><input id="fl2" type="date" data-inp="finF" data-f="from" value="'+esc(D.from)+'" style="width:100%"></div><div><label class="f" for="fl3">По дату</label><input id="fl3" type="date" data-inp="finF" data-f="to" value="'+esc(D.to)+'" style="width:100%"></div></div>';
+    }
+    h+='<label class="f" for="fl4">'+(M.fix?'Новый план, м³':'План, м³')+'</label><input id="fl4" type="number" step="1" min="0" data-inp="finF" data-f="vol" value="'+esc(D.vol)+'" style="width:100%">';
+    if(M.fix)h+='<label class="f" for="fl6">Почему меняете (обязательно)</label><textarea id="fl6" data-inp="finF" data-f="c" style="width:100%">'+esc(D.c)+'</textarea>';
+    else h+='<label class="f" for="fl5">Примечание (откуда план)</label><input id="fl5" type="text" data-inp="finF" data-f="note" value="'+esc(D.note)+'" style="width:100%">'+(!legacy&&!M.id?'<div class="small muted" style="margin-top:6px">После сохранения план фиксируется. Изменить его можно будет только корректировкой с комментарием.</div>':'');
     h+='<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px"><button class="btn pri" data-act="finSave">Сохранить</button></div>';
   }else{
     h+='<div style="display:flex;justify-content:space-between;gap:8px"><b>'+esc(PAYKINDS[D.kind]||'Платёж')+'</b><button class="link" data-act="closeModal">закрыть</button></div>';
@@ -866,7 +902,19 @@ function saveFin(){
   }else if(M.fin==='plan'){
     if(!D.object){toast('Выберите объект');return}
     if(!(num(D.vol)>0)){toast('Укажите план в м³');return}
-    put('plans',M.id||newId(),{object:D.object,from:D.from||'',to:D.to||'',vol:num(D.vol),note:D.note||'',by:by}).then(function(){st.modal=null;$('#modalHost').innerHTML='';toast('План сохранён');renderPlan()});
+    var po=M.id?byId(S.plans||[],M.id):null,t=nowStr(),rec;
+    if(M.fix){
+      if(!String(D.c||'').trim()){toast('Напишите, почему меняется план');return}
+      if(num(D.vol)===num(po.vol)){toast('Новый план совпадает с прежним');return}
+      rec=JSON.parse(JSON.stringify(po));delete rec.id;rec.hist=(rec.hist||[]).concat([{t:t,who:by,was:num(po.vol),now:num(D.vol),c:String(D.c).trim()}]);rec.vol=num(D.vol);
+    }else if(po&&!po.month){
+      rec={object:D.object,from:D.from||'',to:D.to||'',vol:num(D.vol),note:D.note||'',by:by};
+    }else{
+      if(!D.month){toast('Выберите месяц');return}
+      if((S.plans||[]).some(function(x){return x.object===D.object&&x.month===D.month})){toast('План на этот месяц уже есть. Используйте «Корректировка»');return}
+      rec={object:D.object,month:D.month,from:D.month+'-01',to:D.month+'-31',vol:num(D.vol),note:D.note||'',by:by,savedAt:t,hist:[]};
+    }
+    put('plans',M.id||newId(),rec).then(function(){st.modal=null;$('#modalHost').innerHTML='';toast(M.fix?'Корректировка записана':'План сохранён');renderPlan()});
   }else{
     if(!D.carrier){toast('Выберите перевозчика');return}
     if(!D.date){toast('Укажите дату');return}
@@ -992,6 +1040,9 @@ function draftItemHtml(it,i){
   if(it.type==='vyvoz'){
     h+='<div class="row"><span class="small muted">Куда</span><select data-chg="item" data-i="'+i+'" data-f="dest">'+DESTS.map(function(x){return '<option'+(x===it.dest?' selected':'')+'>'+x+'</option>'}).join('')+'</select></div>';
   }
+  if(it.type==='vyvoz'||it.type==='mesto'){
+    h+='<div class="row"><span class="small muted">Подача машин</span><div style="width:100%">'+(it.slots||[]).map(function(x,k){return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px"><input type="number" min="1" style="width:64px" data-inp="slot" data-i="'+i+'" data-s="'+k+'" data-f="n" value="'+esc(x.n||'')+'" aria-label="Сколько машин"><span class="small">маш. к</span><input type="time" style="width:110px" data-inp="slot" data-i="'+i+'" data-s="'+k+'" data-f="t" value="'+esc(x.t||'')+'" aria-label="Время подачи"><button class="link" data-act="rmSlot" data-v="'+i+'" data-s="'+k+'" aria-label="Убрать время">убрать</button></div>'}).join('')+'<button class="btn sm" data-act="addSlot" data-v="'+i+'">+ Время подачи</button>'+((it.slots||[]).length?'':'<div class="small muted" style="margin-top:4px">Например: 5 машин к 8:00, 5 машин к 9:30</div>')+'</div></div>';
+  }
   return h+'</div>';
 }
 function renderMine(){
@@ -1020,7 +1071,7 @@ function submitReq(){
     if((it.type==='vyvoz'||it.type==='mesto')&&!it.allOwn&&!(+it.count>0)){toast('Укажите число машин');return}
     if(it.type==='samo'&&!String(it.volume).trim()&&!(+it.count>0)){toast('Для самовывоза укажите объём или число машин');return}
   }
-  var items=clone(d.items).map(function(it){if(it.count!=null)it.count=+it.count||0;return it});
+  var items=clone(d.items).map(function(it){if(it.count!=null)it.count=+it.count||0;if(it.slots){it.slots=it.slots.filter(function(x){return +x.n>0&&x.t});if(!it.slots.length)delete it.slots}return it});
   var rec={date:d.day,object:d.object,foremanId:f.id,foremanName:f.name,items:items,comment:d.comment,createdAt:Date.now(),sentAt:nowStr(),byStaff:isStaff(m)?m.name:'',log:[]};
   put('requests',newId(),rec).then(function(){
     st.draft=newDraft();toast('Заявка отправлена диспетчеру');renderForeman();
@@ -1635,6 +1686,8 @@ document.addEventListener('click',function(e){
     case 'draftDay':d.day=v;renderForeman();break;
     case 'addItem':d.items.push(newItem(v));renderForeman();break;
     case 'rmItem':d.items.splice(+v,1);renderForeman();break;
+    case 'addSlot':{var si=d.items[+v];(si.slots=si.slots||[]).push({n:'',t:''});renderForeman();break}
+    case 'rmSlot':{d.items[+v].slots.splice(+b.getAttribute('data-s'),1);renderForeman();break}
     case 'submitReq':submitReq();break;
     case 'cancelReq':confirmTwice('cancel:'+v,function(){del('requests',v).then(function(){toast('Заявка отменена')})});break;
     case 'dispDay':st.day=v;renderDispatcher();break;
@@ -1679,6 +1732,7 @@ document.addEventListener('click',function(e){
     case 'adjDel':confirmTwice('adjDel:'+v,function(){del('adjust',v)});break;
     case 'planAdd':openPlan();break;
     case 'planEdit':openPlan(v);break;
+    case 'planFix':openPlan(v,true);break;
     case 'planDel':confirmTwice('planDel:'+v,function(){del('plans',v)});break;
     case 'cfgSave':saveCfg();break;
     case 'qaEco':if(st.qaDraft){st.qaDraft.eco=v;renderQA()}break;
@@ -1722,6 +1776,7 @@ document.addEventListener('input',function(e){
   switch(c){
     case 'comment':d.comment=t.value;break;
     case 'qa_ecoNote':case 'qa_planNote':case 'qa_timesNote':case 'qa_planWho':case 'qa_timesWho':if(st.qaDraft)st.qaDraft[c.slice(3)]=t.value;break;
+    case 'slot':d.items[+t.getAttribute('data-i')].slots[+t.getAttribute('data-s')][t.getAttribute('data-f')]=t.value;break;
     case 'item':d.items[+t.getAttribute('data-i')][t.getAttribute('data-f')]=t.value;break;
     case 'mNote':st.modal.note=t.value;break;
     case 'fKm':st.modal.f.km=t.value;recalcFact();break;
