@@ -217,7 +217,8 @@ header .tab[aria-selected="true"]{background:#fff;color:#1d4713;box-shadow:0 2px
 var S={foremen:[],objects:[],carriers:[],fleet:[],staff:[],requests:[],approvals:[],drivers:[],routes:[],places:[],payments:[],recon:[],settings:[],adjust:[],plans:[]};
 var ready={};
 var st={tab:'foreman',who:null,day:null,dirDay:null,draft:null,draftForeman:null,modal:null,pending:null,loaded:false};
-var MATERIALS=['Грунт','Замусоренный грунт','Кирпичный бой','Ж/Б бой','Бетон','Строительный мусор','Несортированный мусор','Деревянные отходы','Пескогрунт','Песок','Асфальт','Металлолом','Другое'];
+var MAT_DEF=['Ж/Б','Кирпич','Микс (Ж/Б, кирпич)','Дерево','Грунт','Песок','ТБО','Асфальт','Металл (лом)','Строительный мусор'];
+function mats(){var s=byId(S.settings||[],'materials');if(s){try{var a=JSON.parse(s.val);if(a&&a.length)return a}catch(e){}}return MAT_DEF}
 var DESTS=['На усмотрение диспетчера','МЭР Подольск','Рябиновая','КПТС','По месту'];
 var TYPES={vyvoz:'Вывоз',mesto:'По месту',samo:'Самовывоз',polivo:'Поливомоечная'};
 var TYPE_HINT={vyvoz:'Самосвалы вывозят материал с объекта',mesto:'Перевозка внутри объекта или рядом',samo:'Материал забирает перевозчик',polivo:'Уборка и мойка дороги'};
@@ -245,9 +246,9 @@ function me(){return ME}
 function isStaff(m){return m&&(m.kind==='dispatcher'||m.kind==='approver'||m.kind==='admin')}
 function canAssign(m){return m&&(m.kind==='dispatcher'||m.kind==='admin')}
 function canApprove(m){return m&&(m.kind==='approver'||m.kind==='admin')}
-var ROLE_NAMES={foreman:'прораб',dispatcher:'диспетчер',approver:'коммерческий директор',director:'генеральный директор',admin:'администратор'};
+var ROLE_NAMES={pm:'руководитель проекта',foreman:'прораб',dispatcher:'диспетчер',approver:'коммерческий директор',director:'генеральный директор',admin:'администратор'};
 function tabsFor(m){
-  var t=baseTabs(m);if(!m)return t;if(m.kind==='foreman')return CFG().features.plan?t.concat([['plan','План вывоза']]):t;
+  var t=baseTabs(m);if(!m)return t;if(m.kind==='foreman'){if(m.pm)t=t.concat([['totals','Итоги вывоза']]);return CFG().features.plan?t.concat([['plan','План вывоза']]):t}
   var F=CFG().features,ex=[['salary','Зарплата'],['econ','Экономика Renault']];
   if(m.kind==='approver'||m.kind==='admin')ex.unshift(['qa','Вопросы']);
   if(F.plan)ex.push(['plan','План/факт']);if(F.adv)ex.push(['adv','Авансы']);
@@ -927,8 +928,9 @@ function saveFin(){
 /* ---------- обмен с сервером ---------- */
 var TOKEN=(new URLSearchParams(location.search)).get('t')||'';
 var VER=null, inflight=0;
+var PASS='';try{PASS=localStorage.getItem('zvp:'+TOKEN)||''}catch(e){}
 function api(body){
-  body.t=TOKEN;
+  body.t=TOKEN;body.p=PASS;
   return fetch(window.ZV_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)}).then(function(r){return r.json()});
 }
 function localApply(kind,coll,id,data){
@@ -967,15 +969,15 @@ function renderHeader(){
   var m=me();var tabs=tabsFor(m);
   $('#tabs').innerHTML=tabs.length>1?tabs.map(function(t){return '<button class="tab" role="tab" data-act="tab" data-v="'+t[0]+'" aria-selected="'+(st.tab===t[0])+'">'+t[1]+'</button>'}).join(''):'';
   applyTheme(getTheme());
-  $('#who').textContent=m?(m.name.toLowerCase().indexOf(ROLE_NAMES[m.kind])>=0?m.name:m.name+' · '+ROLE_NAMES[m.kind]):'';
+  var rn=m&&m.pm?ROLE_NAMES.pm:m&&ROLE_NAMES[m.kind];$('#who').textContent=m?(m.name.toLowerCase().indexOf(rn)>=0?m.name:m.name+' · '+rn):'';
 }
 
 /* ---------- foreman ---------- */
 function newDraft(){return {object:null,day:null,items:[],comment:''}}
 function newItem(type){
-  if(type==='vyvoz')return {id:uid(),type:type,material:'Грунт',count:1,allOwn:false,dest:'На усмотрение диспетчера'};
-  if(type==='mesto')return {id:uid(),type:type,material:'Грунт',count:1};
-  if(type==='samo')return {id:uid(),type:type,material:'Грунт',volume:'',count:0};
+  if(type==='vyvoz')return {id:uid(),type:type,material:mats()[0],count:1,allOwn:false,dest:'На усмотрение диспетчера',slots:[{n:1,t:''}]};
+  if(type==='mesto')return {id:uid(),type:type,material:mats()[0],count:1,slots:[{n:1,t:''}]};
+  if(type==='samo')return {id:uid(),type:type,material:mats()[0],volume:'',count:0};
   return {id:uid(),type:'polivo',note:''};
 }
 function foremanDays(staff){
@@ -1024,24 +1026,26 @@ function renderForeman(){
   el.innerHTML=h;
   renderMine();
 }
+function timeOpts(sel){var o='<option value="">— время —</option>';for(var m=360;m<=1320;m+=30){var t=('0'+Math.floor(m/60)).slice(-2)+':'+('0'+m%60).slice(-2);o+='<option'+(t===sel?' selected':'')+'>'+t+'</option>'}return o}
+function syncCount(it){if((it.type==='vyvoz'||it.type==='mesto')&&!it.allOwn&&it.slots)it.count=it.slots.reduce(function(s,x){return s+(+x.n||0)},0)}
 function draftItemHtml(it,i){
   var h='<div class="item"><div class="itemhead"><div><b>'+TYPES[it.type]+'</b> <span class="tag">'+TYPE_HINT[it.type]+'</span></div><button class="link" data-act="rmItem" data-v="'+i+'" aria-label="Убрать позицию">убрать</button></div>';
   if(it.type==='polivo'){
     h+='<div class="row"><span class="small muted">Что сделать</span><input type="text" data-inp="item" data-i="'+i+'" data-f="note" value="'+esc(it.note)+'" placeholder="Например: почистить дорогу"></div>';
     return h+'</div>';
   }
-  h+='<div class="row"><span class="small muted">Материал</span><select data-chg="item" data-i="'+i+'" data-f="material">'+MATERIALS.map(function(x){return '<option'+(x===it.material?' selected':'')+'>'+x+'</option>'}).join('')+'</select></div>';
+  h+='<div class="row"><span class="small muted">Материал</span><select data-chg="item" data-i="'+i+'" data-f="material">'+(mats().indexOf(it.material)<0&&it.material?mats().concat([it.material]):mats()).map(function(x){return '<option'+(x===it.material?' selected':'')+'>'+esc(x)+'</option>'}).join('')+'</select></div>';
   if(it.type==='samo'){
     h+='<div class="row"><span class="small muted">Объём</span><input type="text" data-inp="item" data-i="'+i+'" data-f="volume" value="'+esc(it.volume)+'" placeholder="например 200–250 м³"></div>';
     h+='<div class="row"><span class="small muted">Машин</span><input type="number" min="0" data-inp="item" data-i="'+i+'" data-f="count" value="'+(it.count||'')+'" placeholder="если известно"></div>';
   }else{
-    h+='<div class="row"><span class="small muted">Машин</span><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><input type="number" min="1" style="width:76px" data-inp="item" data-i="'+i+'" data-f="count" value="'+(it.count||'')+'"'+(it.allOwn?' disabled':'')+'>'+(it.type==='vyvoz'?'<label class="small"><input type="checkbox" data-chg="allOwn" data-i="'+i+'"'+(it.allOwn?' checked':'')+'> все свои Renault</label>':'')+'</div></div>';
+    h+='<div class="row"><span class="small muted">Всего машин</span><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b>'+(it.allOwn?'все свои Renault':(+it.count||0))+'</b>'+(it.type==='vyvoz'?'<label class="small"><input type="checkbox" data-chg="allOwn" data-i="'+i+'"'+(it.allOwn?' checked':'')+'> все свои Renault</label>':'')+'</div></div>';
   }
   if(it.type==='vyvoz'){
     h+='<div class="row"><span class="small muted">Куда</span><select data-chg="item" data-i="'+i+'" data-f="dest">'+DESTS.map(function(x){return '<option'+(x===it.dest?' selected':'')+'>'+x+'</option>'}).join('')+'</select></div>';
   }
-  if(it.type==='vyvoz'||it.type==='mesto'){
-    h+='<div class="row"><span class="small muted">Подача машин</span><div style="width:100%">'+(it.slots||[]).map(function(x,k){return '<div style="display:flex;gap:6px;align-items:center;margin-bottom:6px"><input type="number" min="1" style="width:64px" data-inp="slot" data-i="'+i+'" data-s="'+k+'" data-f="n" value="'+esc(x.n||'')+'" aria-label="Сколько машин"><span class="small">маш. к</span><input type="time" style="width:110px" data-inp="slot" data-i="'+i+'" data-s="'+k+'" data-f="t" value="'+esc(x.t||'')+'" aria-label="Время подачи"><button class="link" data-act="rmSlot" data-v="'+i+'" data-s="'+k+'" aria-label="Убрать время">убрать</button></div>'}).join('')+'<button class="btn sm" data-act="addSlot" data-v="'+i+'">+ Время подачи</button>'+((it.slots||[]).length?'':'<div class="small muted" style="margin-top:4px">Например: 5 машин к 8:00, 5 машин к 9:30</div>')+'</div></div>';
+  if((it.type==='vyvoz'||it.type==='mesto')&&!it.allOwn){
+    h+='<div class="row"><span class="small muted">Время подачи и число машин</span><div style="width:100%">'+(it.slots||[]).map(function(x,k){return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap"><select data-chg="slotT" data-i="'+i+'" data-s="'+k+'" aria-label="Время подачи">'+timeOpts(x.t)+'</select><span style="display:inline-flex;align-items:center;gap:4px"><button class="btn sm" data-act="slotN" data-v="'+i+'" data-s="'+k+'" data-d="-1" aria-label="Меньше машин">−</button><b style="min-width:30px;text-align:center">'+(+x.n||0)+'</b><button class="btn sm" data-act="slotN" data-v="'+i+'" data-s="'+k+'" data-d="1" aria-label="Больше машин">+</button> <span class="small">маш.</span></span>'+((it.slots||[]).length>1?'<button class="link" data-act="rmSlot" data-v="'+i+'" data-s="'+k+'" aria-label="Убрать время">убрать</button>':'')+'</div>'}).join('')+'<button class="btn sm" data-act="addSlot" data-v="'+i+'">+ Ещё время подачи</button><div class="small muted" style="margin-top:4px">Например: 3 машины к 8:00 и 2 машины к 10:30. Всего машин считается само.</div></div></div>';
   }
   return h+'</div>';
 }
@@ -1068,10 +1072,14 @@ function submitReq(){
   if(!f||!d.object||!d.items.length)return;
   for(var i=0;i<d.items.length;i++){var it=d.items[i];
     if(it.type==='polivo'&&!String(it.note).trim()){toast('Опишите, что сделать поливомоечной');return}
-    if((it.type==='vyvoz'||it.type==='mesto')&&!it.allOwn&&!(+it.count>0)){toast('Укажите число машин');return}
+    if((it.type==='vyvoz'||it.type==='mesto')&&!it.allOwn){
+      syncCount(it);
+      if(!(+it.count>0)){toast('Укажите число машин');return}
+      if((it.slots||[]).some(function(x){return !x.t})){toast('Выберите время подачи для каждой строки');return}
+    }
     if(it.type==='samo'&&!String(it.volume).trim()&&!(+it.count>0)){toast('Для самовывоза укажите объём или число машин');return}
   }
-  var items=clone(d.items).map(function(it){if(it.count!=null)it.count=+it.count||0;if(it.slots){it.slots=it.slots.filter(function(x){return +x.n>0&&x.t});if(!it.slots.length)delete it.slots}return it});
+  var items=clone(d.items).map(function(it){if(it.count!=null)it.count=+it.count||0;if(it.allOwn)delete it.slots;if(it.slots){it.slots=it.slots.filter(function(x){return +x.n>0&&x.t});if(!it.slots.length)delete it.slots}return it});
   var rec={date:d.day,object:d.object,foremanId:f.id,foremanName:f.name,items:items,comment:d.comment,createdAt:Date.now(),sentAt:nowStr(),byStaff:isStaff(m)?m.name:'',log:[]};
   put('requests',newId(),rec).then(function(){
     st.draft=newDraft();toast('Заявка отправлена диспетчеру');renderForeman();
@@ -1339,6 +1347,7 @@ function fleetTable(day){
 }
 
 /* ---------- admin ---------- */
+function genPass(){var a='23456789abcdefghjkmnpqrstuvwxyz',s='';for(var i=0;i<6;i++)s+=a.charAt(Math.floor(Math.random()*a.length));return s}
 function renderAdmin(){
   var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
   var h='<div class="cols2"><div class="card"><h3>Прорабы и объекты</h3><div class="small muted" style="margin-bottom:8px">Отметьте объекты прораба. Когда его переводят, поменяйте галочки: форма сразу покажет новые объекты.</div>';
@@ -1347,8 +1356,17 @@ function renderAdmin(){
   });
   h+='<div style="display:flex;gap:8px;margin-top:10px"><input type="text" id="addF" placeholder="Новый прораб, например Иванов И.И." style="flex:1"><button class="btn" data-act="addF">Добавить</button></div></div>';
   h+='<div class="card"><h3>Диспетчеры и утверждающий</h3>';
-  S.staff.forEach(function(s){h+='<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--line)"><span><b>'+esc(s.name)+'</b> <span class="muted small">'+(s.role==='approver'?'утверждает расстановку':'диспетчер')+(s.title?', '+esc(s.title):'')+'</span></span><button class="link" data-act="delS" data-v="'+s.id+'" style="color:var(--bad)">'+(st.pending==='delS:'+s.id?'точно?':'убрать')+'</button></div>'});
+  S.staff.filter(function(s){return s.role!=='pm'}).forEach(function(s){h+='<div style="display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--line)"><span><b>'+esc(s.name)+'</b> <span class="muted small">'+(s.role==='approver'?'утверждает расстановку':'диспетчер')+(s.title?', '+esc(s.title):'')+'</span></span><button class="link" data-act="delS" data-v="'+s.id+'" style="color:var(--bad)">'+(st.pending==='delS:'+s.id?'точно?':'убрать')+'</button></div>'});
   h+='<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><input type="text" id="addS" placeholder="Фамилия И.О." style="flex:1;min-width:140px"><select id="addSr"><option value="dispatcher">диспетчер</option><option value="approver">утверждает</option></select><button class="btn" data-act="addS">Добавить</button></div></div></div>';
+  if(ME.kind==='admin'){
+    h+='<div class="card" style="margin-top:16px"><h3>Руководители проектов</h3><div class="small muted" style="margin-bottom:8px">У каждого своя ссылка и пароль. Видят только свои объекты, без цен. Пароль виден только вам.</div>';
+    S.staff.filter(function(s){return s.role==='pm'}).forEach(function(p){
+      h+='<details style="border-top:1px solid var(--line);padding:8px 0"><summary style="cursor:pointer"><b>'+esc(p.name)+'</b> <span class="muted small">'+((p.objects||[]).length?(p.objects||[]).map(objShort).map(esc).join(', '):'объекты не назначены')+'</span></summary><div style="margin-top:8px"><div class="small">Пароль: <b>'+esc(p.pass||'не задан')+'</b></div><div style="display:flex;gap:6px;margin:6px 0;flex-wrap:wrap"><input type="text" id="pp_'+p.id+'" placeholder="новый пароль" style="flex:1;min-width:120px"><button class="btn sm" data-act="pmPass" data-v="'+p.id+'">Сменить пароль</button><button class="btn sm" data-act="copyLink" data-v="'+esc(p.token||'')+'">Скопировать ссылку</button></div><div style="display:grid;gap:4px;grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">'
+       +sortBy(S.objects,function(o){return o.name}).map(function(o){return '<label class="small"><input type="checkbox" data-chg="pmObj" data-p="'+p.id+'" data-o="'+o.id+'"'+((p.objects||[]).indexOf(o.id)>=0?' checked':'')+'> '+esc(o.name)+'</label>'}).join('')+'</div></div></details>';
+    });
+    h+='<div style="display:flex;gap:8px;margin-top:10px"><input type="text" id="addPm" placeholder="ФИО руководителя проекта" style="flex:1"><button class="btn" data-act="addPm">Добавить</button></div></div>';
+  }
+  h+='<div class="card" style="margin-top:16px"><h3>Материалы вывоза (список для прорабов)</h3><div class="small muted" style="margin-bottom:6px">Один материал в строке. Прорабы и руководители выбирают из этого списка.</div><textarea id="matList" rows="10" style="width:100%">'+esc(mats().join('\n'))+'</textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" data-act="saveMats">Сохранить</button><button class="btn" data-act="matReset">По умолчанию</button></div></div>';
   h+='<div class="cols2" style="margin-top:16px"><div class="card"><h3>Объекты</h3>';
   S.objects.forEach(function(o){h+='<div style="padding:6px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:8px"><span class="small" style="min-width:0;overflow-wrap:anywhere">'+esc(o.name)+'</span><button class="link" data-act="delO" data-v="'+o.id+'" style="color:var(--bad);flex:none">'+(st.pending==='delO:'+o.id?'точно?':'убрать')+'</button></div>'});
   h+='<div style="display:flex;gap:8px;margin-top:10px"><input type="text" id="addO" placeholder="Название объекта" style="flex:1"><button class="btn" data-act="addO">Добавить</button></div></div>';
@@ -1626,6 +1644,7 @@ function runImport(){
     var docs=[];
     (J.objects||[]).forEach(function(o){if(!byId(S.objects,o.id))docs.push({coll:'objects',id:o.id,data:o})});
     (J.carriers||[]).forEach(function(n){var id=slug(n);if(!S.carriers.some(function(c){return c.name===n}))docs.push({coll:'carriers',id:id,data:{name:n}})});
+    (J.staff||[]).forEach(function(s){if(!byId(S.staff,s.id))docs.push({coll:'staff',id:s.id,data:s})});
     (J.requests||[]).forEach(function(r){docs.push({coll:'requests',id:r.id,data:r})});
     (J.payments||[]).forEach(function(p){docs.push({coll:'payments',id:p.id,data:p})});
     var total=docs.length,done=0,CH=20;
@@ -1647,7 +1666,7 @@ function runImport(){
 function render(){
   renderHeader();
   var t=st.tab;
-  if(t==='foreman')renderForeman();else if(t==='dispatcher')renderDispatcher();else if(t==='director')renderDirector();else if(t==='svodka')renderSvodka();else if(t==='debts')renderDebts();else if(t==='salary')renderSalary();else if(t==='econ')renderEcon();else if(t==='plan')renderPlan();else if(t==='adv')renderAdv();else if(t==='qa')renderQA();else renderAdmin();
+  if(t==='foreman')renderForeman();else if(t==='dispatcher')renderDispatcher();else if(t==='director')renderDirector();else if(t==='svodka')renderSvodka();else if(t==='debts')renderDebts();else if(t==='salary')renderSalary();else if(t==='econ')renderEcon();else if(t==='plan')renderPlan();else if(t==='adv')renderAdv();else if(t==='qa')renderQA();else if(t==='totals')renderTotals();else renderAdmin();
   if(t==='admin'&&ME&&ME.kind==='admin'){appendLinks();appendImport()}
   if(t==='admin'&&ME&&(ME.kind==='admin'||ME.kind==='dispatcher'))appendSettings();
   renderModalIfOpen();
@@ -1655,7 +1674,7 @@ function render(){
 function linkFor(tok){return location.origin+location.pathname+'?t='+tok}
 function appendLinks(){
   var base=[];
-  S.staff.forEach(function(x){base.push([x.name+' ('+(ROLE_NAMES[x.role]||x.role)+')',x.token])});
+  S.staff.forEach(function(x){base.push([x.name+' ('+(ROLE_NAMES[x.role]||x.role)+')'+(x.role==='pm'?' · пароль '+(x.pass||'—'):''),x.token])});
   sortBy(S.foremen,function(f){return f.name}).forEach(function(f){base.push([f.name+' (прораб)',f.token])});
   var h='<div class="card" style="margin-top:16px"><h3>Личные ссылки</h3><div class="small muted" style="margin-bottom:8px">Ссылка личная: отправляйте каждому только его. Чтобы закрыть доступ, уберите человека из списка.</div>';
   h+=base.map(function(x){return '<div style="display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)"><span style="flex:1;min-width:0">'+esc(x[0])+'</span><button class="btn sm" data-act="copyLink" data-v="'+esc(x[1]||'')+'">Скопировать</button></div>'}).join('');
@@ -1682,12 +1701,20 @@ document.addEventListener('click',function(e){
     case 'pPrev':case 'pNext':{var dir=a==='pPrev'?-1:1;if((st.pk||'month')==='custom'){var R0=perRange(),n0=dayDiff(R0.from,R0.to)+1;st.pFrom=dkey(addDays(parseKey(R0.from),dir*n0));st.pTo=dkey(addDays(parseKey(R0.to),dir*n0))}else st.pOff=(st.pOff||0)+dir;renderSvodka();break}
     case 'sv':st.sv=v;renderSvodka();break;
     case 'impGo':runImport();break;
+    case 'login':doLogin();break;
+    case 'tkind':st.tk=v;st.tOff=0;renderTotals();break;
+    case 'tshift':st.tOff=(st.tOff||0)+(+v);renderTotals();break;
+    case 'addPm':{var pn=$('#addPm').value.trim();if(pn){var pid='pm-'+slug(pn)+'-'+Math.random().toString(36).slice(2,5);put('staff',pid,{name:pn,role:'pm',title:'руководитель проекта',pass:genPass(),objects:[],pwset:''})}break}
+    case 'pmPass':{var pp=$('#pp_'+v).value.trim();if(pp.length>=4)upd('staff',v,{pass:pp}).then(function(){toast('Пароль сохранён')});else toast('Пароль не короче 4 символов');break}
+    case 'saveMats':{var ml=$('#matList').value.split('\n').map(function(x){return x.trim()}).filter(Boolean);if(!ml.length){toast('Список пуст');break}put('settings','materials',{val:JSON.stringify(ml),by:(me()||{}).name||'',at:nowStr()}).then(function(){toast('Список материалов сохранён')});break}
+    case 'matReset':put('settings','materials',{val:JSON.stringify(MAT_DEF),by:(me()||{}).name||'',at:nowStr()}).then(function(){toast('Возвращён список по умолчанию');render()});break;
     case 'tab':st.tab=v;st.pending=null;render();break;
     case 'draftDay':d.day=v;renderForeman();break;
     case 'addItem':d.items.push(newItem(v));renderForeman();break;
     case 'rmItem':d.items.splice(+v,1);renderForeman();break;
-    case 'addSlot':{var si=d.items[+v];(si.slots=si.slots||[]).push({n:'',t:''});renderForeman();break}
-    case 'rmSlot':{d.items[+v].slots.splice(+b.getAttribute('data-s'),1);renderForeman();break}
+    case 'addSlot':{var si=d.items[+v];(si.slots=si.slots||[]).push({n:1,t:''});syncCount(si);renderForeman();break}
+    case 'rmSlot':{var rs=d.items[+v];rs.slots.splice(+b.getAttribute('data-s'),1);syncCount(rs);renderForeman();break}
+    case 'slotN':{var sn=d.items[+v],sx=sn.slots[+b.getAttribute('data-s')];sx.n=Math.max(1,(+sx.n||0)+(+b.getAttribute('data-d')));syncCount(sn);renderForeman();break}
     case 'submitReq':submitReq();break;
     case 'cancelReq':confirmTwice('cancel:'+v,function(){del('requests',v).then(function(){toast('Заявка отменена')})});break;
     case 'dispDay':st.day=v;renderDispatcher();break;
@@ -1763,6 +1790,8 @@ document.addEventListener('change',function(e){
     case 'cfgFeat':st.cfgDraft.features[t.getAttribute('data-f')]=t.checked;break;
     case 'dbDate':if(t.value){st.dbWeek=mondayOf(t.value);renderDebts()}break;
     case 'fDest':{var Fm=st.modal.f;Fm.dest=t.value;var rq2=byId(S.requests,st.modal.rid);var rt2=findRoute(rq2.object,Fm.dest);Fm.km=rt2?rt2.km:'';renderModal();break}
+    case 'pmObj':{var ps=byId(S.staff,t.getAttribute('data-p'));var pl=(ps.objects||[]).slice(),po=t.getAttribute('data-o'),px=pl.indexOf(po);if(t.checked&&px<0)pl.push(po);if(!t.checked&&px>=0)pl.splice(px,1);upd('staff',ps.id,{objects:pl});break}
+    case 'slotT':{var stt=st.draft.items[+t.getAttribute('data-i')];stt.slots[+t.getAttribute('data-s')].t=t.value;break}
     case 'fOwnDriver':st.modal.f.own[+t.getAttribute('data-i')].driver=t.value;break;
     case 'fOwnKind':{var oo=st.modal.f.own[+t.getAttribute('data-i')];oo.kind=t.value;if(oo.kind!=='Рейсы'){oo.vol=oo.man?oo.vol:''}renderModal();break}
     case 'fOwnAdd':if(t.value){st.modal.f.own.push({id:t.value,driver:'',kind:'Рейсы',trips:'',hours:'',vol:'',man:false});renderModal()}break;
@@ -1811,10 +1840,66 @@ function afterData(){
   if(st.modal){renderHeader();renderModal();if(st.tab!=='foreman')renderMainOnly();else renderMine();return}
   render();
 }
-function renderMainOnly(){var t=st.tab;if(t==='dispatcher')renderDispatcher();else if(t==='director')renderDirector();else if(t==='svodka')renderSvodka();else if(t==='debts')renderDebts();else if(t==='salary')renderSalary();else if(t==='econ')renderEcon();else if(t==='plan')renderPlan();else if(t==='adv')renderAdv();else if(t==='qa')renderQA();else if(t==='admin')renderAdmin()}
+/* ---------- итоги вывоза для руководителя проекта (без цен) ---------- */
+var TKINDS=[['day','Смена'],['week','Неделя'],['month','Месяц'],['quarter','Квартал'],['year','Год']];
+function carsOf(f){var n=(f.own||[]).length;(f.hired||[]).forEach(function(h){n+=(+h.trips>0?+h.trips:1)});return n}
+function tRange(){
+  var k=st.tk||'month',off=st.tOff||0;
+  if(k==='day'){var d=dkey(addDays(new Date(),off));return {kind:k,from:d,to:d,label:ruDate(d)+(off===0?' (сегодня)':'')}}
+  var r=perBounds(k,off);r.kind=k;r.label=perLabel(k,r);return r;
+}
+function renderTotals(){
+  var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
+  var objIds=planObjects().map(function(o){return o.id});
+  var R=tRange(),T={vol:0,cars:0,obj:{},mat:{},car:{},day:{},dest:{}};
+  S.requests.forEach(function(r){
+    if(r.date<R.from||r.date>R.to||objIds.indexOf(r.object)<0)return;
+    (r.items||[]).forEach(function(it){
+      var f=it.fact;if(!f)return;
+      var c=carsOf(f),v=0,mt=it.material||'без названия';
+      var cb=T.car['Свои машины (Renault)']||(T.car['Свои машины (Renault)']={vol:0,cars:0});
+      (f.own||[]).forEach(function(o){v+=num(o.vol);cb.vol+=num(o.vol);cb.cars++});
+      (f.hired||[]).forEach(function(h){var n=num(h.vol);v+=n;var nm=h.carrier||'Без перевозчика';var x=T.car[nm]||(T.car[nm]={vol:0,cars:0});x.vol+=n;x.cars+=(+h.trips>0?+h.trips:1)});
+      T.vol+=v;T.cars+=c;
+      var o=T.obj[r.object]||(T.obj[r.object]={vol:0,cars:0});o.vol+=v;o.cars+=c;
+      var m=T.mat[mt]||(T.mat[mt]={vol:0,cars:0});m.vol+=v;m.cars+=c;
+      var d=T.day[r.date]||(T.day[r.date]={vol:0,cars:0});d.vol+=v;d.cars+=c;
+      var dn=f.dest||'не указан';var de=T.dest[dn]||(T.dest[dn]={vol:0,cars:0});de.vol+=v;de.cars+=c;
+    });
+  });
+  function tbl(title,map,first,sortF){
+    var ks=Object.keys(map);if(!ks.length)return '';
+    ks=sortF?ks.sort(sortF):ks.sort(function(a,b){return map[b].vol-map[a].vol});
+    return '<div class="card" style="margin-top:12px"><h3>'+title+'</h3><div style="overflow-x:auto"><table class="tb" style="width:100%"><tr><th style="text-align:left">'+first+'</th><th style="text-align:right">Машин</th><th style="text-align:right">м³</th></tr>'
+     +ks.map(function(k){var l=first==='Дата'?ruDate(k):first==='Объект'?objShort(k):k;return '<tr><td style="text-align:left">'+esc(l)+'</td><td style="text-align:right">'+fmt(map[k].cars)+'</td><td style="text-align:right">'+fmt(map[k].vol,1)+'</td></tr>'}).join('')+'</table></div></div>';
+  }
+  var h='<div class="intro"><b>Итоги вывоза по вашим объектам.</b> Данные вносит диспетчер по факту смены. Стоимость не показывается.</div>';
+  h+='<div class="chips" style="margin:10px 0">'+TKINDS.map(function(x){return '<button class="chip" data-act="tkind" data-v="'+x[0]+'" aria-pressed="'+((st.tk||'month')===x[0])+'">'+x[1]+'</button>'}).join('')+'</div>';
+  h+='<div class="daynav"><button class="btn sm" data-act="tshift" data-v="-1" aria-label="Назад">◀</button><b style="min-width:170px;text-align:center">'+esc(R.label)+'</b><button class="btn sm" data-act="tshift" data-v="1" aria-label="Вперёд">▶</button></div>';
+  if(!objIds.length)return void(el.innerHTML='<div class="sv">'+h+'<div class="empty">За вами пока не закреплены объекты. Обратитесь к администратору.</div></div>');
+  h+='<div class="tiles">'+tile('Вывезено',fmt(T.vol,1),'м³','',{hero:true})+tile('Машин',fmt(T.cars),'','за период')+tile('Объектов',String(objIds.length),'','закреплено за вами')+'</div>';
+  if(!T.cars&&!T.vol)h+='<div class="empty" style="margin-top:12px">За этот период вывоза по фактам нет.</div>';
+  h+=tbl('По объектам',T.obj,'Объект')+tbl('Материал',T.mat,'Материал')+tbl('Перевозчики',T.car,'Перевозчик')+tbl('Полигоны',T.dest,'Полигон')
+    +(R.kind==='day'?'':tbl('По дням (машин и объём)',T.day,'Дата',function(a,b){return a<b?1:-1}));
+  el.innerHTML='<div class="sv">'+h+'</div>';
+}
+function renderMainOnly(){var t=st.tab;if(t==='dispatcher')renderDispatcher();else if(t==='director')renderDirector();else if(t==='svodka')renderSvodka();else if(t==='debts')renderDebts();else if(t==='salary')renderSalary();else if(t==='econ')renderEcon();else if(t==='plan')renderPlan();else if(t==='adv')renderAdv();else if(t==='qa')renderQA();else if(t==='totals')renderTotals();else if(t==='admin')renderAdmin()}
+function renderLogin(r){
+  $('#tabs').innerHTML='';$('#who').textContent='';
+  $('#main').innerHTML='<div class="card" style="max-width:380px;margin:30px auto"><h3>Вход для руководителя проекта</h3><div class="small muted" style="margin-bottom:10px">'+esc(r.name||'')+'</div>'
+   +(r.tried?'<div class="small" style="color:var(--bad);margin-bottom:8px">Пароль не подошёл. Проверьте и введите ещё раз.</div>':'')
+   +'<label class="f" for="lgp">Пароль</label><input type="password" id="lgp" style="width:100%" autocomplete="current-password">'
+   +'<button class="btn pri" style="width:100%;margin-top:12px;padding:12px" data-act="login">Войти</button><div class="small muted" style="margin-top:8px">Пароль выдаёт администратор.</div></div>';
+}
+function doLogin(){
+  var p=($('#lgp')||{}).value||'';if(!p)return;
+  PASS=p;try{localStorage.setItem('zvp:'+TOKEN,p)}catch(e){}
+  refresh(true);
+}
 function refresh(force){
   if(inflight>0&&!force)return;
   api({op:'boot',v:force?null:VER}).then(function(r){
+    if(!r.ok&&r.error==='pass'){ME=null;renderLogin(r);return}
     if(!r.ok){
       $('#main').innerHTML='<div class="empty">'+(r.error==='auth'?'Эта ссылка не действует. Попросите у администратора личную ссылку.':'Ошибка: '+esc(r.error))+'</div>';ME=null;return;
     }

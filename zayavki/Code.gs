@@ -3,7 +3,7 @@ var SS_ID = '1-mXmQEWOwusEQxlmTbUf6rKzsF9_VPeEdlrvXqus9jg';
 
 var SPEC = {
   foremen:   {sheet:'Прорабы',      cols:[['id','s'],['name','s'],['objects','csv'],['token','s'],['active','b']]},
-  staff:     {sheet:'Сотрудники',   cols:[['id','s'],['name','s'],['role','s'],['title','s'],['token','s']]},
+  staff:     {sheet:'Сотрудники',   cols:[['id','s'],['name','s'],['role','s'],['title','s'],['token','s'],['pass','s'],['objects','csv'],['pwset','s']]},
   objects:   {sheet:'Объекты',      cols:[['id','s'],['name','s'],['short','s'],['dname','s']]},
   carriers:  {sheet:'Перевозчики',  cols:[['id','s'],['name','s']]},
   fleet:     {sheet:'Машины',       cols:[['id','s'],['name','s'],['model','s'],['kind','s'],['status','s'],['order','n'],['bort','s'],['cap','n']]},
@@ -30,6 +30,8 @@ function doPost(e) {
     var b = JSON.parse(e.postData.contents);
     var me = auth_(b.t);
     if (!me) out = {ok: false, error: 'auth'};
+    else if (me.pm && (!me.pass || String(b.p || '') !== String(me.pass))) out = {ok: false, error: 'pass', name: me.name, tried: !!b.p};
+    else if (b.op === 'setpass') out = setpass_(me, b);
     else if (b.op === 'boot') out = boot_(me, b);
     else if (b.op === 'w') out = write_(me, b);
     else if (b.op === 'imp') out = import_(me, b);
@@ -116,11 +118,48 @@ function tokenMap_() {
   if (s) return JSON.parse(s);
   var m = {};
   readColl_('foremen').forEach(function (f) { if (f.token && f.active !== false) m[f.token] = {kind: 'foreman', id: f.id, name: f.name}; });
-  readColl_('staff').forEach(function (f) { if (f.token) m[f.token] = {kind: f.role, id: f.id, name: f.name}; });
+  readColl_('staff').forEach(function (f) { if (f.token) m[f.token] = {kind: f.role, id: f.id, name: f.name, pass: f.pass || '', objects: f.objects || [], pwset: f.pwset || ''}; });
   cache.put('tm', JSON.stringify(m), 21600);
   return m;
 }
-function auth_(t) { if (!t || typeof t !== 'string') return null; return tokenMap_()[t] || null; }
+function auth_(t) {
+  if (!t || typeof t !== 'string') return null;
+  var m = tokenMap_()[t] || null;
+  if (m && m.kind === 'pm') return {kind: 'foreman', pm: true, id: m.id, name: m.name, pass: m.pass, objects: m.objects, pwset: m.pwset};
+  return m;
+}
+function foremanObjs_(me) {
+  if (me.pm) return me.objects || [];
+  var fo = readColl_('foremen').filter(function (f) { return f.id === me.id; })[0];
+  return (fo && fo.objects) || [];
+}
+function setpass_(me, b) {
+  var np = String(b.np || '').trim();
+  if (!me.pm || np.length < 4) return {ok: false, error: 'Пароль не короче 4 символов'};
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var doc = readColl_('staff').filter(function (x) { return x.id === me.id; })[0];
+    if (!doc) return {ok: false, error: 'Нет записи'};
+    doc.pass = np; doc.pwset = '1';
+    writeDoc_('staff', doc);
+    CacheService.getScriptCache().remove('tm');
+    return {ok: true, ver: bump_()};
+  } finally { lock.releaseLock(); }
+}
+function stripPrices_(reqs) {
+  return reqs.map(function (r) {
+    var c = JSON.parse(JSON.stringify(r));
+    (c.items || []).forEach(function (it) {
+      if (it.assigned) { delete it.assigned.price; (it.assigned.hired || []).forEach(function (h) { delete h.price; }); }
+      if (it.fact) {
+        (it.fact.own || []).forEach(function (o) { delete o.price; delete o.rate; });
+        (it.fact.hired || []).forEach(function (h) { delete h.price; delete h.nodebt; });
+      }
+    });
+    return c;
+  });
+}
 function getVer_() { var c = CacheService.getScriptCache(), v = c.get('ver'); if (!v) { v = String(Date.now()); c.put('ver', v, 21600); } return v; }
 function bump_() { var v = String(Date.now()) + Math.floor(Math.random() * 1000); CacheService.getScriptCache().put('ver', v, 21600); return v; }
 
@@ -129,18 +168,20 @@ function boot_(me, b) {
   if (b.v && b.v === ver) return {ok: true, same: true, ver: ver};
   var data = {};
   Object.keys(SPEC).forEach(function (c) { data[c] = readColl_(c); });
-  if (me.kind === 'foreman') data.requests = data.requests.filter(function (r) { return r.foremanId === me.id; });
   if (me.kind === 'foreman') {
-    var fo = data.foremen.filter(function (f) { return f.id === me.id; })[0], myObj = (fo && fo.objects) || [];
+    var myObj = foremanObjs_(me);
+    data.requests = stripPrices_(data.requests.filter(function (r) { return r.foremanId === me.id || (me.pm && myObj.indexOf(r.object) >= 0); }));
+    data.routes = [];
+    if (me.pm) data.foremen.push({id: me.id, name: me.name, objects: myObj, active: true});
     data.payments = []; data.recon = []; data.adjust = [];
     data.plans = data.plans.filter(function (p) { return myObj.indexOf(p.object) >= 0; });
     var cd = data.settings.filter(function (x) { return x.id === 'calc'; })[0], ft = {};
     try { ft = JSON.parse(cd.val).features || {}; } catch (e) {}
-    data.settings = [{id: 'calc', val: JSON.stringify({features: ft}), by: '', at: ''}];
+    data.settings = [{id: 'calc', val: JSON.stringify({features: ft}), by: '', at: ''}].concat(data.settings.filter(function (x) { return x.id === 'materials'; }));
   }
-  if (me.kind !== 'admin') { data.foremen.forEach(function (f) { delete f.token; }); data.staff.forEach(function (f) { delete f.token; }); }
+  if (me.kind !== 'admin') { data.foremen.forEach(function (f) { delete f.token; }); data.staff.forEach(function (f) { delete f.token; delete f.pass; }); }
   data.foremen = data.foremen.filter(function (f) { return me.kind === 'admin' || me.kind === 'dispatcher' ? true : f.active !== false; });
-  return {ok: true, ver: ver, me: me, data: data};
+  return {ok: true, ver: ver, me: {kind: me.kind, id: me.id, name: me.name, pm: !!me.pm, pwset: me.pwset ? true : false}, data: data};
 }
 
 function allowed_(me, kind, coll, id, data, existing) {
@@ -152,7 +193,7 @@ function allowed_(me, kind, coll, id, data, existing) {
   if (k === 'foreman') {
     if (coll === 'plans') {
       if (kind === 'delete') return false;
-      var fo = readColl_('foremen').filter(function (f) { return f.id === me.id; })[0], mine = (fo && fo.objects) || [];
+      var mine = foremanObjs_(me);
       var obj = existing ? existing.object : (data && data.object);
       if (mine.indexOf(obj) < 0) return false;
       if (existing && data && (data.object !== existing.object || data.month !== existing.month)) return false;
@@ -160,6 +201,7 @@ function allowed_(me, kind, coll, id, data, existing) {
       return true;
     }
     if (coll !== 'requests') return false;
+    if (me.pm && kind === 'set' && !existing && (!data || foremanObjs_(me).indexOf(data.object) < 0)) return false;
     if (kind === 'set' && !existing) return data && data.foremanId === me.id;
     return !!existing && existing.foremanId === me.id && (kind === 'delete' || !data || !data.foremanId || data.foremanId === me.id);
   }
@@ -195,6 +237,7 @@ function import_(me, b) {
       });
       if (add.length) { var rg2 = sh.getRange(last + 1, 1, add.length, cols.length); rg2.setNumberFormat('@'); rg2.setValues(add); }
     });
+    if (by.staff || by.foremen) CacheService.getScriptCache().remove('tm');
     return {ok: true, ver: bump_(), n: docs.length};
   } finally { lock.releaseLock(); }
 }
@@ -222,7 +265,15 @@ function write_(me, b) {
         doc.token = (existing && existing.token) || newToken_();
         if (coll === 'staff' && me.kind !== 'admin') return {ok: false, error: 'Нет прав'};
       }
-      if (coll === 'requests' && me.kind === 'foreman') { doc.foremanId = me.id; delete doc.byStaff; }
+      if (coll === 'requests' && me.kind === 'foreman') {
+        doc.foremanId = me.id; delete doc.byStaff;
+        // назначения и факт диспетчера прораб/РП не меняет (цены ему не показываются) — берём из базы
+        (doc.items || []).forEach(function (it, i) {
+          var ex = existing && existing.items && existing.items[i];
+          if (ex && ex.type === it.type) { it.assigned = ex.assigned; it.fact = ex.fact; } else { delete it.assigned; delete it.fact; }
+        });
+        if (existing) { ['log'].forEach(function (k) { if (existing[k] !== undefined) doc[k] = existing[k]; }); }
+      }
       writeDoc_(coll, doc);
     }
     if (coll === 'foremen' || coll === 'staff') CacheService.getScriptCache().remove('tm');
