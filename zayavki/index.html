@@ -668,6 +668,19 @@ function planDue(ym){
   return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 }
 var WD=['вс','пн','вт','ср','чт','пт','сб'];
+/* рабочая неделя пн–сб, воскресенье выходной */
+function workDays(a,b){var n=0;if(!a||!b||a>b)return 0;for(var d=parseKey(a),e=parseKey(b);d<=e;d=addDays(d,1))if(d.getDay()!==0)n++;return n}
+function planBounds(p){
+  if(p.from&&p.to)return {from:p.from,to:p.to};
+  if(p.month){var q=p.month.split('-'),y=+q[0],m=+q[1]-1;return {from:dkey(new Date(y,m,1)),to:dkey(new Date(y,m+1,0))}}
+  return {from:p.from||'',to:p.to||''};
+}
+/* норма на сегодня: пропорционально рабочим дням (пн–сб), по вчерашний день включительно */
+function planNorm(p){
+  var b=planBounds(p),tot=workDays(b.from,b.to),pv=num(p.vol);if(!tot)return null;
+  var y=dkey(addDays(new Date(),-1)),upto=y<b.from?null:(y>b.to?b.to:y),done=upto?workDays(b.from,upto):0;
+  return {perDay:pv/tot,tot:tot,done:done,norm:pv/tot*done,left:Math.max(0,tot-done)};
+}
 function planFact(p){var f=0;S.requests.forEach(function(r){if(r.object!==p.object)return;if(p.from&&r.date<p.from)return;if(p.to&&r.date>p.to)return;(r.items||[]).forEach(function(it){if(!it.fact)return;(it.fact.own||[]).forEach(function(o){f+=num(o.vol)});(it.fact.hired||[]).forEach(function(x){f+=num(x.vol)})})});return f}
 function planStatusCard(){
   var ym=monthShift(today().slice(0,7),1),due=planDue(ym),objs=planObjects(),have={};
@@ -686,15 +699,15 @@ function renderPlan(){
   var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
   var canE=finCan('plans'),adm=ME&&ME.kind==='admin',mine={};planObjects().forEach(function(o){mine[o.id]=1});
   var pl=sortBy((S.plans||[]).filter(function(p){return !ME||ME.kind!=='foreman'||mine[p.object]}),function(p){return (p.month||'0')+' '+(p.object||'')}).reverse();
-  var h='<h2 style="margin:0 0 4px">'+(ME&&ME.kind==='foreman'?'План вывоза':'План / факт по объектам')+'</h2><div class="small muted intro" style="margin-bottom:12px">План вывоза на месяц вносят руководители проектов. Факт — принятый объём (Renault и перевозчики).</div>';
+  var h='<h2 style="margin:0 0 4px">'+(ME&&ME.kind==='foreman'?'План вывоза':'План / факт по объектам')+'</h2><div class="small muted intro" style="margin-bottom:12px">План вывоза на месяц вносят руководители проектов. Факт — принятый объём (Renault и перевозчики). План делится поровну на рабочие дни: понедельник–суббота, воскресенье выходной. «По графику» — сколько должно быть вывезено к вчерашнему дню.</div>';
   h+=planStatusCard();
   h+='<div class="card" style="margin-top:12px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">Планы</h3>'+(canE?'<button class="btn sm pri" data-act="planAdd">+ План на месяц</button>':'')+'</div>';
   if(!pl.length)h+='<div class="empty" style="margin-top:10px">Планов пока нет. Нажмите «+ План на месяц».</div>';
   else{
-    h+='<div class="tablewrap" style="margin-top:8px"><table class="t"><thead><tr><th class="l">Объект</th><th class="l">Период</th><th class="n">План, м³</th><th class="n">Факт, м³</th><th class="n">Выполнено</th><th class="n">Осталось, м³</th><th class="l"></th></tr></thead><tbody>';
+    h+='<div class="tablewrap" style="margin-top:8px"><table class="t"><thead><tr><th class="l">Объект</th><th class="l">Период</th><th class="n">План, м³</th><th class="n">Факт, м³</th><th class="n">Выполнено</th><th class="n">В день, м³</th><th class="n">По графику, м³</th><th class="n">Отклонение, м³</th><th class="n">Осталось, м³</th><th class="l"></th></tr></thead><tbody>';
     pl.forEach(function(p){
       var f=planFact(p),pv=num(p.vol),pc=pv>0?f/pv*100:0,hist=p.hist||[];
-      h+='<tr><td class="l"><b>'+esc(objName(p.object))+'</b>'+(p.note?'<div class="small muted">'+esc(p.note)+'</div>':'')+(p.savedAt?'<div class="small muted">внёс: '+esc(p.by||'')+', '+esc(p.savedAt)+'</div>':'')+hist.map(function(x){return '<div class="small" style="color:var(--warn)">корректировка '+esc(x.t)+' ('+esc(x.who)+'): '+fmt(x.was,0)+' → '+fmt(x.now,0)+' м³. '+esc(x.c)+'</div>'}).join('')+'</td><td class="l">'+(p.month?esc(monthLabel(p.month)):((p.from?dmy(p.from):'…')+' — '+(p.to?dmy(p.to):'…')))+'</td><td class="n">'+fmt(pv,0)+'</td><td class="n">'+fmt(f,0)+'</td><td class="n"><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end"><span style="display:inline-block;width:70px;height:8px;background:var(--sunk);border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:'+Math.min(100,pc)+'%;background:var(--accent)"></i></span>'+fmt(pc,0)+'%</div></td><td class="n">'+fmt(Math.max(0,pv-f),0)+'</td><td class="l">'+(canE?(p.month?'<button class="btn sm" data-act="planFix" data-v="'+esc(p.id)+'">Корректировка</button>':'<button class="btn sm" data-act="planEdit" data-v="'+esc(p.id)+'">Изменить</button>')+(adm?' <button class="btn sm" data-act="planDel" data-v="'+esc(p.id)+'">'+(st.pending==='planDel:'+p.id?'Точно удалить?':'×')+'</button>':''):'')+'</td></tr>';
+      h+='<tr><td class="l"><b>'+esc(objName(p.object))+'</b>'+(p.note?'<div class="small muted">'+esc(p.note)+'</div>':'')+(p.savedAt?'<div class="small muted">внёс: '+esc(p.by||'')+', '+esc(p.savedAt)+'</div>':'')+hist.map(function(x){return '<div class="small" style="color:var(--warn)">корректировка '+esc(x.t)+' ('+esc(x.who)+'): '+fmt(x.was,0)+' → '+fmt(x.now,0)+' м³. '+esc(x.c)+'</div>'}).join('')+'</td><td class="l">'+(p.month?esc(monthLabel(p.month)):((p.from?dmy(p.from):'…')+' — '+(p.to?dmy(p.to):'…')))+'</td><td class="n">'+fmt(pv,0)+'</td><td class="n">'+fmt(f,0)+'</td><td class="n"><div style="display:flex;align-items:center;gap:6px;justify-content:flex-end"><span style="display:inline-block;width:70px;height:8px;background:var(--sunk);border-radius:4px;overflow:hidden"><i style="display:block;height:100%;width:'+Math.min(100,pc)+'%;background:var(--accent)"></i></span>'+fmt(pc,0)+'%</div></td>'+(function(){var nm=planNorm(p);if(!nm)return '<td class="n">—</td><td class="n">—</td><td class="n">—</td>';var dv=f-nm.norm;return '<td class="n">'+fmt(nm.perDay,0)+'<div class="small muted">'+nm.tot+' раб. дн.</div></td><td class="n">'+fmt(nm.norm,0)+'<div class="small muted">прошло '+nm.done+' дн.</div></td><td class="n" style="color:'+(dv<0?'var(--bad)':'var(--ok)')+'"><b>'+(dv>0?'+':'')+fmt(dv,0)+'</b></td>'})()+'<td class="n">'+fmt(Math.max(0,pv-f),0)+(function(){var nm=planNorm(p);return nm&&nm.left?'<div class="small muted">≈ '+fmt(Math.max(0,pv-f)/nm.left,0)+' в день</div>':''})()+'</td><td class="l">'+(canE?(p.month?'<button class="btn sm" data-act="planFix" data-v="'+esc(p.id)+'">Корректировка</button>':'<button class="btn sm" data-act="planEdit" data-v="'+esc(p.id)+'">Изменить</button>')+(adm?' <button class="btn sm" data-act="planDel" data-v="'+esc(p.id)+'">'+(st.pending==='planDel:'+p.id?'Точно удалить?':'×')+'</button>':''):'')+'</td></tr>';
     });
     h+='</tbody></table></div>';
   }
