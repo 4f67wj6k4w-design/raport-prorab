@@ -501,6 +501,19 @@ function tariffFor(km){km=num(km);var t=CFG().tariff;for(var i=0;i<t.length;i++)
 var MONTHS=['январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
 function monthLabel(ym){var p=ym.split('-');return MONTHS[+p[1]-1]+' '+p[0]}
 function monthBounds(ym){return [ym+'-01',ym+'-31']}
+/* общий выбор периода: неделя / месяц / квартал / год / всё время (Зарплата, Экономика, Долги, План) */
+var GKINDS=[['week','Неделя'],['month','Месяц'],['quarter','Квартал'],['year','Год'],['all','Всё время']];
+function gRange(){
+  var k=st.gk||'month',o=st.gOff||0;
+  if(k==='all')return {kind:k,from:'0000-00-00',to:'9999-99-99',label:'Всё время'};
+  var r=perBounds(k,o);r.kind=k;r.label=perLabel(k,r);return r;
+}
+function periodBar(){
+  var R=gRange();
+  return '<div class="persec"><div class="seg" role="group" aria-label="Период">'+GKINDS.map(function(p){return '<button type="button" data-act="gk" data-v="'+p[0]+'" aria-pressed="'+(R.kind===p[0])+'">'+p[1]+'</button>'}).join('')+'</div>'
+   +'<div class="pnav"><button type="button" class="btn" data-act="gshift" data-v="-1" aria-label="Предыдущий период"'+(R.kind==='all'?' disabled':'')+'>‹</button><div class="plabel">'+esc(R.label)+'</div><button type="button" class="btn" data-act="gshift" data-v="1" aria-label="Следующий период"'+(R.kind==='all'?' disabled':'')+'>›</button></div></div>'
+   +(R.kind==='all'?'':'<div class="hint" style="margin:4px 0 8px">Период: '+ruDate(R.from)+' — '+ruDate(R.to)+'</div>');
+}
 function monthShift(ym,d){var p=ym.split('-'),n=(+p[0])*12+(+p[1]-1)+d;return Math.floor(n/12)+'-'+pad(n%12+1)}
 function monthNav(key){
   var ym=st[key]||(st[key]=today().slice(0,7));
@@ -535,20 +548,20 @@ function vehName(id){var v=byId(S.fleet,id);return v?v.name:id}
 /* ---------- Зарплата ---------- */
 function renderSalary(){
   var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
-  var ym=st.salMonth||(st.salMonth=today().slice(0,7)),b=monthBounds(ym),C=CFG(),canA=finCan('adjust');
+  var R=gRange(),b=[R.from,R.to],C=CFG(),canA=finCan('adjust');
   var L=ownLines(b[0],b[1]),D={};
   function g(n){return D[n]=D[n]||{drv:n,days:{},trips:0,trip:0,hrs:0,hpay:0,shift:0,adj:0}}
   L.forEach(function(l){if(!l.drv)return;var x=g(l.drv);if(l.came)x.days[l.date]=1;x.trips+=l.trips;x.trip+=l.trip;x.hrs+=l.paidHours;x.hpay+=l.hpay;x.shift+=l.shift});
-  var AJ=(S.adjust||[]).filter(function(a){return a.month===ym});
+  var AJ=(S.adjust||[]).filter(function(a){return a.month>=R.from.slice(0,7)&&a.month<=R.to.slice(0,7)});
   AJ.forEach(function(a){g(a.driver).adj+=num(a.amount)});
   var keys=Object.keys(D);keys.forEach(function(k){var x=D[k];x.total=x.trip+x.hpay+x.shift+x.adj;x.nd=Object.keys(x.days).length});
   keys.sort(function(a,b2){return D[b2].total-D[a].total});
   var T={trip:0,hpay:0,shift:0,adj:0,total:0,trips:0,hrs:0};keys.forEach(function(k){var x=D[k];T.trip+=x.trip;T.hpay+=x.hpay;T.shift+=x.shift;T.adj+=x.adj;T.total+=x.total;T.trips+=x.trips;T.hrs+=x.hrs});
   var h='<h2 style="margin:0 0 4px">Зарплата водителей Renault</h2><div class="small muted intro" style="margin-bottom:10px">Рейсы по тарифу за км в одну сторону + '+fmt(C.shift,0)+' ₽ за каждый день выхода (рейс, работа по месту, простой, ремонт/ТО) + '+fmt(C.hourRate,0)+' ₽/ч за работу по месту и оплачиваемый простой (от '+C.idleMin+' ч; в журнале диспетчер вносит оплачиваемые простои). Налоги и взносы не включены. Премии, штрафы и удержания вносятся вручную (их ведут механики). Ставки меняются в «Справочники → Настройки расчёта».</div>';
-  h+=monthNav('salMonth');
+  h+=periodBar();
   h+='<div class="tiles">'+tile('К начислению, без налогов',fmt(T.total),'₽',keys.length+' водит.',{hero:true})+tile('За рейсы',fmt(T.trip),'₽',fmt(T.trips,0)+' рейсов')+tile('За часы',fmt(T.hpay),'₽',fmt(T.hrs,1)+' ч')+tile('Выходы',fmt(T.shift),'₽',fmt(T.shift/Math.max(C.shift,1),0)+' дн.')+tile('Премии / удержания',fmt(T.adj),'₽','вручную')+'</div>';
-  h+='<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">По водителям: '+esc(monthLabel(ym))+'</h3>'+(canA?'<button class="btn sm pri" data-act="adjAdd">+ Премия / удержание</button>':'')+'</div>';
-  if(!keys.length)h+='<div class="empty" style="margin-top:10px">За этот месяц нет записей по Renault.</div>';
+  h+='<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">По водителям: '+esc(R.label)+'</h3>'+(canA?'<button class="btn sm pri" data-act="adjAdd">+ Премия / удержание</button>':'')+'</div>';
+  if(!keys.length)h+='<div class="empty" style="margin-top:10px">За этот период нет записей по Renault.</div>';
   else{
     h+='<div class="tablewrap" style="margin-top:8px"><table class="t"><thead><tr><th class="l">Водитель</th><th class="n">Дней выхода</th><th class="n">Рейсов</th><th class="n">За рейсы</th><th class="n">Часов</th><th class="n">За часы</th><th class="n">Выход</th><th class="n">Прем./удерж.</th><th class="n">Итого</th></tr></thead><tbody>';
     keys.forEach(function(k){var x=D[k];h+='<tr data-act="salDrv" data-v="'+esc(k)+'" style="cursor:pointer"><td class="l"><b>'+esc(k)+'</b></td><td class="n">'+x.nd+'</td><td class="n">'+fmt(x.trips,0)+'</td><td class="n">'+fmt(x.trip)+'</td><td class="n">'+(x.hrs?fmt(x.hrs,1):'—')+'</td><td class="n">'+(x.hpay?fmt(x.hpay):'—')+'</td><td class="n">'+fmt(x.shift)+'</td><td class="n">'+(x.adj?fmt(x.adj):'—')+'</td><td class="n"><b>'+fmt(x.total)+'</b></td></tr>'});
@@ -570,14 +583,14 @@ function renderSalary(){
 }
 function openAdj(drv){
   if(!finCan('adjust'))return;
-  var ym=st.salMonth||today().slice(0,7);
+  var R0=gRange(),ym=(R0.kind==='month')?R0.from.slice(0,7):today().slice(0,7);
   st.modal={fin:'adj',d:{month:ym,driver:drv||st.salDrv||'',amount:'',note:''}};renderModal();
 }
 
 /* ---------- Экономика Renault ---------- */
 function renderEcon(){
   var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
-  var ym=st.econMonth||(st.econMonth=today().slice(0,7)),b=monthBounds(ym),C=CFG(),F=C.features;
+  var R=gRange(),b=[R.from,R.to],C=CFG(),F=C.features;
   var L=ownLines(b[0],b[1]),V={},np=0;
   function g(id){return V[id]=V[id]||{id:id,days:{},trips:0,vol:0,mil:0,rev:0,sal:0,fuel:0,amort:0,idle:0}}
   L.forEach(function(l){var x=g(l.veh);if(l.trips>0||l.kind==='По месту')x.days[l.date]=1;x.trips+=l.trips;x.vol+=l.kind==='Рейсы'?l.vol:0;x.mil+=l.mil;x.rev+=l.rev;x.sal+=l.trip+l.hpay+l.shift;x.fuel+=l.fuel;x.amort+=l.amort;x.idle+=l.idle;if(l.noPrice)np++});
@@ -586,11 +599,11 @@ function renderEcon(){
   var T={rev:0,sal:0,fuel:0,amort:0,profit:0,nd:0,mil:0,vol:0,idle:0};keys.forEach(function(k){var x=V[k];T.rev+=x.rev;T.sal+=x.sal;T.fuel+=x.fuel;T.amort+=x.amort;T.profit+=x.profit;T.nd+=x.nd;T.mil+=x.mil;T.vol+=x.vol;T.idle+=x.idle});
   var mg=T.rev>0?T.profit/T.rev*100:0;
   var h='<h2 style="margin:0 0 4px">Экономика Renault</h2><div class="small muted intro" style="margin-bottom:10px">Выручка внутренняя: объём × цена по маршруту (для сравнения с ценой перевозчиков), работа по месту — '+fmt(C.placeRate,0)+' ₽/ч. Расходы: зарплата (рейсы, часы, выход), топливо ('+C.fuelNorm+' л/100 км × '+fmt(C.fuelPrice,0)+' ₽/л), амортизация '+fmt(C.amort,0)+' ₽/км. Пробег = км × рейсы × '+C.kmK+'. Налоги, ремонт и прочие расходы отдельно не учитываются: они заложены в амортизацию на км. Всё меняется в «Справочники → Настройки расчёта».</div>';
-  h+=monthNav('econMonth');
+  h+=periodBar();
   h+='<div class="tiles">'+tile('Прибыль',fmt(T.profit),'₽','маржа '+fmt(mg,1)+'% (цель '+C.targetMargin+'%)',{hero:true})+tile('Выручка',fmt(T.rev),'₽',fmt(T.vol,0)+' м³')+tile('Зарплата',fmt(T.sal),'₽','')+tile('Топливо',fmt(T.fuel),'₽',fmt(T.mil,0)+' км пробега')+tile('Амортизация',fmt(T.amort),'₽','')+'</div>';
   if(np)h+='<div class="note" style="margin-top:10px">Строк рейсов без цены заказчика: <b>'+np+'</b>. Их выручка принята за 0. Добавьте цену в справочник маршрутов.</div>';
-  h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 8px">По машинам: '+esc(monthLabel(ym))+'</h3>';
-  if(!keys.length)h+='<div class="empty">За этот месяц нет записей по Renault.</div>';
+  h+='<div class="card" style="margin-top:14px"><h3 style="margin:0 0 8px">По машинам: '+esc(R.label)+'</h3>';
+  if(!keys.length)h+='<div class="empty">За этот период нет записей по Renault.</div>';
   else{
     h+='<div class="tablewrap"><table class="t"><thead><tr><th class="l">Машина</th><th class="n">Раб. дней</th><th class="n">Рейсов</th><th class="n">Км</th><th class="n">Выручка</th><th class="n">Зарплата</th><th class="n">Топливо</th><th class="n">Амортиз.</th><th class="n">Прибыль</th><th class="n">Маржа</th><th class="n">Выручка / день</th>'+(F.times?'<th class="n">Простой, ч</th>':'')+'</tr></thead><tbody>';
     keys.forEach(function(k){var x=V[k],low=x.nd&&x.perDay<C.targetDay;h+='<tr><td class="l"><b>'+esc(vehName(k))+'</b></td><td class="n">'+x.nd+'</td><td class="n">'+fmt(x.trips,0)+'</td><td class="n">'+fmt(x.mil,0)+'</td><td class="n">'+fmt(x.rev)+'</td><td class="n">'+fmt(x.sal)+'</td><td class="n">'+fmt(x.fuel)+'</td><td class="n">'+fmt(x.amort)+'</td><td class="n"><b style="color:'+(x.profit<0?'var(--bad,var(--warn))':'inherit')+'">'+fmt(x.profit)+'</b></td><td class="n"><span style="color:'+(x.margin>=C.targetMargin?'var(--accent)':'var(--warn)')+'">'+fmt(x.margin,0)+'%</span></td><td class="n"><span style="color:'+(low?'var(--warn)':'var(--accent)')+'">'+fmt(x.perDay)+'</span></td>'+(F.times?'<td class="n">'+(x.idle?fmt(x.idle,1):'—')+'</td>':'')+'</tr>'});
@@ -698,11 +711,13 @@ function planStatusCard(){
 function renderPlan(){
   var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
   var canE=finCan('plans'),adm=ME&&ME.kind==='admin',mine={};planObjects().forEach(function(o){mine[o.id]=1});
-  var pl=sortBy((S.plans||[]).filter(function(p){return !ME||ME.kind!=='foreman'||mine[p.object]}),function(p){return (p.month||'0')+' '+(p.object||'')}).reverse();
+  var RP=gRange();
+  var pl=sortBy((S.plans||[]).filter(function(p){if(ME&&ME.kind==='foreman'&&!mine[p.object])return false;var pb=planBounds(p);return !pb.from||!pb.to||(pb.to>=RP.from&&pb.from<=RP.to)}),function(p){return (p.month||'0')+' '+(p.object||'')}).reverse();
   var h='<h2 style="margin:0 0 4px">'+(ME&&ME.kind==='foreman'?'План вывоза':'План / факт по объектам')+'</h2><div class="small muted intro" style="margin-bottom:12px">План вывоза на месяц вносят руководители проектов. Факт — принятый объём (Renault и перевозчики). План делится поровну на рабочие дни: понедельник–суббота, воскресенье выходной. «По графику» — сколько должно быть вывезено к вчерашнему дню.</div>';
   h+=planStatusCard();
-  h+='<div class="card" style="margin-top:12px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">Планы</h3>'+(canE?'<button class="btn sm pri" data-act="planAdd">+ План на месяц</button>':'')+'</div>';
-  if(!pl.length)h+='<div class="empty" style="margin-top:10px">Планов пока нет. Нажмите «+ План на месяц».</div>';
+  h+='<div style="margin-top:12px">'+periodBar()+'</div>';
+  h+='<div class="card" style="margin-top:4px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">Планы</h3>'+(canE?'<button class="btn sm pri" data-act="planAdd">+ План на месяц</button>':'')+'</div>';
+  if(!pl.length)h+='<div class="empty" style="margin-top:10px">'+(S.plans&&S.plans.length?'За выбранный период планов нет. Выберите другой период или «Всё время».':'Планов пока нет. Нажмите «+ План на месяц».')+'</div>';
   else{
     h+='<div class="tablewrap" style="margin-top:8px"><table class="t"><thead><tr><th class="l">Объект</th><th class="l">Период</th><th class="n">План, м³</th><th class="n">Факт, м³</th><th class="n">Выполнено</th><th class="n">В день, м³</th><th class="n">По графику, м³</th><th class="n">Отклонение, м³</th><th class="n">Осталось, м³</th><th class="l"></th></tr></thead><tbody>';
     pl.forEach(function(p){
@@ -788,15 +803,17 @@ function carFin(from,to){
   })})});
   return m;
 }
-function debtTable(){
+function debtTable(pf,pt){
+  pf=pf||'0000-00-00';pt=pt||'9999-99-99';
   var m={},ps=priceStart();
-  function g(c){return m[c]=m[c]||{car:c,open:0,openDate:'',acc:0,paid:0,adv:0,np:0}}
+  function g(c){return m[c]=m[c]||{car:c,open:0,openDate:'',acc:0,paid:0,accP:0,paidP:0,adv:0,np:0}}
   (S.payments||[]).forEach(function(p){if(p.kind==='open'){var x=g(p.carrier);if(!x.openDate||p.date>x.openDate){x.openDate=p.date;x.open=num(p.amount)}}});
   S.requests.forEach(function(r){(r.items||[]).forEach(function(it){var f=it.fact;if(!f)return;(f.hired||[]).forEach(function(h){
     if(!h.carrier)return;var v=num(h.vol);if(!v)return;var x=m[h.carrier];if(x&&x.openDate&&r.date<=x.openDate)return;
-    x=g(h.carrier);var p=num(h.price);if(ndb(h,it)){}else if(p>0)x.acc+=v*p;else if(r.date>=ps)x.np++;
+    if(r.date>pt)return;
+    x=g(h.carrier);var p=num(h.price);if(ndb(h,it)){}else if(p>0){x.acc+=v*p;if(r.date>=pf)x.accP+=v*p}else if(r.date>=ps&&r.date>=pf)x.np++;
   })})});
-  (S.payments||[]).forEach(function(p){var x=g(p.carrier);if(p.kind==='pay'){if(!x.openDate||p.date>x.openDate)x.paid+=num(p.amount)}else if(p.kind==='adv')x.adv+=num(p.amount)});
+  (S.payments||[]).forEach(function(p){if(p.date>pt)return;var x=g(p.carrier);if(p.kind==='pay'){if(!x.openDate||p.date>x.openDate){x.paid+=num(p.amount);if(p.date>=pf)x.paidP+=num(p.amount)}}else if(p.kind==='adv')x.adv+=num(p.amount)});
   Object.keys(m).forEach(function(k){var x=m[k];x.debt=x.open+x.acc-x.paid});
   return m;
 }
@@ -805,18 +822,19 @@ function renderDebts(){
   var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
   var canP=finCan('payments'),canR=finCan('recon');
   var wk=st.dbWeek||(st.dbWeek=mondayOf(today())),we=dkey(addDays(parseKey(wk),6));
-  var T=debtTable();
+  var RG=gRange(),T=debtTable(RG.from,RG.to);
   var keys=Object.keys(T).filter(function(k){var x=T[k];return x.open||x.acc||x.paid||x.adv}).sort(function(a,b){return T[b].debt-T[a].debt});
   var hasOpen=keys.some(function(k){return T[k].openDate});
-  var tot={debt:0,acc:0,paid:0,adv:0,np:0};keys.forEach(function(k){var x=T[k];tot.debt+=x.debt;tot.acc+=x.acc;tot.paid+=x.paid;tot.adv+=x.adv});
+  var tot={debt:0,acc:0,paid:0,adv:0,np:0};keys.forEach(function(k){var x=T[k];tot.debt+=x.debt;tot.acc+=x.accP;tot.paid+=x.paidP;tot.adv+=x.adv});
   Object.keys(T).forEach(function(k){tot.np+=T[k].np});
   var h='<h2 style="margin:0 0 4px">Долги и сверка с перевозчиками</h2><div class="small muted intro" style="margin-bottom:12px">Долг = остаток на начальную дату + начислено (принятый диспетчером объём × цена) − оплаты. Авансы показаны отдельно и в долг не входят. Начисление идёт только по строкам, где указана цена.</div>';
-  h+='<div class="tiles">'+tile(hasOpen?'Долг перед перевозчиками':'Начислено, оплат и остатка нет',fmt(tot.debt),'₽',hasOpen?keys.length+' перевозч.':'это ещё не долг: внесите остатки и оплаты',{hero:true})+tile('Начислено (после даты остатка)',fmt(tot.acc),'₽','')+tile('Оплачено',fmt(tot.paid),'₽','')+tile('Авансы выданы, отдельно',fmt(tot.adv),'₽','не вычитаются из долга')+tile('Строк факта без цены',fmt(tot.np),'','начисление по ним 0')+'</div>';
+  h+=periodBar();
+  h+='<div class="tiles">'+tile(hasOpen?'Долг на '+(RG.kind==='all'?'сегодня':ruDate(RG.to<today()?RG.to:today())):'Начислено, оплат и остатка нет',fmt(tot.debt),'₽',hasOpen?keys.length+' перевозч.':'это ещё не долг: внесите остатки и оплаты',{hero:true})+tile('Начислено за период',fmt(tot.acc),'₽',esc(RG.label))+tile('Оплачено за период',fmt(tot.paid),'₽',esc(RG.label))+tile('Авансы выданы, отдельно',fmt(tot.adv),'₽','не вычитаются из долга')+tile('Строк факта без цены',fmt(tot.np),'','начисление по ним 0')+'</div>';
   h+='<div class="card" style="margin-top:14px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">Долг по перевозчикам</h3>'+(canP?'<span style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm pri" data-act="dbPay" data-v="pay">+ Оплата</button>'+(CFG().features.adv?'<button class="btn sm" data-act="dbPay" data-v="adv">+ Аванс</button>':'')+'<button class="btn sm" data-act="dbPay" data-v="open">+ Начальный остаток</button></span>':'')+'</div>';
   if(!keys.length)h+='<div class="empty" style="margin-top:10px">Пока нет данных. Задайте начальный остаток долга по перевозчикам и вносите цены в назначении или факте.</div>';
   else{
-    h+='<div class="tablewrap" style="margin-top:8px"><table class="t"><thead><tr><th class="l">Перевозчик</th><th class="n">Остаток на дату</th><th class="n">Начислено</th><th class="n">Оплачено</th><th class="n">'+(hasOpen?'Долг':'Итого')+'</th><th class="n">Аванс</th></tr></thead><tbody>';
-    keys.forEach(function(k){var x=T[k];h+='<tr data-act="dbCar" data-v="'+esc(k)+'" style="cursor:pointer"><td class="l"><b>'+esc(k)+'</b>'+(x.np?'<div class="small" style="color:var(--warn)">без цены строк: '+x.np+'</div>':'')+(hasOpen&&!x.openDate?'<div class="small" style="color:var(--warn)">нет остатка на дату: долг завышен</div>':'')+'</td><td class="n">'+(x.openDate?fmt(x.open)+'<div class="small muted">на '+dmy(x.openDate)+'</div>':'—')+'</td><td class="n">'+fmt(x.acc)+'</td><td class="n">'+fmt(x.paid)+'</td><td class="n"><b style="color:'+(x.debt>0?'var(--warn)':'inherit')+'">'+fmt(x.debt)+'</b></td><td class="n">'+(x.adv?fmt(x.adv):'—')+'</td></tr>'});
+    h+='<div class="tablewrap" style="margin-top:8px"><table class="t"><thead><tr><th class="l">Перевозчик</th><th class="n">Остаток на дату</th><th class="n">Начислено за период</th><th class="n">Оплачено за период</th><th class="n">'+(hasOpen?'Долг на конец периода':'Итого')+'</th><th class="n">Аванс</th></tr></thead><tbody>';
+    keys.forEach(function(k){var x=T[k];h+='<tr data-act="dbCar" data-v="'+esc(k)+'" style="cursor:pointer"><td class="l"><b>'+esc(k)+'</b>'+(x.np?'<div class="small" style="color:var(--warn)">без цены строк: '+x.np+'</div>':'')+(hasOpen&&!x.openDate?'<div class="small" style="color:var(--warn)">нет остатка на дату: долг завышен</div>':'')+'</td><td class="n">'+(x.openDate?fmt(x.open)+'<div class="small muted">на '+dmy(x.openDate)+'</div>':'—')+'</td><td class="n">'+fmt(x.accP)+'</td><td class="n">'+fmt(x.paidP)+'</td><td class="n"><b style="color:'+(x.debt>0?'var(--warn)':'inherit')+'">'+fmt(x.debt)+'</b></td><td class="n">'+(x.adv?fmt(x.adv):'—')+'</td></tr>'});
     h+='</tbody><tfoot><tr><td class="l"><b>Итого</b></td><td class="n"></td><td class="n">'+fmt(tot.acc)+'</td><td class="n">'+fmt(tot.paid)+'</td><td class="n"><b>'+fmt(tot.debt)+'</b></td><td class="n">'+fmt(tot.adv)+'</td></tr></tfoot></table></div>';
   }
   h+='</div>';
@@ -928,7 +946,7 @@ function saveFin(){
       if((S.plans||[]).some(function(x){return x.object===D.object&&x.month===D.month})){toast('План на этот месяц уже есть. Используйте «Корректировка»');return}
       rec={object:D.object,month:D.month,from:D.month+'-01',to:D.month+'-31',vol:num(D.vol),note:D.note||'',by:by,savedAt:t,hist:[]};
     }
-    put('plans',M.id||newId(),rec).then(function(){st.modal=null;$('#modalHost').innerHTML='';toast(M.fix?'Корректировка записана':'План сохранён');renderPlan()});
+    put('plans',M.id||newId(),rec).then(function(){st.modal=null;$('#modalHost').innerHTML='';toast(M.fix?'Корректировка записана':'План сохранён');st.gk='all';renderPlan()});
   }else{
     if(!D.carrier){toast('Выберите перевозчика');return}
     if(!D.date){toast('Укажите дату');return}
@@ -1717,6 +1735,8 @@ document.addEventListener('click',function(e){
     case 'sv':st.sv=v;renderSvodka();break;
     case 'impGo':runImport();break;
     case 'login':doLogin();break;
+    case 'gk':st.gk=v;st.gOff=0;renderMainOnly();break;
+    case 'gshift':st.gOff=(st.gOff||0)+(+v);renderMainOnly();break;
     case 'tkind':st.tk=v;st.tOff=0;renderTotals();break;
     case 'tshift':st.tOff=(st.tOff||0)+(+v);renderTotals();break;
     case 'addPm':{var pn=$('#addPm').value.trim();if(pn){var pid='pm-'+slug(pn)+'-'+Math.random().toString(36).slice(2,5);put('staff',pid,{name:pn,role:'pm',title:'руководитель проекта',pass:genPass(),objects:[],pwset:''})}break}
