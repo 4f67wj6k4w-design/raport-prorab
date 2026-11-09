@@ -870,7 +870,7 @@ function addIn(d){d=d||{};
   const i=r.querySelectorAll("input");i[0].value=d.c||"";sel.value=d.k&&PLANT.kinds.includes(d.k)?d.k:PLANT.kinds[0];
   i[1].value=d.t!=null?String(d.t):"";i[2].value=d.v!=null?String(d.v).replace(".",","):"";i[3].value=d.w!=null?String(d.w).replace(".",","):"";
   $("f-in").appendChild(r);}
-const DEF_FLEET=["Креат 600 №3","MESDA MJ 10 №4","СЛ 956 Leshide №59","ЛиГонг 908 №52","СДМ 853 №69","Sumitomo 350 №61","CAT 336 №73","Hyundai 330 №54","Hyundai 330 №53","Sumitomo 350 №65","CAT 336 №79","Hyundai 380 №54"];
+const DEF_FLEET=["Креат 600 №3","MESDA MJ 10 №4","СЛ 956 Leshide №59","ЛиГонг 908 №52","СДМ 853 №69","Sumitomo 350 №61","CAT 336 №73","Hyundai 330 №54","Hyundai 330 №53","Sumitomo 350 №65","CAT 336 №79"];
 // техника площадки: готовый список из прошлых рапортов — прораб вписывает моточасы только у работавшей
 function loadFleet(r){
   const fl=(PLANT.fleet&&PLANT.fleet.length)?PLANT.fleet:DEF_FLEET,has=n=>fl.some(f=>nrm(f)===nrm(n));
