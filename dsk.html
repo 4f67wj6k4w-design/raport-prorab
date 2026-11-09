@@ -857,7 +857,7 @@ function initPlant(cfg){
   {const h2=$("c-works").querySelector("h2");h2.innerHTML='<span><span class="num"></span>. Прочие операции</span><span>объём</span>';
    const hn=$("c-works").querySelector(".hint");if(hn)hn.textContent="Металлолом, бетонный лом на дорогу и всё, чего нет в разделах выше: выберите операцию и впишите объём. Кнопка под строкой: «за смену» — сделано сегодня, «всего на сегодня» — итог с начала, форма сама вычтет то, что было раньше.";
    $("f-work-add").textContent="+ Добавить операцию";}
-  let n=0;["c-in","c-proc","c-haul","c-stock","c-works","c-mdi","c-subs","c-mach","c-dt","c-send"].forEach(id=>{if(!$(id).hidden){n++;const e=$(id).querySelector(".num");if(e)e.textContent=n;}});
+  let n=0;["c-in","c-proc","c-haul","c-stock","c-works","c-mdi","c-subs","c-mach","c-dt","c-done","c-send"].forEach(id=>{if(!$(id).hidden){n++;const e=$(id).querySelector(".num");if(e)e.textContent=n;}});
   // поля выпуска и остатков
   const mk=(box,key,name)=>{const l=document.createElement("label");l.htmlFor=box+"-"+key;l.textContent=name;const sm=document.createElement("small");sm.className="sh";l.appendChild(sm);
     const i=document.createElement("input");i.id=box+"-"+key;i.dataset.k=key;i.inputMode="decimal";i.placeholder="—";$(box).appendChild(l);$(box).appendChild(i);};
