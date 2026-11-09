@@ -288,6 +288,7 @@ function reqStatus(r){
   return 'new';
 }
 function statusPill(s){return s==='done'?'<span class="pill done">Назначена</span>':s==='part'?'<span class="pill part">Частично</span>':'<span class="pill new">Новая</span>'}
+function tnorm(s){s=String(s||'').trim();if(!s)return '';var h,m,p=s.split(/[^0-9]+/).filter(Boolean);if(/[^0-9]/.test(s)&&p.length>=2){h=+p[0];m=+p[1]}else{var d=s.replace(/\D/g,'');if(!d)return '';if(d.length<=2){h=+d;m=0}else if(d.length===3){h=+d[0];m=+d.slice(1)}else{h=+d.slice(0,2);m=+d.slice(2,4)}}if(isNaN(h)||isNaN(m)||h>23||m>59)return '';return (h<10?'0':'')+h+':'+(m<10?'0':'')+m}
 function slotsText(it){var a=(it.slots||[]).filter(function(x){return +x.n>0&&x.t}).map(function(x){return x.n+' маш. с '+x.t+(x.t2?' до '+x.t2:'')});return a.length?' · подача: '+a.join('; '):''}
 function itemTitle(it){
   var t=TYPES[it.type]+': ';
@@ -1078,7 +1079,7 @@ function draftItemHtml(it,i){
     h+='<div class="row"><span class="small muted">Куда</span><div style="width:100%"><select data-chg="destSel" data-i="'+i+'" style="width:100%">'+dl.map(function(x){return '<option'+(!isNew&&x===it.dest?' selected':'')+'>'+esc(x)+'</option>'}).join('')+'<option value="__new"'+(isNew?' selected':'')+'>✏️ Другое — вписать своё…</option></select>'+(isNew?'<input type="text" data-inp="item" data-f="dest" data-i="'+i+'" value="'+esc(it.dest||'')+'" placeholder="Куда везти (название / адрес)" style="width:100%;margin-top:6px;font-size:16px;padding:8px">':'')+'</div></div>';
   }
   if((it.type==='vyvoz'||it.type==='mesto')&&!it.allOwn){
-    h+='<div class="row"><span class="small muted">Время подачи и число машин</span><div style="width:100%">'+(it.slots||[]).map(function(x,k){return '<div class="slotrow" style="border:1px solid var(--line);border-radius:12px;padding:8px;margin-bottom:8px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label class="small muted">с<input type="time" step="900" data-inp="slot" data-f="t" data-i="'+i+'" data-s="'+k+'" value="'+esc(x.t||'')+'" style="width:100%;font-size:16px;padding:8px"></label><label class="small muted">до<input type="time" step="900" data-inp="slot" data-f="t2" data-i="'+i+'" data-s="'+k+'" value="'+esc(x.t2||'')+'" style="width:100%;font-size:16px;padding:8px"></label></div><div style="display:flex;gap:8px;align-items:center;margin-top:8px"><label class="small muted" style="flex:1">Машин<input type="number" inputmode="numeric" pattern="[0-9]*" min="1" step="1" data-inp="slot" data-f="n" data-i="'+i+'" data-s="'+k+'" value="'+esc(x.n)+'" placeholder="0" style="width:100%;font-size:16px;padding:8px"></label>'+((it.slots||[]).length>1?'<button class="link" data-act="rmSlot" data-v="'+i+'" data-s="'+k+'" style="margin-top:16px">убрать</button>':'')+'</div></div>'}).join('')+'<button class="btn sm" data-act="addSlot" data-v="'+i+'">+ Ещё время подачи</button><div class="small muted" style="margin-top:4px">Например: 3 машины с 08:00 до 10:00 и 2 машины с 14:00 до 16:00. Всего машин считается само.</div></div></div>';
+    h+='<div class="row"><span class="small muted">Время подачи и число машин</span><div style="width:100%">'+(it.slots||[]).map(function(x,k){return '<div class="slotrow" style="border:1px solid var(--line);border-radius:12px;padding:8px;margin-bottom:8px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label class="small muted">с<input type="text" inputmode="numeric" autocomplete="off" placeholder="например 8:30" data-inp="slot" data-f="t" data-i="'+i+'" data-s="'+k+'" value="'+esc(x.t||'')+'" style="width:100%;font-size:16px;padding:8px"></label><label class="small muted">до<input type="text" inputmode="numeric" autocomplete="off" placeholder="например 8:30" data-inp="slot" data-f="t2" data-i="'+i+'" data-s="'+k+'" value="'+esc(x.t2||'')+'" style="width:100%;font-size:16px;padding:8px"></label></div><div style="display:flex;gap:8px;align-items:center;margin-top:8px"><label class="small muted" style="flex:1">Машин<input type="number" inputmode="numeric" pattern="[0-9]*" min="1" step="1" data-inp="slot" data-f="n" data-i="'+i+'" data-s="'+k+'" value="'+esc(x.n)+'" placeholder="0" style="width:100%;font-size:16px;padding:8px"></label>'+((it.slots||[]).length>1?'<button class="link" data-act="rmSlot" data-v="'+i+'" data-s="'+k+'" style="margin-top:16px">убрать</button>':'')+'</div></div>'}).join('')+'<button class="btn sm" data-act="addSlot" data-v="'+i+'">+ Ещё время подачи</button><div class="small muted" style="margin-top:4px">Например: 3 машины с 08:00 до 10:00 и 2 машины с 14:00 до 16:00. Всего машин считается само.</div></div></div>';
   }
   return h+'</div>';
 }
@@ -1822,6 +1823,7 @@ document.addEventListener('change',function(e){
     case 'pFrom':case 'pTo':{var R1=perRange();if(!t.value)break;st.pFrom=a0(R1,'from',t,c);st.pTo=a0(R1,'to',t,c);st.pk='custom';renderSvodka();break}
     case 'foremanSel':st.draftForeman=t.value||null;st.draft=newDraft();renderForeman();break;
     case 'object':d.object=t.value;break;
+    case 'slot':{var sf2=t.getAttribute('data-f');if(sf2!=='n'){t.value=tnorm(t.value)}break}
     case 'destSel':{var di=d.items[+t.getAttribute('data-i')];if(t.value==='__new'){di.destNew=true;di.dest=''}else{di.destNew=false;di.dest=t.value}renderForeman();break}
     case 'item':d.items[+t.getAttribute('data-i')][t.getAttribute('data-f')]=t.value;break;
     case 'allOwn':d.items[+t.getAttribute('data-i')].allOwn=t.checked;renderForeman();break;
@@ -1847,7 +1849,7 @@ document.addEventListener('input',function(e){
   switch(c){
     case 'comment':d.comment=t.value;break;
     case 'qa_ecoNote':case 'qa_planNote':case 'qa_timesNote':case 'qa_planWho':case 'qa_timesWho':if(st.qaDraft)st.qaDraft[c.slice(3)]=t.value;break;
-    case 'slot':{var si2=d.items[+t.getAttribute('data-i')];si2.slots[+t.getAttribute('data-s')][t.getAttribute('data-f')]=t.value;syncCount(si2);var te=document.getElementById('tot'+t.getAttribute('data-i'));if(te&&!si2.allOwn)te.textContent=si2.count||0;break}
+    case 'slot':{var si2=d.items[+t.getAttribute('data-i')];var sf=t.getAttribute('data-f');si2.slots[+t.getAttribute('data-s')][sf]=(sf==='n')?t.value:tnorm(t.value);syncCount(si2);var te=document.getElementById('tot'+t.getAttribute('data-i'));if(te&&!si2.allOwn)te.textContent=si2.count||0;break}
     case 'item':d.items[+t.getAttribute('data-i')][t.getAttribute('data-f')]=t.value;break;
     case 'mNote':st.modal.note=t.value;break;
     case 'fKm':st.modal.f.km=t.value;recalcFact();break;
