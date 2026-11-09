@@ -1433,6 +1433,7 @@ function aggr(from,to){
   var tday={};
   S.requests.forEach(function(r){
     if(r.date<from||r.date>to)return;
+    if(st.svObj&&r.object!==st.svObj)return;
     (r.items||[]).forEach(function(it){
       var f=it.fact;if(!f)return;A.days[r.date]=1;
       var pd=A.perDay[r.date]||(A.perDay[r.date]={own:0,hired:0});
@@ -1579,6 +1580,7 @@ function renderSvodka(){
   h+='<div class="pnav"><button type="button" class="btn" data-act="pPrev" aria-label="Предыдущий период"'+((R.kind==='all')?' disabled':'')+'>‹</button><div class="plabel">'+esc(R.label)+'</div><button type="button" class="btn" data-act="pNext" aria-label="Следующий период"'+((R.kind==='all')?' disabled':'')+'>›</button></div>';
   h+='<div class="pdates"><label>с <input type="date" data-chg="pFrom" value="'+esc(R.from<'1000'?'':R.from)+'"></label><label>по <input type="date" data-chg="pTo" value="'+esc(R.to>'9000'?'':R.to)+'"></label></div></div>';
   h+='<div class="hint" style="margin:6px 0 4px">'+(R.kind==='all'?'Все данные в системе':'Период: '+ruDate(R.from)+' — '+ruDate(R.to))+' · дней с данными: '+nd+(hp?' · сравнение с '+ruDate(R.prev.from)+' — '+ruDate(R.prev.to)+(R.partial?' (за такой же срок)':''):'')+'</div>';
+  h+='<div class="viewsw" style="margin-bottom:6px"><label class="muted small" for="svObj">Объект:</label><select id="svObj" data-chg="svObj" style="max-width:100%"><option value="">Все объекты</option>'+sortBy(S.objects.filter(function(o){return o.id!=='garage'}),function(o){return o.name}).map(function(o){return '<option value="'+esc(o.id)+'"'+(st.svObj===o.id?' selected':'')+'>'+esc(o.name)+'</option>'}).join('')+'</select>'+(st.svObj?'<span class="hint">показан только выбранный объект</span>':'')+'</div>';
   h+='<div class="viewsw"><span class="muted small">Вид:</span><div class="seg">'+SVIEWS.map(function(v){return '<button type="button" data-act="sv" data-v="'+v[0]+'" aria-pressed="'+(view===v[0])+'">'+v[1]+'</button>'}).join('')+'</div></div>';
   if(!nd){h+='<div class="empty" style="margin-top:12px">За выбранный период факт вывоза не внесён.</div>';el.innerHTML='<div class="sv">'+h+'</div>';return}
   /* плитки */
@@ -1804,6 +1806,7 @@ document.addEventListener('change',function(e){
     case 'dbDate':if(t.value){st.dbWeek=mondayOf(t.value);renderDebts()}break;
     case 'fDest':{var Fm=st.modal.f;Fm.dest=t.value;var rq2=byId(S.requests,st.modal.rid);var rt2=findRoute(rq2.object,Fm.dest);Fm.km=rt2?rt2.km:'';renderModal();break}
     case 'pmObj':{var ps=byId(S.staff,t.getAttribute('data-p'));var pl=(ps.objects||[]).slice(),po=t.getAttribute('data-o'),px=pl.indexOf(po);if(t.checked&&px<0)pl.push(po);if(!t.checked&&px>=0)pl.splice(px,1);upd('staff',ps.id,{objects:pl});break}
+    case 'svObj':st.svObj=t.value;renderSvodka();break;
     case 'slotT':{var stt=st.draft.items[+t.getAttribute('data-i')];stt.slots[+t.getAttribute('data-s')].t=t.value;break}
     case 'fOwnDriver':st.modal.f.own[+t.getAttribute('data-i')].driver=t.value;break;
     case 'fOwnKind':{var oo=st.modal.f.own[+t.getAttribute('data-i')];oo.kind=t.value;if(oo.kind!=='Рейсы'){oo.vol=oo.man?oo.vol:''}renderModal();break}
