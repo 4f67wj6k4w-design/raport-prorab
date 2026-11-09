@@ -288,7 +288,7 @@ function reqStatus(r){
   return 'new';
 }
 function statusPill(s){return s==='done'?'<span class="pill done">Назначена</span>':s==='part'?'<span class="pill part">Частично</span>':'<span class="pill new">Новая</span>'}
-function slotsText(it){var a=(it.slots||[]).filter(function(x){return +x.n>0&&x.t}).map(function(x){return x.n+' к '+x.t});return a.length?' · подача: '+a.join(', '):''}
+function slotsText(it){var a=(it.slots||[]).filter(function(x){return +x.n>0&&x.t}).map(function(x){return x.n+' маш. с '+x.t+(x.t2?' до '+x.t2:'')});return a.length?' · подача: '+a.join('; '):''}
 function itemTitle(it){
   var t=TYPES[it.type]+': ';
   if(it.type==='polivo')return t+(it.note||'Поливомоечная');
@@ -1006,8 +1006,8 @@ function renderHeader(){
 /* ---------- foreman ---------- */
 function newDraft(){return {object:null,day:null,items:[],comment:''}}
 function newItem(type){
-  if(type==='vyvoz')return {id:uid(),type:type,material:mats()[0],count:1,allOwn:false,dest:'На усмотрение диспетчера',slots:[{n:1,t:''}]};
-  if(type==='mesto')return {id:uid(),type:type,material:mats()[0],count:1,slots:[{n:1,t:''}]};
+  if(type==='vyvoz')return {id:uid(),type:type,material:mats()[0],count:1,allOwn:false,dest:'На усмотрение диспетчера',slots:[{n:'',t:'',t2:''}]};
+  if(type==='mesto')return {id:uid(),type:type,material:mats()[0],count:1,slots:[{n:'',t:'',t2:''}]};
   if(type==='samo')return {id:uid(),type:type,material:mats()[0],volume:'',count:0};
   return {id:uid(),type:'polivo',note:''};
 }
@@ -1070,13 +1070,15 @@ function draftItemHtml(it,i){
     h+='<div class="row"><span class="small muted">Объём</span><input type="text" data-inp="item" data-i="'+i+'" data-f="volume" value="'+esc(it.volume)+'" placeholder="например 200–250 м³"></div>';
     h+='<div class="row"><span class="small muted">Машин</span><input type="number" min="0" data-inp="item" data-i="'+i+'" data-f="count" value="'+(it.count||'')+'" placeholder="если известно"></div>';
   }else{
-    h+='<div class="row"><span class="small muted">Всего машин</span><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b>'+(it.allOwn?'все свои Renault':(+it.count||0))+'</b>'+(it.type==='vyvoz'?'<label class="small"><input type="checkbox" data-chg="allOwn" data-i="'+i+'"'+(it.allOwn?' checked':'')+'> все свои Renault</label>':'')+'</div></div>';
+    h+='<div class="row"><span class="small muted">Всего машин</span><div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><b id="tot'+i+'">'+(it.allOwn?'все свои Renault':(+it.count||0))+'</b>'+(it.type==='vyvoz'?'<label class="small"><input type="checkbox" data-chg="allOwn" data-i="'+i+'"'+(it.allOwn?' checked':'')+'> все свои Renault</label>':'')+'</div></div>';
   }
   if(it.type==='vyvoz'){
-    h+='<div class="row"><span class="small muted">Куда</span><select data-chg="item" data-i="'+i+'" data-f="dest">'+DESTS.map(function(x){return '<option'+(x===it.dest?' selected':'')+'>'+x+'</option>'}).join('')+'</select></div>';
+    var dl=DESTS.slice();(S.places||[]).forEach(function(p){if(p.name&&dl.indexOf(p.name)<0)dl.push(p.name)});
+    var isNew=!!it.destNew;
+    h+='<div class="row"><span class="small muted">Куда</span><div style="width:100%"><select data-chg="destSel" data-i="'+i+'" style="width:100%">'+dl.map(function(x){return '<option'+(!isNew&&x===it.dest?' selected':'')+'>'+esc(x)+'</option>'}).join('')+'<option value="__new"'+(isNew?' selected':'')+'>✏️ Другое — вписать своё…</option></select>'+(isNew?'<input type="text" data-inp="item" data-f="dest" data-i="'+i+'" value="'+esc(it.dest||'')+'" placeholder="Куда везти (название / адрес)" style="width:100%;margin-top:6px;font-size:16px;padding:8px">':'')+'</div></div>';
   }
   if((it.type==='vyvoz'||it.type==='mesto')&&!it.allOwn){
-    h+='<div class="row"><span class="small muted">Время подачи и число машин</span><div style="width:100%">'+(it.slots||[]).map(function(x,k){return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap"><select data-chg="slotT" data-i="'+i+'" data-s="'+k+'" aria-label="Время подачи">'+timeOpts(x.t)+'</select><span style="display:inline-flex;align-items:center;gap:4px"><button class="btn sm" data-act="slotN" data-v="'+i+'" data-s="'+k+'" data-d="-1" aria-label="Меньше машин">−</button><b style="min-width:30px;text-align:center">'+(+x.n||0)+'</b><button class="btn sm" data-act="slotN" data-v="'+i+'" data-s="'+k+'" data-d="1" aria-label="Больше машин">+</button> <span class="small">маш.</span></span>'+((it.slots||[]).length>1?'<button class="link" data-act="rmSlot" data-v="'+i+'" data-s="'+k+'" aria-label="Убрать время">убрать</button>':'')+'</div>'}).join('')+'<button class="btn sm" data-act="addSlot" data-v="'+i+'">+ Ещё время подачи</button><div class="small muted" style="margin-top:4px">Например: 3 машины к 8:00 и 2 машины к 10:30. Всего машин считается само.</div></div></div>';
+    h+='<div class="row"><span class="small muted">Время подачи и число машин</span><div style="width:100%">'+(it.slots||[]).map(function(x,k){return '<div class="slotrow" style="border:1px solid var(--line);border-radius:12px;padding:8px;margin-bottom:8px"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><label class="small muted">с<input type="time" step="900" data-inp="slot" data-f="t" data-i="'+i+'" data-s="'+k+'" value="'+esc(x.t||'')+'" style="width:100%;font-size:16px;padding:8px"></label><label class="small muted">до<input type="time" step="900" data-inp="slot" data-f="t2" data-i="'+i+'" data-s="'+k+'" value="'+esc(x.t2||'')+'" style="width:100%;font-size:16px;padding:8px"></label></div><div style="display:flex;gap:8px;align-items:center;margin-top:8px"><label class="small muted" style="flex:1">Машин<input type="number" inputmode="numeric" pattern="[0-9]*" min="1" step="1" data-inp="slot" data-f="n" data-i="'+i+'" data-s="'+k+'" value="'+esc(x.n)+'" placeholder="0" style="width:100%;font-size:16px;padding:8px"></label>'+((it.slots||[]).length>1?'<button class="link" data-act="rmSlot" data-v="'+i+'" data-s="'+k+'" style="margin-top:16px">убрать</button>':'')+'</div></div>'}).join('')+'<button class="btn sm" data-act="addSlot" data-v="'+i+'">+ Ещё время подачи</button><div class="small muted" style="margin-top:4px">Например: 3 машины с 08:00 до 10:00 и 2 машины с 14:00 до 16:00. Всего машин считается само.</div></div></div>';
   }
   return h+'</div>';
 }
@@ -1106,11 +1108,14 @@ function submitReq(){
     if((it.type==='vyvoz'||it.type==='mesto')&&!it.allOwn){
       syncCount(it);
       if(!(+it.count>0)){toast('Укажите число машин');return}
-      if((it.slots||[]).some(function(x){return !x.t})){toast('Выберите время подачи для каждой строки');return}
+      if((it.slots||[]).some(function(x){return !x.t||!x.t2})){toast('Укажите время «с» и «до» для каждой строки');return}
+      if((it.slots||[]).some(function(x){return x.t2<=x.t})){toast('Время «до» должно быть позже «с»');return}
+      if((it.slots||[]).some(function(x){return !(+x.n>0)})){toast('Укажите число машин в каждой строке');return}
     }
+    if(it.destNew&&!String(it.dest||'').trim()){toast('Впишите, куда везти');return}
     if(it.type==='samo'&&!String(it.volume).trim()&&!(+it.count>0)){toast('Для самовывоза укажите объём или число машин');return}
   }
-  var items=clone(d.items).map(function(it){if(it.count!=null)it.count=+it.count||0;if(it.allOwn)delete it.slots;if(it.slots){it.slots=it.slots.filter(function(x){return +x.n>0&&x.t});if(!it.slots.length)delete it.slots}return it});
+  var items=clone(d.items).map(function(it){if(it.count!=null)it.count=+it.count||0;delete it.destNew;if(it.allOwn)delete it.slots;if(it.slots){it.slots=it.slots.filter(function(x){return +x.n>0&&x.t&&x.t2}).map(function(x){return {n:+x.n,t:x.t,t2:x.t2}});if(!it.slots.length)delete it.slots}return it});
   var rec={date:d.day,object:d.object,foremanId:f.id,foremanName:f.name,items:items,comment:d.comment,createdAt:Date.now(),sentAt:nowStr(),byStaff:isStaff(m)?m.name:'',log:[]};
   put('requests',newId(),rec).then(function(){
     st.draft=newDraft();toast('Заявка отправлена диспетчеру');renderForeman();
@@ -1747,7 +1752,7 @@ document.addEventListener('click',function(e){
     case 'draftDay':d.day=v;renderForeman();break;
     case 'addItem':d.items.push(newItem(v));renderForeman();break;
     case 'rmItem':d.items.splice(+v,1);renderForeman();break;
-    case 'addSlot':{var si=d.items[+v];(si.slots=si.slots||[]).push({n:1,t:''});syncCount(si);renderForeman();break}
+    case 'addSlot':{var si=d.items[+v];(si.slots=si.slots||[]).push({n:'',t:'',t2:''});syncCount(si);renderForeman();break}
     case 'rmSlot':{var rs=d.items[+v];rs.slots.splice(+b.getAttribute('data-s'),1);syncCount(rs);renderForeman();break}
     case 'slotN':{var sn=d.items[+v],sx=sn.slots[+b.getAttribute('data-s')];sx.n=Math.max(1,(+sx.n||0)+(+b.getAttribute('data-d')));syncCount(sn);renderForeman();break}
     case 'submitReq':submitReq();break;
@@ -1817,6 +1822,7 @@ document.addEventListener('change',function(e){
     case 'pFrom':case 'pTo':{var R1=perRange();if(!t.value)break;st.pFrom=a0(R1,'from',t,c);st.pTo=a0(R1,'to',t,c);st.pk='custom';renderSvodka();break}
     case 'foremanSel':st.draftForeman=t.value||null;st.draft=newDraft();renderForeman();break;
     case 'object':d.object=t.value;break;
+    case 'destSel':{var di=d.items[+t.getAttribute('data-i')];if(t.value==='__new'){di.destNew=true;di.dest=''}else{di.destNew=false;di.dest=t.value}renderForeman();break}
     case 'item':d.items[+t.getAttribute('data-i')][t.getAttribute('data-f')]=t.value;break;
     case 'allOwn':d.items[+t.getAttribute('data-i')].allOwn=t.checked;renderForeman();break;
     case 'mAgreed':{st.modal.agreed=t.value;if(!num(st.modal.price)){var lp1=lastPrice(t.value,byId(S.requests,st.modal.rid).object);if(lp1)st.modal.price=lp1}renderModal();break}
@@ -1841,7 +1847,7 @@ document.addEventListener('input',function(e){
   switch(c){
     case 'comment':d.comment=t.value;break;
     case 'qa_ecoNote':case 'qa_planNote':case 'qa_timesNote':case 'qa_planWho':case 'qa_timesWho':if(st.qaDraft)st.qaDraft[c.slice(3)]=t.value;break;
-    case 'slot':d.items[+t.getAttribute('data-i')].slots[+t.getAttribute('data-s')][t.getAttribute('data-f')]=t.value;break;
+    case 'slot':{var si2=d.items[+t.getAttribute('data-i')];si2.slots[+t.getAttribute('data-s')][t.getAttribute('data-f')]=t.value;syncCount(si2);var te=document.getElementById('tot'+t.getAttribute('data-i'));if(te&&!si2.allOwn)te.textContent=si2.count||0;break}
     case 'item':d.items[+t.getAttribute('data-i')][t.getAttribute('data-f')]=t.value;break;
     case 'mNote':st.modal.note=t.value;break;
     case 'fKm':st.modal.f.km=t.value;recalcFact();break;
