@@ -206,6 +206,8 @@ td.src small{display:block;color:var(--muted);font-size:11px}
 .pgrid label{font-size:14px;line-height:1.25}
 .pgrid label small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
 .pgrid input{text-align:right;font-family:var(--f-num)}
+.haul .mn{grid-column:1/-1}
+.haul.tn input.mn{text-align:left;font-family:inherit}
 .psub{margin:14px 0 8px;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 body.is-idle #c-in,body.is-idle #c-proc,body.is-idle #c-stock{display:none}
 </style>
@@ -852,7 +854,8 @@ function initPlant(cfg){
   {const fl=$("f-foreman").parentNode;if(fl&&fl.firstChild&&fl.firstChild.nodeType===3)fl.firstChild.textContent="Руководитель ДСК (Фамилия И.О.)";}
   WORKS.forEach(x=>{if(["ЗАВ","ПЕР","ПЕРБ"].includes(x.c))x.ro="считается из разделов «Приёмка» и «Переработка» рапорта";});
   const anchor=$("c-mdi");["c-in","c-proc","c-haul","c-stock","c-works"].forEach(id=>anchor.parentNode.insertBefore($(id),anchor));
-  ["c-in","c-proc","c-stock","cs-in","cs-stock"].forEach(id=>$(id).hidden=false);
+  ["c-in","c-proc","cs-in"].forEach(id=>$(id).hidden=false);
+  if(PLANT.stock===1)["c-stock","cs-stock"].forEach(id=>$(id).hidden=false); // остатки пока выключены; включаются флагом stock:1 в паспорте
   {const idle=$("c-works").querySelector("label.idle");if(idle)$("f-exists").parentNode.insertBefore(idle,$("f-exists"));}
   {const h2=$("c-works").querySelector("h2");h2.innerHTML='<span><span class="num"></span>. Прочие операции</span><span>объём</span>';
    const hn=$("c-works").querySelector(".hint");if(hn)hn.textContent="Металлолом, бетонный лом на дорогу и всё, чего нет в разделах выше: выберите операцию и впишите объём. Кнопка под строкой: «за смену» — сделано сегодня, «всего на сегодня» — итог с начала, форма сама вычтет то, что было раньше.";
@@ -1030,6 +1033,13 @@ function addHaul(d){d=d||{};const r=mkRow(HL.tn?"haul tn":"haul",'<input type="t
   r.querySelector(".cr").placeholder=HL.c;if(HL.tn){const q=r.querySelectorAll("input");q[1].placeholder="рейсов";q[2].placeholder="м³";q[3].value=d.w!=null?String(d.w).replace(".",","):"";}
   const sel=r.querySelector("select");MATS.forEach(m=>{const o=document.createElement("option");o.value=m;o.textContent=m;sel.appendChild(o);});
   const i=r.querySelectorAll("input");i[0].value=d.c||"";sel.value=d.m&&MATS.includes(d.m)?d.m:MATS[0];i[1].value=d.t!=null?String(d.t):"";i[2].value=d.v!=null?String(d.v).replace(".",","):"";
+  if(PLANT){const known=MATS.slice();list().forEach(x=>haulOf(x).forEach(h=>{if(h.m&&!known.some(k=>nrm(k)===nrm(h.m)))known.push(h.m);}));
+    if(d.m&&!known.some(k=>nrm(k)===nrm(d.m)))known.push(d.m);
+    sel.innerHTML="";known.forEach(m=>{const o=document.createElement("option");o.value=m;o.textContent=m;sel.appendChild(o);});
+    const on=document.createElement("option");on.value="__new";on.textContent="+ Другой материал (вписать название)…";sel.appendChild(on);
+    const mn=document.createElement("input");mn.type="text";mn.className="mn";mn.placeholder="Название нового материала";mn.hidden=true;sel.after(mn);
+    sel.value=known.find(k=>nrm(k)===nrm(d.m||""))||known[0];
+    sel.onchange=()=>{mn.hidden=sel.value!=="__new";if(!mn.hidden)mn.focus();};}
   $("f-haul").appendChild(r);}
 function addDt(d){d=d||{};const r=document.createElement("div");r.className="dt";
   r.innerHTML='<div class="dtk full" role="group" aria-label="Вид"><button type="button" data-k="Простой">Простой</button><button type="button" data-k="Ремонт">Ремонт</button><button type="button" data-k="ТО">ТО</button></div><input type="text" class="full" list="mach-list" placeholder="Что стояло (техника, бригада)"><select class="dtf"><option value="">По чьей вине…</option></select><input inputmode="decimal" placeholder="часов"><input type="text" class="full" placeholder="Причина / что ремонтировали"><button type="button" class="btn small full">Удалить</button>';
@@ -1038,7 +1048,7 @@ function addDt(d){d=d||{};const r=document.createElement("div");r.className="dt"
   r.querySelectorAll(".dtk button").forEach(b=>b.onclick=()=>{setK(b.dataset.k);dirty=true;});setK(d.k||"Простой");
   const i=r.querySelectorAll("input");i[0].value=d.what||"";i[1].value=d.h!=null?String(d.h).replace(".",","):"";i[2].value=d.why||"";sel.value=d.fault||"";
   r.querySelector("button").onclick=()=>{r.remove();dirty=true;};$("f-dt").appendChild(r);}
-function readHaul(){const a=[];document.querySelectorAll("#f-haul .haul").forEach(row=>{const i=row.querySelectorAll("input");const c=i[0].value.trim(),m=row.querySelector("select").value,t=num(i[1].value),v=num(i[2].value),w=i[3]?num(i[3].value):null;if(t!==null||v!==null||w!==null){const o={c:c,m:m,t:t,v:v};if(HL.tn)o.w=w;a.push(o);}});return a;}
+function readHaul(){const a=[];document.querySelectorAll("#f-haul .haul").forEach(row=>{const i=row.querySelectorAll("input:not(.mn)");const sl=row.querySelector("select"),mn=row.querySelector(".mn");const c=i[0].value.trim(),m=(sl.value==="__new"&&mn)?mn.value.trim():sl.value,t=num(i[1].value),v=num(i[2].value),w=i[3]?num(i[3].value):null;if(t!==null||v!==null||w!==null){const o={c:c,m:m,t:t,v:v};if(HL.tn)o.w=w;a.push(o);}});return a;}
 function cumWorks(rs){const dd=C&&C.d0date;const o=sumWorks(dd?rs.filter(r=>r.date>dd):rs);WORKS.forEach(x=>{if(x.d0)o[x.k]+=x.d0;});return o;}// рапорты до даты «выполнено ранее» включительно уже учтены в d0 — только история
 function sumWorks(rs){const o={};WORKS.forEach(x=>o[x.k]=0);rs.forEach(r=>{WORKS.forEach(x=>{const v=r.works&&r.works[x.c];if(typeof v==="number")o[x.k]+=v;});});return o;}
 function updProg(){
@@ -1091,7 +1101,7 @@ function collect(){
   if(!$("c-subs").hidden)document.querySelectorAll("#f-subs .mach").forEach(row=>{const i=row.querySelectorAll("input");const n=i[0].value.trim(),p=num(i[1].value);if(n||p!==null)o.subs.push({n:n,p:p});});
   if(!$("c-mach").hidden)document.querySelectorAll("#f-mach .mach").forEach(row=>{const i=row.querySelectorAll("input");const n=i[0].value.trim(),q=num(i[1].value),h=num(i[2].value);if(n&&(q||h)){const m={n:n,q:q||1};if(h!==null)m.h=h;o.mach.push(m);}});
   if(!$("c-haul").hidden)o.haul=readHaul();
-  WORKS.filter(isHaulSrc).forEach(x=>{const f=isTrips(x)?"t":isTons(x)?"w":"v",mt=srcMat(x).split("|");const g=Math.round(o.haul.filter(h=>mt.includes(h.m)).reduce((s,h)=>s+(h[f]||0),0)*1000)/1000;if(g)o.works[x.c]=g;else delete o.works[x.c];});
+  WORKS.filter(isHaulSrc).forEach(x=>{const f=isTrips(x)?"t":isTons(x)?"w":"v",mt=srcMat(x).split("|");const g=Math.round(o.haul.filter(h=>(PLANT&&(x.c==="ПР"||x.c==="ПРТ"))||mt.includes(h.m)).reduce((s,h)=>s+(h[f]||0),0)*1000)/1000;if(g)o.works[x.c]=g;else delete o.works[x.c];});
   WORKS.filter(isMachSrc).forEach(x=>{const ks=x.src.slice(5).split("|").map(nrm);const g=Math.round(o.mach.filter(m=>ks.includes(nrm(m.n))).reduce((s,m)=>s+(m.h||0),0)*1000)/1000;if(g)o.works[x.c]=g;else delete o.works[x.c];});
   o.trips=o.haul.reduce((s,h)=>s+(h.t||0),0)||null;
   if(!$("c-dt").hidden)document.querySelectorAll("#f-dt .dt").forEach(row=>{const i=row.querySelectorAll("input");const sel=row.querySelector("select");const d={k:row.dataset.k||"Простой",what:i[0].value.trim(),h:num(i[1].value),why:i[2].value.trim(),fault:sel.value};if(d.what||d.h||d.why)o.downtime.push(d);});
@@ -1104,7 +1114,7 @@ function collect(){
 function validate(o){
   const e=(o._bad||[]).slice();if(!o.date)e.push("дата");if(!o.foreman)e.push("ФИО прораба");
   if(o.people.own==null&&!o.subs.length&&!o.idle)e.push("люди на объекте (если никого не было — 0)");
-  o.haul.forEach((h,i)=>{if(!h.c)e.push(HL.t.toLowerCase()+" "+(i+1)+": "+HL.c.toLowerCase());if(HL.tn?(h.v===null&&h.w===null):(h.t===null&&h.v===null))e.push(HL.t.toLowerCase()+" "+(i+1)+": "+(HL.tn?"м³ или т":"рейсы или м³"));});
+  o.haul.forEach((h,i)=>{if(!h.m)e.push(HL.t.toLowerCase()+" "+(i+1)+": название материала");if(!h.c)e.push(HL.t.toLowerCase()+" "+(i+1)+": "+HL.c.toLowerCase());if(HL.tn?(h.v===null&&h.w===null):(h.t===null&&h.v===null))e.push(HL.t.toLowerCase()+" "+(i+1)+": "+(HL.tn?"м³ или т":"рейсы или м³"));});
   if(PLANT&&o.plant)(o.plant.in||[]).forEach((x,i)=>{if(x.v===null)e.push("приёмка "+(i+1)+": объём в м³"+(x.w!=null?" (тонны указаны, а м³ — нет)":""));});
   o.subs.forEach((x,i)=>{if(!x.n)e.push("субподрядчик "+(i+1)+": название");if(x.p===null)e.push("субподрядчик "+(i+1)+": людей");});
   o.mach.forEach((m,i)=>{if(m.q>3&&m.h==null)e.push("техника "+(i+1)+" («"+m.n+"»): в «шт» стоит "+m.q+" — это часы? Перенесите в поле «часы», в «шт» — количество машин");});
