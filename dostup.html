@@ -84,7 +84,13 @@ function say(id,t,cls){const m=$(id);m.textContent=t||"";m.className="msg"+(cls?
 const errText={login:"Логин: латиница, цифры, точка, дефис, 3–30 знаков",name:"Укажите имя",role:"Выберите роль",exists:"Такой логин уже есть",nouser:"Человек не найден",self:"Себя отключить нельзя",auth:"Вход устарел, обновите страницу"};
 function invite(u){return "Кабинет: "+pageFor(u.role)+"\nЛогин: "+u.login+"\nВременный пароль: "+u.temp+"\nПри первом входе система попросит задать свой пароль.";}
 function copy(txt,btn){try{navigator.clipboard.writeText(txt).then(()=>{const o=btn.textContent;btn.textContent="Скопировано";setTimeout(()=>btn.textContent=o,1500);});}catch(e){}}
-function objPicker(box,sel){box.innerHTML="";objects.forEach(o=>{const l=el("label");const c=el("input");c.type="checkbox";c.value=o.pid;c.checked=sel.includes(o.pid);l.appendChild(c);l.appendChild(el("span",null,(o.name||o.pid)));box.appendChild(l);});
+function objPicker(box,sel){box.innerHTML="";
+  [["msk","Москва"],["reg","Регионы"]].forEach(([rg,title])=>{
+    const g=objects.filter(o=>o.region===rg);
+    const h=el("div","hint",title+" — "+g.length);h.style.gridColumn="1/-1";h.style.fontWeight="700";h.style.marginTop="4px";box.appendChild(h);
+    if(!g.length){const e=el("div","hint","объектов нет");e.style.gridColumn="1/-1";box.appendChild(e);}
+    g.forEach(o=>{const l=el("label");const c=el("input");c.type="checkbox";c.value=o.pid;c.checked=sel.includes(o.pid);l.appendChild(c);l.appendChild(el("span",null,(o.name||o.pid)));box.appendChild(l);});
+  });
   if(!objects.length)box.appendChild(el("div","hint","Список объектов не загрузился"));}
 const picked=box=>[...box.querySelectorAll("input:checked")].map(c=>c.value);
 function drawUsers(){
@@ -119,7 +125,7 @@ async function load(){
 }
 async function loadObjects(){
   try{const r=await fetch(U+(U.includes("?")?"&":"?")+new URLSearchParams({a:"objects",k:"tk:"+T}),{redirect:"follow"});const j=await r.json();
-    if(j.ok)objects=(j.objects||[]).filter(o=>o&&o.pid).map(o=>({pid:o.pid,name:o.name||o.pid})).sort((a,b)=>String(a.name).localeCompare(String(b.name),"ru"));}catch(e){}
+    if(j.ok)objects=(j.objects||[]).filter(o=>o&&o.pid).map(o=>({pid:o.pid,name:o.name||o.pid,region:(o.region==="reg"?"reg":"msk")})).sort((a,b)=>String(a.name).localeCompare(String(b.name),"ru"));}catch(e){}
 }
 async function init(){
   if(!U||!T){deny("Войдите по логину и паролю администратора.");return;}
