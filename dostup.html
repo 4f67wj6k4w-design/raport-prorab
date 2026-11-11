@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2E671F">
+<meta name="robots" content="noindex">
+<script src="auth.js"></script>
+<title>Доступы — ГК «КРАШМАШ»</title>
+<style>
+[hidden]{display:none!important}
+html,body{margin:0}
+:root{--brand:#2E671F;--bg:#eef1ec;--surface:#fff;--sunk:#e2e8df;--line:#cbd4c7;--fg:#18221a;--muted:#5a6758;--accent:#2E671F;--accent-ink:#fff;--ok:#2E671F;--warn:#b26b00;--bad:#b3362c;--f-ui:"IBM Plex Sans Condensed","Arial Narrow",Arial,sans-serif;--f-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;--r:10px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111612;--surface:#1a211b;--sunk:#232c24;--line:#344035;--fg:#e6ede5;--muted:#9aa898;--accent:#5f9e4b;--accent-ink:#0c1709;--ok:#7fc06a;--warn:#e3a33c;--bad:#ec6a5e;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#111612;--surface:#1a211b;--sunk:#232c24;--line:#344035;--fg:#e6ede5;--muted:#9aa898;--accent:#5f9e4b;--accent-ink:#0c1709;--ok:#7fc06a;--warn:#e3a33c;--bad:#ec6a5e;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:16px;line-height:1.35}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 60px}
+header.top{background:var(--brand);color:#fff;margin:0 -16px;padding:12px 16px}
+header.top h1{font-size:20px;margin:0}
+header.top div{font-size:13px;opacity:.85;margin-top:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);margin-top:12px;padding:14px}
+.card h2{font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0 0 10px;font-weight:600}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);margin-top:10px}
+input,select{font:16px var(--f-ui);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;width:100%;min-height:44px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--fg);font:600 15px var(--f-ui);border-radius:8px;min-height:40px;padding:0 14px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--bad)}
+.btn:disabled{opacity:.5}
+.u{padding:12px 0;border-top:1px solid var(--line)}
+.u:first-of-type{border-top:0}
+.uh{display:flex;justify-content:space-between;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.uh b{font-size:17px}
+.sub{font-size:13px;color:var(--muted);margin-top:2px}
+.tg{font-size:12px;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.tg.ok{background:color-mix(in srgb,var(--ok) 18%,var(--surface));color:var(--ok)}
+.tg.warn{background:color-mix(in srgb,var(--warn) 20%,var(--surface));color:var(--warn)}
+.tg.bad{background:color-mix(in srgb,var(--bad) 18%,var(--surface));color:var(--bad)}
+.temp{margin-top:8px;padding:10px 12px;border-radius:8px;background:var(--sunk);border-left:4px solid var(--warn);font-size:14px}
+.temp code{font-family:var(--f-num);font-size:20px;font-weight:600;letter-spacing:.04em}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.objs{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 12px;margin-top:8px;max-height:260px;overflow:auto;padding:8px;border:1px solid var(--line);border-radius:8px}
+.objs label{display:flex;gap:8px;align-items:flex-start;font-size:14px;color:var(--fg)}
+.objs input{width:auto;min-height:0;margin-top:3px}
+.msg{margin-top:10px;font-size:14px}
+.msg.bad{color:var(--bad)}.msg.ok{color:var(--ok)}
+pre.inv{white-space:pre-wrap;font:14px/1.5 var(--f-num);background:var(--sunk);border-radius:8px;padding:12px;margin:8px 0 0}
+.hint{font-size:12px;color:var(--muted);margin-top:8px}
+</style>
+<link rel="stylesheet" href="tema.css">
+<script src="tema.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><h1>Доступы</h1><div>Кто и как входит в «Руководитель проектов» и «Светофор»</div></header>
+  <div id="deny" class="card" hidden></div>
+  <div id="main" hidden>
+    <section class="card"><h2>Добавить человека</h2>
+      <label class="f">Имя (как будет видно в кабинете)<input id="a-name" placeholder="Фамилия И.О."></label>
+      <label class="f">Логин (латиницей, 3–30 знаков)<input id="a-login" autocapitalize="none" autocorrect="off" placeholder="например, zharikov"></label>
+      <label class="f">Кто это<select id="a-role"></select></label>
+      <div id="a-objs-w" hidden><div class="hint" style="margin-top:10px">Объекты этого руководителя (их он видит полностью; остальные — только обзор):</div><div class="objs" id="a-objs"></div></div>
+      <div class="acts"><button class="btn primary" id="a-go" type="button">Создать и получить временный пароль</button></div>
+      <div id="a-msg" class="msg"></div>
+      <div id="a-inv" hidden></div>
+    </section>
+    <section class="card"><h2>Люди <span id="u-cnt"></span></h2><div id="u-out">Загрузка…</div>
+      <div class="hint">Пароль, который человек задал себе сам, никому не виден: сохраняется только его шифр. Если забыл — «Сбросить пароль» выдаст новый временный.</div></section>
+  </div>
+</div>
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;};
+const A=window.RaportAuth||{};const U=A.u&&A.u();let T=A.token&&A.token();
+const ROLE_NAME={admin:"Администратор",pm:"Руководитель проектов",exec:"Директор"};
+let users=[],objects=[];
+const base=location.origin+location.pathname.replace(/[^\/]*$/,"");
+const pageFor=r=>base+(r==="exec"?"exec.html":r==="admin"?"dostup.html":"director.html")+"#u="+encodeURIComponent(U);
+function deny(t){const d=$("deny");d.hidden=false;d.textContent=t;}
+async function api(body){const r=await fetch(U,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body),redirect:"follow"});return r.json();}
+function say(id,t,cls){const m=$(id);m.textContent=t||"";m.className="msg"+(cls?" "+cls:"");}
+const errText={login:"Логин: латиница, цифры, точка, дефис, 3–30 знаков",name:"Укажите имя",role:"Выберите роль",exists:"Такой логин уже есть",nouser:"Человек не найден",self:"Себя отключить нельзя",auth:"Вход устарел, обновите страницу"};
+function invite(u){return "Кабинет: "+pageFor(u.role)+"\nЛогин: "+u.login+"\nВременный пароль: "+u.temp+"\nПри первом входе система попросит задать свой пароль.";}
+function copy(txt,btn){try{navigator.clipboard.writeText(txt).then(()=>{const o=btn.textContent;btn.textContent="Скопировано";setTimeout(()=>btn.textContent=o,1500);});}catch(e){}}
+function objPicker(box,sel){box.innerHTML="";objects.forEach(o=>{const l=el("label");const c=el("input");c.type="checkbox";c.value=o.pid;c.checked=sel.includes(o.pid);l.appendChild(c);l.appendChild(el("span",null,(o.name||o.pid)));box.appendChild(l);});
+  if(!objects.length)box.appendChild(el("div","hint","Список объектов не загрузился"));}
+const picked=box=>[...box.querySelectorAll("input:checked")].map(c=>c.value);
+function drawUsers(){
+  const out=$("u-out");out.innerHTML="";$("u-cnt").textContent=users.length?("— "+users.length):"";
+  users.forEach(u=>{
+    const b=el("div","u");const h=el("div","uh");const l=el("div");l.appendChild(el("b",null,u.name));
+    l.appendChild(el("div","sub",u.roleName+" · логин: "+u.login+(u.last?" · был: "+u.last:" · ещё не входил")));h.appendChild(l);
+    const tgs=el("div");tgs.style.display="flex";tgs.style.gap="6px";tgs.style.flexWrap="wrap";
+    tgs.appendChild(el("span","tg "+(u.active?(u.must?"warn":"ok"):"bad"),!u.active?"отключён":u.must?"ждёт смены пароля":"пароль задан"));
+    h.appendChild(tgs);b.appendChild(h);
+    if(u.active&&u.must&&u.temp){const t=el("div","temp");t.appendChild(document.createTextNode("Временный пароль: "));t.appendChild(el("code",null,u.temp));
+      const cp=el("button","btn","Скопировать приглашение");cp.type="button";cp.style.marginLeft="10px";cp.onclick=()=>copy(invite(u),cp);t.appendChild(cp);b.appendChild(t);}
+    const acts=el("div","acts");
+    const rs=el("button","btn","Сбросить пароль");rs.type="button";rs.onclick=async()=>{if(!confirm("Выдать "+u.name+" новый временный пароль? Старый перестанет работать.")) return;const r=await api({a:"ureset",t:T,login:u.login});if(!r.ok){alert(errText[r.error]||r.error);return;}await load();};acts.appendChild(rs);
+    const tg=el("button","btn"+(u.active?" danger":""),u.active?"Отключить":"Включить");tg.type="button";tg.onclick=async()=>{const r=await api({a:"utoggle",t:T,login:u.login,active:!u.active});if(!r.ok){alert(errText[r.error]||r.error);return;}await load();};acts.appendChild(tg);
+    b.appendChild(acts);
+    if(u.role==="pm"){
+      const w=el("div");w.appendChild(el("div","hint","Объекты, которые "+u.name+" видит полностью (остальные — только обзор):"));
+      const box=el("div","objs");objPicker(box,u.objs||[]);w.appendChild(box);
+      const sv=el("button","btn","Сохранить объекты");sv.type="button";sv.style.marginTop="8px";const mg=el("div","msg");
+      sv.onclick=async()=>{const r=await api({a:"uobjs",t:T,login:u.login,objs:picked(box)});if(r.ok){mg.textContent="Сохранено";mg.className="msg ok";u.objs=r.user.objs;}else{mg.textContent=errText[r.error]||r.error;mg.className="msg bad";}};
+      w.appendChild(sv);w.appendChild(mg);b.appendChild(w);
+    }else{b.appendChild(el("div","hint",u.role==="pm"?"":"Видит все объекты полностью."));}
+    out.appendChild(b);
+  });
+  if(!users.length)out.textContent="Пока никого нет.";
+}
+async function load(){
+  const r=await api({a:"ulist",t:T});
+  if(!r.ok){if(r.error==="auth"){deny("Эта страница только для администратора. Войдите под учётной записью администратора.");$("main").hidden=true;}return;}
+  users=r.users;drawUsers();
+}
+async function loadObjects(){
+  try{const r=await fetch(U+(U.includes("?")?"&":"?")+new URLSearchParams({a:"objects",k:"tk:"+T}),{redirect:"follow"});const j=await r.json();
+    if(j.ok)objects=(j.objects||[]).filter(o=>o&&o.pid).map(o=>({pid:o.pid,name:o.name||o.pid})).sort((a,b)=>String(a.name).localeCompare(String(b.name),"ru"));}catch(e){}
+}
+async function init(){
+  if(!U||!T){deny("Войдите по логину и паролю администратора.");return;}
+  $("main").hidden=false;
+  const sel=$("a-role");["pm","exec","admin"].forEach(r=>{const o=el("option",null,ROLE_NAME[r]);o.value=r;sel.appendChild(o);});
+  await loadObjects();objPicker($("a-objs"),[]);
+  const upd=()=>{$("a-objs-w").hidden=sel.value!=="pm";};sel.onchange=upd;upd();
+  $("a-go").onclick=async()=>{
+    say("a-msg","");const name=$("a-name").value.trim(),login=$("a-login").value.trim().toLowerCase();
+    if(!name){say("a-msg","Укажите имя","bad");return;}
+    if(!/^[a-z0-9._-]{3,30}$/.test(login)){say("a-msg",errText.login,"bad");return;}
+    $("a-go").disabled=true;
+    try{const r=await api({a:"uadd",t:T,name:name,login:login,role:sel.value,objs:sel.value==="pm"?picked($("a-objs")):[]});
+      if(!r.ok){say("a-msg",errText[r.error]||("Ошибка: "+r.error),"bad");}
+      else{say("a-msg","Создано","ok");const inv=$("a-inv");inv.hidden=false;inv.innerHTML="";inv.appendChild(el("div","hint","Отправьте человеку (например, в MAX) — это сообщение уже готово:"));
+        const pre=el("pre","inv",invite(r.user));inv.appendChild(pre);const cp=el("button","btn primary","Скопировать");cp.type="button";cp.style.marginTop="8px";cp.onclick=()=>copy(invite(r.user),cp);inv.appendChild(cp);
+        $("a-name").value="";$("a-login").value="";objPicker($("a-objs"),[]);await load();}
+    }catch(e){say("a-msg","Нет связи, повторите","bad");}
+    $("a-go").disabled=false;
+  };
+  load();
+}
+init();
+})();
+</script>
+</body>
+</html>
