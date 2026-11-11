@@ -85,7 +85,7 @@
   function finish(j) {
     st = { u: U, t: j.token, name: j.name, role: j.role }; sv(st);
     setHash("tk:" + j.token);
-    location.reload();
+    setTimeout(function () { location.reload(); }, 600);
   }
   function showLogin(box) {
     box.innerHTML = "";
@@ -94,31 +94,35 @@
     if (!U) { box.appendChild(mk("p", "Откройте страницу по ссылке, которую вам прислали (в ней адрес базы).")); return; }
     var l1 = mk("label", "Логин"), i1 = mk("input", null, { type: "text", autocomplete: "username", autocapitalize: "none", autocorrect: "off", spellcheck: "false" });
     var l2 = mk("label", "Пароль"), i2 = mk("input", null, { type: "password", autocomplete: "current-password" });
-    var go = mk("button", "Войти", { type: "button" }), er = mk("div", "", {}); er.className = "e";
-    [l1, i1, l2, i2, go, er].forEach(function (x) { box.appendChild(x); });
+    i1.setAttribute("name", "username"); i2.setAttribute("name", "password");
+    var go = mk("button", "Войти", { type: "submit" }), er = mk("div", "", {}); er.className = "e";
+    var fm = mk("form", null, { autocomplete: "on" }); box.appendChild(fm);
+    [l1, i1, l2, i2, go, er].forEach(function (x) { fm.appendChild(x); });
+    fm.addEventListener("submit", function (e) { e.preventDefault(); submit(); });
     function submit() {
       if (!i1.value.trim() || !i2.value) { er.textContent = "Введите логин и пароль"; return; }
       go.disabled = true; er.textContent = "";
       post({ a: "login", u: i1.value.trim(), p: i2.value }).then(function (j) {
         go.disabled = false;
-        if (j.ok && j.must) { showChange(box, j); return; }
+        if (j.ok && j.must) { showChange(box, j, i1.value.trim()); return; }
         if (j.ok) { finish(j); return; }
         er.textContent = j.error === "locked" ? "Слишком много попыток. Подождите 15 минут." : j.error === "bad" ? "Неверный логин или пароль" : "Ошибка: " + (j.error || "нет связи");
       }).catch(function () { go.disabled = false; er.textContent = "Нет связи. Проверьте интернет и повторите."; });
     }
-    go.onclick = submit;
-    i2.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(); });
-    i1.addEventListener("keydown", function (e) { if (e.key === "Enter") i2.focus(); });
+    i1.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); i2.focus(); } });
     setTimeout(function () { try { i1.focus(); } catch (e) {} }, 50);
   }
-  function showChange(box, j) {
+  function showChange(box, j, lg) {
     box.innerHTML = "";
     box.appendChild(mk("h2", "Задайте свой пароль"));
     box.appendChild(mk("p", "Вы вошли с временным паролем. Придумайте свой — не короче 8 символов. Дальше входить нужно будет с ним."));
     var l1 = mk("label", "Новый пароль"), i1 = mk("input", null, { type: "password", autocomplete: "new-password" });
     var l2 = mk("label", "Повторите пароль"), i2 = mk("input", null, { type: "password", autocomplete: "new-password" });
-    var go = mk("button", "Сохранить и войти", { type: "button" }), er = mk("div", ""); er.className = "e";
-    [l1, i1, l2, i2, go, er].forEach(function (x) { box.appendChild(x); });
+    var un = mk("input", null, { type: "text", name: "username", autocomplete: "username", value: lg || j.login || "" }); un.style.display = "none";
+    var go = mk("button", "Сохранить и войти", { type: "submit" }), er = mk("div", ""); er.className = "e";
+    var fm = mk("form", null, { autocomplete: "on" }); box.appendChild(fm);
+    [un, l1, i1, l2, i2, go, er].forEach(function (x) { fm.appendChild(x); });
+    fm.addEventListener("submit", function (e) { e.preventDefault(); submit(); });
     function submit() {
       if (i1.value.length < 8) { er.textContent = "Пароль короче 8 символов"; return; }
       if (i1.value !== i2.value) { er.textContent = "Пароли не совпадают"; return; }
@@ -129,8 +133,6 @@
         er.textContent = r.error === "short" ? "Пароль короче 8 символов" : r.error === "same" ? "Новый пароль должен отличаться от временного" : "Ошибка: " + (r.error || "нет связи");
       }).catch(function () { go.disabled = false; er.textContent = "Нет связи. Повторите."; });
     }
-    go.onclick = submit;
-    i2.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(); });
     setTimeout(function () { try { i1.focus(); } catch (e) {} }, 50);
   }
   document.addEventListener("DOMContentLoaded", function () {
