@@ -206,6 +206,10 @@ html.embed header .brand,html.embed header .who,html.embed #themeFab{display:non
 html.embed header .tabs{display:flex;gap:6px;flex-wrap:wrap;width:100%;overflow:visible}
 html.embed header .tab{color:var(--fg)!important;background:transparent;border:1px solid var(--line);padding:7px 16px;font-size:14.5px}
 html.embed header .tab[aria-selected="true"]{background:#2E671F!important;color:#fff!important;border-color:#2E671F;box-shadow:none}
+html.embed .tablewrap table.t th:nth-child(2),html.embed .tablewrap table.t td:nth-child(2),html.embed .tablewrap table.t th:nth-child(6),html.embed .tablewrap table.t td:nth-child(6),html.embed .tablewrap table.t th:nth-child(7),html.embed .tablewrap table.t td:nth-child(7),html.embed .tablewrap table.t th:nth-child(8),html.embed .tablewrap table.t td:nth-child(8){display:none}
+html.embed .tablewrap table.t{font-size:12.5px}html.embed .tablewrap table.t th,html.embed .tablewrap table.t td{padding-left:5px!important;padding-right:5px!important;white-space:normal!important}html.embed .tablewrap table.t td:nth-child(9) div{white-space:normal}
+html.embed .tablewrap table.t td:nth-child(10) .btn{padding:4px 6px;font-size:11px;min-height:0;white-space:normal}html.embed .tablewrap table.t th:nth-child(5),html.embed .tablewrap table.t td:nth-child(5){min-width:0;width:auto}
+@media (max-width:520px){html.embed .tablewrap table.t th:nth-child(5),html.embed .tablewrap table.t td:nth-child(5){display:none}}
 </style>
 <script>(function(){var q=new URLSearchParams(location.search);if(q.get('embed')==='1'){var r=document.documentElement;r.classList.add('embed');var th=q.get('th');if(th==='light'||th==='dark'){var fix=function(){if(r.getAttribute('data-theme')!==th)r.setAttribute('data-theme',th)};fix();new MutationObserver(fix).observe(r,{attributes:true,attributeFilter:['data-theme']});}}})();</script>
 </head><body>
@@ -722,14 +726,14 @@ function planStatusCard(){
 }
 function renderPlan(){
   var el=$('#main');if(!st.loaded){el.innerHTML='<div class="empty">Загружаю…</div>';return}
-  var canE=finCan('plans'),adm=ME&&ME.kind==='admin',mine={};planObjects().forEach(function(o){mine[o.id]=1});
+  var EMB=document.documentElement.classList.contains('embed'),canE=EMB?false:finCan('plans'),adm=ME&&ME.kind==='admin',mine={};planObjects().forEach(function(o){mine[o.id]=1});
   var RP=gRange();
   var pl=sortBy((S.plans||[]).filter(function(p){if(ME&&ME.kind==='foreman'&&!mine[p.object])return false;var pb=planBounds(p);return !pb.from||!pb.to||(pb.to>=RP.from&&pb.from<=RP.to)}),function(p){return (p.month||'0')+' '+(p.object||'')}).reverse();
   var h='<h2 style="margin:0 0 4px">'+(ME&&ME.kind==='foreman'?'План вывоза':'План / факт по объектам')+'</h2><div class="small muted intro" style="margin-bottom:12px">План вывоза на месяц вносят руководители проектов. Факт — принятый объём (Renault и перевозчики). План делится поровну на рабочие дни: понедельник–суббота, воскресенье выходной. «По графику» — сколько должно быть вывезено к вчерашнему дню.</div>';
-  h+=planStatusCard();
+  if(!EMB)h+=planStatusCard();
   h+='<div style="margin-top:12px">'+periodBar()+'</div>';
   h+='<div class="card" style="margin-top:4px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;align-items:center"><h3 style="margin:0">Планы</h3>'+(canE?'<button class="btn sm pri" data-act="planAdd">+ План на месяц</button>':'')+'</div>';
-  if(!pl.length)h+='<div class="empty" style="margin-top:10px">'+(S.plans&&S.plans.length?'За выбранный период планов нет. Выберите другой период или «Всё время».':'Планов пока нет. Нажмите «+ План на месяц».')+'</div>';
+  if(!pl.length)h+='<div class="empty" style="margin-top:10px">'+(S.plans&&S.plans.length?(EMB?'План на выбранный период не задан.':'За выбранный период планов нет. Выберите другой период или «Всё время».'):(EMB?'План не задан.':'Планов пока нет. Нажмите «+ План на месяц».'))+'</div>';
   else{
     h+='<div class="tablewrap" style="margin-top:8px"><table class="t"><thead><tr><th class="l">Объект</th><th class="l">Период</th><th class="n">План, м³</th><th class="n">Факт, м³</th><th class="n">Выполнено</th><th class="n">В день, м³</th><th class="n">По графику, м³</th><th class="n">Отклонение, м³</th><th class="n">Осталось, м³</th><th class="l"></th></tr></thead><tbody>';
     pl.forEach(function(p){
