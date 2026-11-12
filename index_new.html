@@ -479,7 +479,7 @@ td.src small{display:block;color:var(--muted);font-size:11px}
     </section>
     <div id="h-wrap" hidden>
       <div style="text-align:right;padding:4px 2px"><button type="button" class="btn" id="h-change" style="min-height:0;padding:4px 10px;font-size:13px">Сменить ссылку</button></div>
-      <iframe id="h-fr" title="Заявка на вывоз" style="width:100%;height:calc(100vh - 190px);min-height:480px;border:0;background:#fff;border-radius:12px"></iframe>
+      <iframe id="h-fr" title="Заявка на вывоз" style="width:100%;height:calc(100vh - 190px);min-height:480px;border:0;background:transparent" allowtransparency="true"></iframe>
     </div>
   </div>
   <div id="v-log" hidden>
@@ -1124,7 +1124,7 @@ function renderHaul(){
   const tok=zvTok(),fr=$("h-fr");
   $("h-setup").hidden=!!tok;$("h-wrap").hidden=!tok;
   $("h-change").hidden=!!(C&&C.zv);
-  if(tok){const src=new URL("zayavki/index.html?t="+encodeURIComponent(tok),BASE).href;if(fr.dataset.src!==src){fr.src=src;fr.dataset.src=src;}}
+  if(tok){const th=document.documentElement.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");const src=new URL("zayavki/index_embed.html?embed=1&th="+th+"&t="+encodeURIComponent(tok),BASE).href;if(fr.dataset.src!==src){fr.src=src;fr.dataset.src=src;}}
 }
 $("h-save").onclick=function(){
   const v=$("h-link").value.trim();let t="";
