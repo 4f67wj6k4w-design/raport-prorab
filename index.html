@@ -199,6 +199,7 @@ body.is-idle #f-prev,body.is-idle #f-works,body.is-idle #f-work-add,body.is-idle
 .passinfo div{padding:2px 0}
 td.src small{display:block;color:var(--muted);font-size:11px}
 .mode-pill{display:inline-block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;background:rgba(255,255,255,.18);border-radius:4px;padding:2px 6px;margin-bottom:4px}
+#tabs-form{gap:0}#tabs-form button{font-size:13.5px;padding-left:2px;padding-right:2px}
 </style>
 <link rel="stylesheet" href="tema.css">
 <script src="tema.js"></script>
@@ -220,6 +221,7 @@ td.src small{display:block;color:var(--muted);font-size:11px}
       <button role="tab" id="tab-pass" aria-selected="false" data-v="pass">Паспорт</button>
       <button role="tab" id="tab-sum" aria-selected="false" data-v="sum">Итоги</button>
       <button role="tab" id="tab-log" aria-selected="false" data-v="log">Журнал</button>
+      <button role="tab" id="tab-haul" aria-selected="false" data-v="haul">Вывоз</button>
     </nav>
     <nav class="tabs" role="tablist" id="tabs-admin" hidden>
       <button role="tab" id="tab-edit" aria-selected="true" data-a="edit">Объект</button>
@@ -467,6 +469,19 @@ td.src small{display:block;color:var(--muted);font-size:11px}
     </section>
   </div>
 
+  <div id="v-haul" hidden>
+    <section class="card" id="h-setup" hidden>
+      <h2>Заявка на вывоз</h2>
+      <p class="muted">Один раз вставьте вашу личную ссылку «Вывоз» (ту, которой вы пользовались раньше). Она запомнится на этом телефоне.</p>
+      <label class="f">Ссылка «Вывоз»<input type="text" id="h-link" placeholder="https://…/zayavki/index.html?t=…"></label>
+      <button type="button" class="btn" id="h-save">Сохранить</button>
+      <div class="muted small" id="h-msg" style="margin-top:8px"></div>
+    </section>
+    <div id="h-wrap" hidden>
+      <div style="text-align:right;padding:4px 2px"><button type="button" class="btn" id="h-change" style="min-height:0;padding:4px 10px;font-size:13px">Сменить ссылку</button></div>
+      <iframe id="h-fr" title="Заявка на вывоз" style="width:100%;height:calc(100vh - 190px);min-height:480px;border:0;background:transparent" allowtransparency="true"></iframe>
+    </div>
+  </div>
   <div id="v-log" hidden>
     <section class="card">
       <h2>Все рапорты <span id="l-count"></span></h2>
@@ -698,7 +713,7 @@ let C=null, WORKS=[], MATS=[], reports={}, shift="D", dirty=false, LKEY="", OKEY
 const slug=s=>nrm(s).replace(/[^a-zа-яё0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"x";
 function startForm(cfg){
   {const bm=$("back-menu");let ok=false;try{const m=JSON.parse(sget("raport2-menu")||"null");ok=Array.isArray(m)&&m.some(x=>x&&x.pid===cfg.pid);}catch(e){}bm.hidden=!ok;bm.onclick=()=>{location.hash="#menu";};}
-  C=cfg;WORKS=(cfg.works||[]).map(w=>Object.assign({k:"w_"+String(w.c).replace(/[^\wА-Яа-яЁё]/g,"_")},w));
+  C=cfg;try{$("tab-haul").style.display=zvTok()?"":"none";}catch(e){}WORKS=(cfg.works||[]).map(w=>Object.assign({k:"w_"+String(w.c).replace(/[^\wА-Яа-яЁё]/g,"_")},w));
   MATS=(cfg.mats&&cfg.mats.length?cfg.mats:DEF_MATS);LKEY="raport2-"+cfg.pid;OKEY="raport2-outbox-"+cfg.pid;
   document.title=(cfg.title||"Рапорт прораба")+" — "+(cfg.name||"");
   $("hdr-obj").textContent=cfg.name||"";$("hdr-title").textContent=cfg.title||"Рапорт прораба";
@@ -1103,7 +1118,23 @@ function renderLog(){
     s.textContent=parts.join(" · ")||"без объёмов";b.appendChild(s);
     b.onclick=()=>{$("f-date").value=r.date;setShift(r.shift);show("form");window.scrollTo(0,0);};el.appendChild(b);});
 }
-function show(v){["form","pass","sum","log"].forEach(x=>{$("v-"+x).hidden=x!==v;$("tab-"+x).setAttribute("aria-selected",String(x===v));});$("savebar").hidden=v!=="form";if(v==="pass")renderPass();if(v==="sum")renderSum();if(v==="log")renderLog();sset("raport2-tab",v);}
+function show(v){["form","pass","sum","log","haul"].forEach(x=>{$("v-"+x).hidden=x!==v;$("tab-"+x).setAttribute("aria-selected",String(x===v));});$("savebar").hidden=v!=="form";if(v==="pass")renderPass();if(v==="sum")renderSum();if(v==="log")renderLog();if(v==="haul")renderHaul();sset("raport2-tab",v);}
+function zvTok(){let t=(C&&C.zv)||"";if(!t){try{t=localStorage.getItem("raport2-zv-"+(C&&C.pid))||"";}catch(e){}}return t;}
+function renderHaul(){
+  const tok=zvTok(),fr=$("h-fr");
+  $("h-setup").hidden=!!tok;$("h-wrap").hidden=!tok;
+  $("h-change").hidden=!!(C&&C.zv);
+  if(tok){const th=document.documentElement.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");const src=new URL("zayavki/index_embed.html?embed=1&th="+th+"&t="+encodeURIComponent(tok),BASE).href;if(fr.dataset.src!==src){fr.src=src;fr.dataset.src=src;}}
+}
+$("h-save").onclick=function(){
+  const v=$("h-link").value.trim();let t="";
+  try{t=new URL(v).searchParams.get("t")||"";}catch(e){}
+  if(!t&&/^[A-Za-z0-9_\-]{6,}$/.test(v))t=v;
+  if(!t){$("h-msg").textContent="Не нашёл личный код в ссылке. Вставьте ссылку «Вывоз» целиком.";return}
+  try{localStorage.setItem("raport2-zv-"+C.pid,t);}catch(e){}
+  $("h-msg").textContent="";renderHaul();
+};
+$("h-change").onclick=function(){try{localStorage.removeItem("raport2-zv-"+C.pid);}catch(e){}$("h-fr").removeAttribute("src");$("h-fr").dataset.src="";$("h-link").value="";renderHaul();};
 function bindForm(){
   $("f-idle").onchange=()=>{document.body.classList.toggle("is-idle",$("f-idle").checked);dirty=true;};
   $("f-date").addEventListener("change",()=>{dirty=false;loadForm();});
