@@ -713,7 +713,7 @@ let C=null, WORKS=[], MATS=[], reports={}, shift="D", dirty=false, LKEY="", OKEY
 const slug=s=>nrm(s).replace(/[^a-zа-яё0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"x";
 function startForm(cfg){
   {const bm=$("back-menu");let ok=false;try{const m=JSON.parse(sget("raport2-menu")||"null");ok=Array.isArray(m)&&m.some(x=>x&&x.pid===cfg.pid);}catch(e){}bm.hidden=!ok;bm.onclick=()=>{location.hash="#menu";};}
-  C=cfg;try{$("tab-haul").style.display=zvTok()?"":"none";}catch(e){}WORKS=(cfg.works||[]).map(w=>Object.assign({k:"w_"+String(w.c).replace(/[^\wА-Яа-яЁё]/g,"_")},w));
+  C=cfg;try{$("tab-haul").style.display=zvTok()?"":"none";setTimeout(zvAuto,1500);}catch(e){}WORKS=(cfg.works||[]).map(w=>Object.assign({k:"w_"+String(w.c).replace(/[^\wА-Яа-яЁё]/g,"_")},w));
   MATS=(cfg.mats&&cfg.mats.length?cfg.mats:DEF_MATS);LKEY="raport2-"+cfg.pid;OKEY="raport2-outbox-"+cfg.pid;
   document.title=(cfg.title||"Рапорт прораба")+" — "+(cfg.name||"");
   $("hdr-obj").textContent=cfg.name||"";$("hdr-title").textContent=cfg.title||"Рапорт прораба";
@@ -976,7 +976,7 @@ function softWarn(o){const w=[];
 function checkForm(ctx){const m=$("save-msg");const o=collect();const e=validate(o);if(e.length){m.textContent="Заполните или исправьте: "+e.join("; ");m.className="msg bad";warnAck="";
     popup("bad","Рапорт НЕ сохранён","Заполните или исправьте:",e,[{t:"Понятно, исправлю",p:1}]);return null;}
   {const w=softWarn(o),key=JSON.stringify(w)+JSON.stringify(o.works);if(w.length&&warnAck!==key){warnAck=key;m.textContent="Проверьте: "+w.join(" ")+" Если всё верно — нажмите «Сохранить рапорт» ещё раз.";m.className="msg warnc";
-    popup("warn","Проверьте перед сохранением","Рапорт ещё НЕ сохранён. Посмотрите:",w,ctx==="save"?[{t:"Исправить"},{t:"Всё верно — сохранить",p:1,f:()=>{const o2=checkForm("save");if(o2)persist(o2);}}]:[{t:"Понятно",p:1}]);return null;}}delete o._bad;o.savedAt=new Date().toISOString();sset("raport2-foreman",o.foreman);return o;}
+    popup("warn","Проверьте перед сохранением","Рапорт ещё НЕ сохранён. Посмотрите:",w,ctx==="save"?[{t:"Исправить"},{t:"Всё верно — сохранить",p:1,f:()=>{const o2=checkForm("save");if(o2)persist(o2);}}]:[{t:"Понятно",p:1}]);return null;}}delete o._bad;o.savedAt=new Date().toISOString();sset("raport2-foreman",o.foreman);setTimeout(zvAuto,500);return o;}
 function persist(o){
   if(renameFrom&&renameFrom!==o.id){o.replaces=renameFrom;delete reports[renameFrom];try{const m=loadLocal();delete m[renameFrom];localStorage.setItem(LKEY,JSON.stringify(m));}catch(e){}setOutbox(outbox().filter(x=>x!==renameFrom));renameFrom=null;loadedId=o.id;}
   const ok=saveLocal(o);reports=loadLocal();if(!ok)reports[o.id]=o;dirty=false;
@@ -1119,11 +1119,30 @@ function renderLog(){
     b.onclick=()=>{$("f-date").value=r.date;setShift(r.shift);show("form");window.scrollTo(0,0);};el.appendChild(b);});
 }
 function show(v){["form","pass","sum","log","haul"].forEach(x=>{$("v-"+x).hidden=x!==v;$("tab-"+x).setAttribute("aria-selected",String(x===v));});$("savebar").hidden=v!=="form";if(v==="pass")renderPass();if(v==="sum")renderSum();if(v==="log")renderLog();if(v==="haul")renderHaul();sset("raport2-tab",v);}
-function zvTok(){let t=(C&&C.zv)||"";if(!t){const m=/[#&]zv=([A-Za-z0-9_\-]+)/.exec(location.hash||"");if(m)t=m[1];}if(!t){try{t=localStorage.getItem("raport2-zv-"+(C&&C.pid))||"";}catch(e){}}return t;}
+function zvTok(){let t=(C&&C.zv)||"";if(!t){const m=/[#&]zv=([A-Za-z0-9_\-]+)/.exec(location.hash||"");if(m)t=m[1];}if(!t){try{t=localStorage.getItem("raport2-zv-"+(C&&C.pid))||"";}catch(e){}}if(!t){try{const a=JSON.parse(localStorage.getItem("raport2-zva-"+(C&&C.pid))||"null");if(a&&a.t)t=a.t;}catch(e){}}return t;}
+const ZV_URL="https://script.google.com/macros/s/AKfycbwYTcUvCaVu4E7Erh2btGNPJmlS8Ma0jJcD2JCAZec_RQPYBjOuUZVM-1RWJlrmUwMn/exec";
+/* Автоматическое включение «Вывоза»: код заявок ищется по объекту и ФИО прораба из рапорта. Любая ошибка — молча, форма работает как раньше. */
+let zvBusy=false;
+async function zvAuto(){try{
+  if(!C||!C.pid||zvBusy)return;
+  if(C.zv||/[#&]zv=/.test(location.hash||""))return;
+  try{if(localStorage.getItem("raport2-zv-"+C.pid))return;}catch(e){}
+  const fio=(($("f-foreman")&&$("f-foreman").value)||sget("raport2-foreman")||"").trim();
+  if(fio.length<3)return;
+  const key="raport2-zva-"+C.pid;let a=null;try{a=JSON.parse(localStorage.getItem(key)||"null");}catch(e){}
+  const same=a&&a.fio===fio;
+  if(same&&a.t)return;
+  if(same&&!a.t&&Date.now()-(a.at||0)<3600000)return;
+  zvBusy=true;
+  const r=await fetch(ZV_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({op:"find",obj:C.pid,fio:fio})});
+  const j=await r.json();
+  try{localStorage.setItem(key,JSON.stringify({fio:fio,t:(j&&j.ok&&j.t)?j.t:"",at:Date.now()}));}catch(e){}
+  $("tab-haul").style.display=zvTok()?"":"none";
+}catch(e){}finally{zvBusy=false;}}
 function renderHaul(){
   const tok=zvTok(),fr=$("h-fr");
   $("h-setup").hidden=!!tok;$("h-wrap").hidden=!tok;
-  $("h-change").hidden=!!(C&&C.zv)||/[#&]zv=/.test(location.hash||"");
+  $("h-change").hidden=!!(C&&C.zv)||/[#&]zv=/.test(location.hash||"")||(()=>{try{const a=JSON.parse(localStorage.getItem("raport2-zva-"+(C&&C.pid))||"null");return !!(a&&a.t);}catch(e){return false;}})();
   if(tok){const th=document.documentElement.getAttribute("data-theme")||(matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light");const src=new URL("zayavki/index_embed.html?embed=1&th="+th+"&t="+encodeURIComponent(tok),BASE).href;if(fr.dataset.src!==src){fr.src=src;fr.dataset.src=src;}}
 }
 $("h-save").onclick=function(){
@@ -1138,7 +1157,7 @@ $("h-change").onclick=function(){try{localStorage.removeItem("raport2-zv-"+C.pid
 function bindForm(){
   $("f-idle").onchange=()=>{document.body.classList.toggle("is-idle",$("f-idle").checked);dirty=true;};
   $("f-date").addEventListener("change",()=>{dirty=false;loadForm();});
-  $("f-foreman").addEventListener("change",()=>{
+  $("f-foreman").addEventListener("change",()=>{setTimeout(zvAuto,300);
     const src=renameFrom||loadedId,nid=docId();
     if(src&&src!==nid&&reports[src]&&!reports[nid]&&reports[src].date===$("f-date").value){renameFrom=src;dirty=true;
       const ex=$("f-exists");if(ex){ex.hidden=false;ex.textContent="ФИО изменено: рапорт сохранится под новым ФИО, рапорт «"+reports[src].foreman+"» за эту смену будет удалён.";}return;}
