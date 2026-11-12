@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Прораб — ГК КРАШМАШ (тест)</title>
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font:16px/1.4 -apple-system,Segoe UI,Roboto,Arial,sans-serif;background:#f3f5f1;color:#1d1d1b}
+#app{display:flex;flex-direction:column;height:100%}
+.top{background:#2E671F;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px}
+.top b{flex:1;font-size:16px}
+.top .test{background:#f0b400;color:#222;border-radius:6px;font-size:12px;font-weight:700;padding:2px 8px}
+.top button{background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:8px;padding:6px 10px;font-size:14px}
+.tabs{display:flex;background:#fff;border-bottom:1px solid #d8ddd3}
+.tabs button{flex:1;padding:12px 4px;border:0;background:none;font-size:15px;font-weight:600;color:#556;border-bottom:3px solid transparent}
+.tabs button.on{color:#2E671F;border-bottom-color:#2E671F}
+.bar{background:#fff;border-bottom:1px solid #d8ddd3;padding:8px 12px;display:flex;gap:8px;align-items:center}
+.bar select{flex:1;font-size:15px;padding:8px;border-radius:8px;border:1px solid #c9d0c3;background:#fff}
+.bar button{padding:8px 12px;border-radius:8px;border:1px solid #c9d0c3;background:#fff;font-size:14px}
+.pane{flex:1;min-height:0;display:none;flex-direction:column}
+.pane.on{display:flex}
+iframe{flex:1;width:100%;border:0;background:#fff}
+.box{max-width:420px;margin:0 auto;padding:22px 16px;width:100%}
+.card{background:#fff;border:1px solid #d8ddd3;border-radius:12px;padding:18px}
+h1{font-size:20px;margin:0 0 4px}.muted{color:#667;font-size:14px}
+label{display:block;margin:12px 0 4px;font-size:14px;color:#445}
+input{width:100%;font-size:17px;padding:11px;border:1px solid #c9d0c3;border-radius:10px}
+.btn{width:100%;margin-top:16px;padding:13px;border:0;border-radius:10px;background:#2E671F;color:#fff;font-size:17px;font-weight:600}
+.err{color:#a3261a;font-size:14px;margin-top:10px;min-height:18px}
+.item{display:block;width:100%;text-align:left;background:#fff;border:1px solid #d8ddd3;border-radius:12px;padding:14px;margin:8px 0;font-size:16px}
+.item small{display:block;color:#667;margin-top:2px}
+.list{padding:8px 12px;overflow:auto}
+.empty{padding:28px 16px;text-align:center;color:#667}
+[hidden]{display:none!important}
+</style></head>
+<body>
+<div id="app">
+  <!-- вход -->
+  <div id="v-login" class="box" hidden>
+    <div class="card">
+      <h1>Рапорт прораба <span class="test" style="background:#f0b400;border-radius:6px;font-size:12px;padding:2px 8px">ТЕСТ</span></h1>
+      <div class="muted">ГК КРАШМАШ. Войдите под своим логином.</div>
+      <label for="l-login">Логин</label><input id="l-login" autocomplete="username" autocapitalize="none" autocorrect="off">
+      <label for="l-pass">Пароль</label><input id="l-pass" type="password" autocomplete="current-password">
+      <button class="btn" id="l-go">Войти</button>
+      <div class="err" id="l-err"></div>
+    </div>
+  </div>
+  <!-- смена пароля -->
+  <div id="v-pass" class="box" hidden>
+    <div class="card">
+      <h1>Задайте свой пароль</h1>
+      <div class="muted">Временный пароль больше не нужен. Придумайте свой, не короче 8 символов, и запомните его.</div>
+      <label for="p-1">Новый пароль</label><input id="p-1" type="password" autocomplete="new-password">
+      <label for="p-2">Повторите пароль</label><input id="p-2" type="password" autocomplete="new-password">
+      <button class="btn" id="p-go">Сохранить и войти</button>
+      <div class="err" id="p-err"></div>
+    </div>
+  </div>
+  <!-- основное -->
+  <div id="v-main" hidden style="display:none;flex-direction:column;height:100%">
+    <div class="top"><b id="m-name">Прораб</b><span class="test">ТЕСТ</span><button id="m-out">Выйти</button></div>
+    <div class="tabs" id="tabs">
+      <button data-t="rep" class="on">Рапорт</button>
+      <button data-t="haul">Вывоз</button>
+      <button data-t="done">Завершённые</button>
+    </div>
+    <div class="pane on" id="t-rep">
+      <div class="bar" id="rep-bar" hidden><select id="rep-sel"></select></div>
+      <div class="empty" id="rep-empty" hidden>За вами пока не закреплён ни один действующий объект. Обратитесь к руководителю.</div>
+      <iframe id="rep-fr" title="Рапорт" hidden></iframe>
+    </div>
+    <div class="pane" id="t-haul">
+      <div class="empty" id="haul-empty" hidden>Вывоз для вас ещё не подключён. Обратитесь к администратору.</div>
+      <iframe id="haul-fr" title="Вывоз" hidden></iframe>
+    </div>
+    <div class="pane" id="t-done">
+      <div class="bar" id="done-bar" hidden><button id="done-back">← К списку</button><span class="muted" id="done-ttl"></span></div>
+      <div class="list" id="done-list"></div>
+      <iframe id="done-fr" title="Завершённый объект" hidden></iframe>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+"use strict";
+var LS="prorab-test-auth";
+var $=function(i){return document.getElementById(i)};
+var hs=new URLSearchParams(location.hash.slice(1));
+function ld(){try{return JSON.parse(localStorage.getItem(LS)||"null")||{}}catch(e){return {}}}
+function sv(o){try{localStorage.setItem(LS,JSON.stringify(o))}catch(e){}}
+var S=ld();
+var API=hs.get("u")||S.u||"";
+if(hs.get("u")){S.u=API;sv(S);try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}}
+var DATA=null;
+
+function show(v){["v-login","v-pass"].forEach(function(i){$(i).hidden=(i!==v)});
+  var m=$("v-main");m.hidden=(v!=="v-main");m.style.display=(v==="v-main")?"flex":"none";}
+function post(body){return fetch(API,{method:"POST",body:JSON.stringify(body),redirect:"follow"}).then(function(r){return r.json()});}
+function get(q){return fetch(API+(API.indexOf("?")<0?"?":"&")+q,{redirect:"follow"}).then(function(r){return r.json()});}
+
+// ссылка на форму объекта: тот же формат, что в обычной ссылке прораба (#p=z…)
+function b64u(b){var s="";b.forEach(function(x){s+=String.fromCharCode(x)});return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");}
+async function enc(cfg){
+  var raw=new TextEncoder().encode(JSON.stringify(cfg));
+  if(window.CompressionStream){try{var cs=new CompressionStream("deflate-raw"),w=cs.writable.getWriter();w.write(raw);w.close();
+    return "z"+b64u(new Uint8Array(await new Response(cs.readable).arrayBuffer()));}catch(e){}}
+  return "j"+b64u(raw);
+}
+async function formSrc(o){return "index.html#p="+await enc(o.cfg);}
+
+// ---- вход ----
+$("l-go").onclick=async function(){
+  var u=$("l-login").value.trim().toLowerCase(),p=$("l-pass").value;$("l-err").textContent="";
+  if(!u||!p){$("l-err").textContent="Введите логин и пароль";return}
+  if(!API){$("l-err").textContent="Нет адреса сервера. Откройте страницу по ссылке от администратора.";return}
+  $("l-go").disabled=true;
+  try{var r=await post({a:"login",u:u,p:p});
+    if(r.ok){S.t=r.token;S.name=r.name;S.login=u;sv(S);r.must?show("v-pass"):start();}
+    else $("l-err").textContent=r.error==="locked"?"Слишком много попыток. Подождите 15 минут.":"Неверный логин или пароль";
+  }catch(e){$("l-err").textContent="Нет связи. Проверьте интернет и повторите."}
+  $("l-go").disabled=false;
+};
+$("l-pass").onkeydown=function(e){if(e.key==="Enter")$("l-go").onclick()};
+$("p-go").onclick=async function(){
+  var a=$("p-1").value,b=$("p-2").value;$("p-err").textContent="";
+  if(a.length<8){$("p-err").textContent="Пароль короче 8 символов";return}
+  if(a!==b){$("p-err").textContent="Пароли не совпадают";return}
+  try{var r=await post({a:"chpass",t:S.t,p:a});
+    if(r.ok){S.t=r.token;sv(S);start();}
+    else $("p-err").textContent=r.error==="same"?"Новый пароль не должен совпадать с временным":r.error==="short"?"Пароль слишком короткий":"Сессия устарела, войдите заново";
+  }catch(e){$("p-err").textContent="Нет связи"}
+};
+$("m-out").onclick=function(){S.t="";sv(S);location.reload();};
+
+// ---- вкладки ----
+Array.prototype.forEach.call($("tabs").children,function(b){b.onclick=function(){
+  Array.prototype.forEach.call($("tabs").children,function(x){x.classList.toggle("on",x===b)});
+  ["rep","haul","done"].forEach(function(t){$("t-"+t).classList.toggle("on",t===b.dataset.t)});
+  if(b.dataset.t==="haul")loadHaul();
+};});
+
+async function loadRep(i){
+  var o=DATA.active[i];if(!o)return;
+  $("rep-fr").src=await formSrc(o);$("rep-fr").hidden=false;
+}
+async function loadHaul(){
+  var f=$("haul-fr");if(f.dataset.ok)return;
+  if(!DATA.zv){$("haul-empty").hidden=false;return}
+  f.src="zayavki/index.html?t="+encodeURIComponent(DATA.zv);f.hidden=false;f.dataset.ok=1;
+}
+function drawDone(){
+  var box=$("done-list");box.innerHTML="";
+  if(!DATA.done.length){box.innerHTML='<div class="empty">Завершённых объектов пока нет. Когда вы отметите «Работы завершены» и руководитель подтвердит, объект появится здесь.</div>';return}
+  DATA.done.forEach(function(o,i){var b=document.createElement("button");b.className="item";
+    b.textContent=o.name||o.pid;var s=document.createElement("small");s.textContent=o.closedAt?"Завершён "+o.closedAt:"Завершён";b.appendChild(s);
+    b.onclick=async function(){$("done-list").hidden=true;$("done-bar").hidden=false;$("done-ttl").textContent=o.name||"";
+      $("done-fr").src=await formSrc(o);$("done-fr").hidden=false;};box.appendChild(b);});
+}
+$("done-back").onclick=function(){$("done-fr").hidden=true;$("done-fr").removeAttribute("src");$("done-bar").hidden=true;$("done-list").hidden=false;};
+
+async function start(){
+  show("v-main");$("m-name").textContent=S.name||"Прораб";
+  try{var r=await get("a=my&k="+encodeURIComponent("tk:"+S.t));
+    if(!r.ok){if(r.error==="auth"||r.error==="key"){S.t="";sv(S);show("v-login");$("l-err").textContent="Войдите заново";return}throw new Error(r.error)}
+    var sel=function(f){return r.objects.filter(f)};
+    DATA={active:sel(function(o){return !o.closed}),done:sel(function(o){return o.closed}),zv:r.zv||""};
+    if(r.name){S.name=r.name;sv(S);$("m-name").textContent=r.name;}
+  }catch(e){$("rep-empty").hidden=false;$("rep-empty").textContent="Не удалось загрузить объекты. Проверьте интернет и обновите страницу.";return}
+  var s=$("rep-sel");s.innerHTML="";
+  DATA.active.forEach(function(o,i){var op=document.createElement("option");op.value=i;op.textContent=o.name||o.pid;s.appendChild(op)});
+  if(!DATA.active.length){$("rep-empty").hidden=false}
+  else{$("rep-bar").hidden=DATA.active.length<2;s.onchange=function(){loadRep(+s.value)};loadRep(0);}
+  drawDone();
+}
+if(!API){show("v-login");$("l-err").textContent="Откройте страницу по ссылке от администратора."}
+else if(S.t){start()}else show("v-login");
+})();
+</script></body></html>

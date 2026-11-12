@@ -74,7 +74,7 @@ pre.inv{white-space:pre-wrap;font:14px/1.5 var(--f-num);background:var(--sunk);b
 const $=id=>document.getElementById(id);
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;};
 const A=window.RaportAuth||{};const U=A.u&&A.u();let T=A.token&&A.token();
-const ROLE_NAME={admin:"Администратор",pm:"Руководитель проектов",exec:"Директор"};
+const ROLE_NAME={admin:"Администратор",pm:"Руководитель проектов",exec:"Директор",prorab:"Прораб"};
 let users=[],objects=[];
 const base=location.origin+location.pathname.replace(/[^\/]*$/,"");
 const pageFor=r=>base+(r==="exec"?"exec.html":r==="admin"?"dostup.html":"director.html")+"#u="+encodeURIComponent(U);
@@ -107,7 +107,7 @@ function drawUsers(){
     const rs=el("button","btn","Сбросить пароль");rs.type="button";rs.onclick=async()=>{if(!confirm("Выдать "+u.name+" новый временный пароль? Старый перестанет работать.")) return;const r=await api({a:"ureset",t:T,login:u.login});if(!r.ok){alert(errText[r.error]||r.error);return;}await load();};acts.appendChild(rs);
     const tg=el("button","btn"+(u.active?" danger":""),u.active?"Отключить":"Включить");tg.type="button";tg.onclick=async()=>{const r=await api({a:"utoggle",t:T,login:u.login,active:!u.active});if(!r.ok){alert(errText[r.error]||r.error);return;}await load();};acts.appendChild(tg);
     b.appendChild(acts);
-    if(u.role==="pm"){
+    if(u.role==="pm"||u.role==="prorab"){
       const w=el("div");w.appendChild(el("div","hint","Объекты, которые "+u.name+" видит полностью (остальные — только обзор):"));
       const box=el("div","objs");objPicker(box,u.objs||[]);w.appendChild(box);
       const sv=el("button","btn","Сохранить объекты");sv.type="button";sv.style.marginTop="8px";const mg=el("div","msg");
@@ -130,15 +130,15 @@ async function loadObjects(){
 async function init(){
   if(!U||!T){deny("Войдите по логину и паролю администратора.");return;}
   $("main").hidden=false;
-  const sel=$("a-role");["pm","exec","admin"].forEach(r=>{const o=el("option",null,ROLE_NAME[r]);o.value=r;sel.appendChild(o);});
+  const sel=$("a-role");["prorab","pm","exec","admin"].forEach(r=>{const o=el("option",null,ROLE_NAME[r]);o.value=r;sel.appendChild(o);});
   await loadObjects();objPicker($("a-objs"),[]);
-  const upd=()=>{$("a-objs-w").hidden=sel.value!=="pm";};sel.onchange=upd;upd();
+  const upd=()=>{$("a-objs-w").hidden=sel.value!=="pm"&&sel.value!=="prorab";};sel.onchange=upd;upd();
   $("a-go").onclick=async()=>{
     say("a-msg","");const name=$("a-name").value.trim(),login=$("a-login").value.trim().toLowerCase();
     if(!name){say("a-msg","Укажите имя","bad");return;}
     if(!/^[a-z0-9._-]{3,30}$/.test(login)){say("a-msg",errText.login,"bad");return;}
     $("a-go").disabled=true;
-    try{const r=await api({a:"uadd",t:T,name:name,login:login,role:sel.value,objs:sel.value==="pm"?picked($("a-objs")):[]});
+    try{const r=await api({a:"uadd",t:T,name:name,login:login,role:sel.value,objs:(sel.value==="pm"||sel.value==="prorab")?picked($("a-objs")):[]});
       if(!r.ok){say("a-msg",errText[r.error]||("Ошибка: "+r.error),"bad");}
       else{say("a-msg","Создано","ok");const inv=$("a-inv");inv.hidden=false;inv.innerHTML="";inv.appendChild(el("div","hint","Отправьте человеку (например, в MAX) — это сообщение уже готово:"));
         const pre=el("pre","inv",invite(r.user));inv.appendChild(pre);const cp=el("button","btn primary","Скопировать");cp.type="button";cp.style.marginTop="8px";cp.onclick=()=>copy(invite(r.user),cp);inv.appendChild(cp);
