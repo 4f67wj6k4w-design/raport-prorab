@@ -817,8 +817,8 @@ function usedExtras(){const m={},pw=new Set(WORKS.map(w=>xKey(w.n,w.u)));list().
 function extraDone(n,u,D,me){return list().filter(q=>q.date<=D&&q.id!==me).reduce((a,q)=>a+(q.extra||[]).filter(e=>xKey(e.n,e.u)===xKey(n,u)).reduce((s,e)=>s+(+e.v||0),0),0);}
 function rowHint(r){
   const h=r.querySelector(".wh");const c=r.querySelector("select").value;h.className="wh";
-  if(c==="__other"){h.textContent="Новая работа — впишите название и единицу (м³, м², т, шт…). В следующий раз она будет в списке.";return;}
-  if(c.startsWith("__x:")){const [n,u]=c.slice(4).split("\u0001");const done=extraDone(n,u,$("f-date").value,docId());h.textContent="Было выполнено "+fmt(done)+" "+u;
+  if(c==="__other"){h.textContent="Новая работа — впишите название и единицу (м³, м², т, шт…). Если объём не измеряется (сортировка, подготовка, уборка) — оставьте объём и единицу пустыми. В следующий раз работа будет в списке.";return;}
+  if(c.startsWith("__x:")){const [n,u]=c.slice(4).split("\u0001");if(u===NOV){h.textContent="Работа без измеряемого объёма — объём вводить не нужно.";return;}const done=extraDone(n,u,$("f-date").value,docId());h.textContent="Было выполнено "+fmt(done)+" "+u;
     const qv=num(r.querySelector(".wq").value);if(r.dataset.m==="t"&&qv!==null){const d=qv-done;h.textContent+=d<0?" · ВСЕГО меньше, чем уже было — проверьте":d===0?" · за смену: 0":" · за смену получится: "+fmt(d)+" "+u;if(d<0)h.className="wh bad";}return;}
   const x=WORKS.find(w=>w.c===c);if(!x){h.textContent="";return;}
   const D=$("f-date").value,me=docId();const done=cumWorks(list().filter(q=>q.date<=D&&q.id!==me))[x.k]||0;
@@ -830,7 +830,7 @@ function rowHint(r){
 }
 function addWork(d){d=d||{};
   const r=document.createElement("div");r.className="wrow";
-  r.innerHTML='<select aria-label="Работа"></select><input class="wq" inputmode="decimal" placeholder="0" aria-label="Объём"><button type="button" class="btn del" aria-label="Удалить строку">×</button><input type="text" class="won" placeholder="Что сделано" hidden><input type="text" class="wou" placeholder="ед.: м³, м², т, шт" list="unit-list" hidden><div class="wm"><button type="button" data-m="d" aria-pressed="true">за смену</button><button type="button" data-m="t" aria-pressed="false">всего на сегодня</button></div><div class="wh"></div>';
+  r.innerHTML='<select aria-label="Работа"></select><input class="wq" inputmode="decimal" placeholder="0" aria-label="Объём"><button type="button" class="btn del" aria-label="Удалить строку">×</button><input type="text" class="won" placeholder="Что сделано" hidden><input type="text" class="wou" placeholder="ед.: м³, м², т, шт (пусто — без объёма)" list="unit-list" hidden><div class="wm"><button type="button" data-m="d" aria-pressed="true">за смену</button><button type="button" data-m="t" aria-pressed="false">всего на сегодня</button></div><div class="wh"></div>';
   const sel=r.querySelector("select");
   const add=(v,t)=>{const o=document.createElement("option");o.value=v;o.textContent=t;sel.appendChild(o);};
   add("","— выберите работу —");manual().forEach(x=>add(x.c,x.c+" · "+x.n+", "+x.u));usedExtras().forEach(e=>add("__x:"+e.n+"\u0001"+e.u,e.n+", "+e.u));add("__other","+ Новая работа (вписать название)…");
@@ -848,15 +848,18 @@ function addWork(d){d=d||{};
   r.querySelector("button.del").onclick=()=>{r.remove();dirty=true;if(!$("f-works").children.length)addWork();};
   $("f-works").appendChild(r);upd();return r;
 }
+const NOV="без объёма";
 function readWorks(){
   const works={},extra=[],bad=[];
   document.querySelectorAll("#f-works .wrow").forEach((r,i)=>{
     const c=r.querySelector("select").value,v=num(r.querySelector(".wq").value),n=i+1;
     if(c==="__other"){const nm=r.querySelector(".won").value.trim(),u=r.querySelector(".wou").value.trim();
-      if(!nm&&v===null)return;if(!nm)bad.push("работа "+n+": наименование");if(v===null)bad.push("работа "+n+": объём");
+      if(!nm&&v===null)return;if(!nm)bad.push("работа "+n+": наименование");
+      if(nm&&!u&&v===null){extra.push({n:nm,u:NOV,v:0});return;}
+      if(v===null)bad.push("работа "+n+": объём");
       if(nm&&!u)bad.push("работа "+n+" («"+nm+"»): единица измерения (м³, м², т, шт…)");
       if(nm&&u&&v!==null)extra.push({n:nm,u:u,v:v});return;}
-    if(c.startsWith("__x:")){const [nm,u]=c.slice(4).split("\u0001");if(v===null){bad.push("работа "+n+" («"+nm+"»): объём");return;}
+    if(c.startsWith("__x:")){const [nm,u]=c.slice(4).split("\u0001");if(u===NOV){const ex0=extra.find(e=>xKey(e.n,e.u)===xKey(nm,u));if(!ex0)extra.push({n:nm,u:u,v:0});return;}if(v===null){bad.push("работа "+n+" («"+nm+"»): объём");return;}
       let dv=v;if(r.dataset.m==="t"){const done=extraDone(nm,u,$("f-date").value,docId());dv=Math.round((v-done)*1000)/1000;if(dv<0)dv=v;if(dv===0)return;}
       const ex=extra.find(e=>xKey(e.n,e.u)===xKey(nm,u));if(ex)ex.v+=dv;else extra.push({n:nm,u:u,v:dv});return;}
     if(!c){if(v!==null)bad.push("работа "+n+": выберите вид работ");return;}
@@ -1000,7 +1003,7 @@ function shiftText(o){
   const done=WORKS.filter(x=>o.works[x.c]&&!isMachSrc(x)&&(!isAuto(x)||x.t));
   if(o.idle){L.push("РАБОТ НЕ БЫЛО");}else{L.push("ВЫПОЛНЕНО ЗА СМЕНУ");if(!done.length&&!(o.extra||[]).length)L.push("• объёмов нет");}
   done.forEach(x=>{L.push("• "+x.n+" — "+fmt(o.works[x.c])+" "+x.u);L.push("   с начала "+fmt(cum[x.k])+(x.t?" из "+fmt(x.t)+" "+x.u+" ("+fmt(cum[x.k]/x.t*100,1)+"%)":" "+x.u));});
-  if(!o.idle)(o.extra||[]).forEach(e=>{const t=extraDone(e.n,e.u,o.date,o.id)+(+e.v||0);L.push("• "+e.n+" — "+fmt(e.v)+" "+e.u);L.push("   с начала "+fmt(t)+" "+e.u);});
+  if(!o.idle)(o.extra||[]).forEach(e=>{if(e.u===NOV){L.push("• "+e.n);return;}const t=extraDone(e.n,e.u,o.date,o.id)+(+e.v||0);L.push("• "+e.n+" — "+fmt(e.v)+" "+e.u);L.push("   с начала "+fmt(t)+" "+e.u);});
   if(o.haul.length){const tt=o.haul.reduce((a,h)=>a+(h.t||0),0),tv=o.haul.reduce((a,h)=>a+(h.v||0),0),tw=o.haul.reduce((a,h)=>a+(h.w||0),0);
     L.push("");L.push(HL.t.toUpperCase()+": "+(tt?fmt(tt,0)+" "+plur(tt,"рейс","рейса","рейсов")+", ":"")+fmt(tv)+" м³"+(HL.tn&&tw?" / "+fmt(tw)+" т":""));
     o.haul.forEach(h=>L.push("• "+h.m+": "+(h.c||"—")+" — "+(h.t!=null?fmt(h.t,0)+" "+plur(h.t,"рейс","рейса","рейсов")+", ":"")+fmt(h.v)+" м³"+(HL.tn&&h.w!=null?" / "+fmt(h.w)+" т":"")));}
@@ -1044,7 +1047,7 @@ function renderPass(){
   const ex={};all.forEach(r=>(r.extra||[]).forEach(e=>{const k=nrm(e.n)+"|"+nrm(e.u);if(!ex[k])ex[k]={n:e.n,u:e.u,v:0};ex[k].v+=+e.v||0;}));
   const ks=Object.keys(ex);$("p-extra-card").hidden=!ks.length;
   const eb=$("p-extra").querySelector("tbody");eb.innerHTML="";
-  ks.sort((a,b)=>ex[a].n.localeCompare(ex[b].n,"ru")).forEach(k=>{const tr=document.createElement("tr");tr.innerHTML='<td></td><td></td><td class="n"></td>';tr.children[0].textContent=ex[k].n;tr.children[1].textContent=ex[k].u;tr.children[2].textContent=fmt(ex[k].v);eb.appendChild(tr);});
+  ks.sort((a,b)=>ex[a].n.localeCompare(ex[b].n,"ru")).forEach(k=>{const tr=document.createElement("tr");tr.innerHTML='<td></td><td></td><td class="n"></td>';tr.children[0].textContent=ex[k].n;tr.children[1].textContent=ex[k].u;tr.children[2].textContent=ex[k].u===NOV?"выполнялась":fmt(ex[k].v);eb.appendChild(tr);});
 }
 // ---------- итоги ----------
 const sumField=(rs,f)=>rs.reduce((a,r)=>a+(typeof r[f]==="number"?r[f]:0),0);
@@ -1101,7 +1104,7 @@ function dayText(D,P,sd,sm,sc,pd,pn){
   (pd||[]).forEach(r=>L.push("Люди, день ("+r.foreman+"): "+pp(r)));(pn||[]).forEach(r=>L.push("Люди, ночь ("+r.foreman+"): "+pp(r)));L.push("");
   L.push("Выполнено (сутки / месяц / с начала):");
   WORKS.forEach(x=>{if(sc[x.k]>0)L.push("— "+x.n+": "+fmt(sd[x.k])+" / "+fmt(sm[x.k])+" / "+fmt(sc[x.k])+" "+x.u+(x.t?" из "+fmt(x.t)+" ("+fmt(sc[x.k]/x.t*100,1)+"%)":""));});
-  P.day.forEach(r=>(r.extra||[]).forEach(e=>L.push("— "+e.n+": "+fmt(e.v)+" "+e.u+" ("+r.foreman+")")));
+  P.day.forEach(r=>(r.extra||[]).forEach(e=>L.push(e.u===NOV?"— "+e.n+" ("+r.foreman+")":"— "+e.n+": "+fmt(e.v)+" "+e.u+" ("+r.foreman+")")));
   const dts=[];P.day.forEach(r=>(r.downtime||[]).forEach(d=>dts.push((d.k||"Простой")+": "+(d.what||"")+" — "+fmt(d.h)+" ч"+(d.fault?" (вина: "+d.fault+")":""))));
   if(!$("c-dt").hidden){L.push("");L.push("Простои: "+(dts.length?"":"нет"));dts.forEach(s=>L.push("— "+s));}
   return L.join("\n");
@@ -1114,7 +1117,7 @@ function renderLog(){
     const m=document.createElement("div");m.className="meta";const t=document.createElement("span");t.textContent=ruDate(r.date)+" · "+(r.shift==="D"?"день":"ночь")+(r.foreman?" · "+r.foreman:"");m.appendChild(t);
     if((r.downtime||[]).length){const f=document.createElement("span");f.className="flag";f.style.background="var(--warn)";f.textContent=(r.downtime||[]).some(d=>d.k==="Ремонт"||d.k==="ТО")?"ремонт/простой":"простой";m.appendChild(f);}
     b.appendChild(m);const s=document.createElement("div");s.className="sum";
-    const parts=WORKS.filter(x=>r.works&&r.works[x.c]).map(x=>x.c+" "+fmt(r.works[x.c])+" "+x.u);(r.extra||[]).forEach(e=>parts.push(e.n+" "+fmt(e.v)+" "+e.u));if(r.trips)parts.push("рейсов "+fmt(r.trips,0));const p=pplOf(r);if(p)parts.push("люди "+p);
+    const parts=WORKS.filter(x=>r.works&&r.works[x.c]).map(x=>x.c+" "+fmt(r.works[x.c])+" "+x.u);(r.extra||[]).forEach(e=>parts.push(e.u===NOV?e.n:e.n+" "+fmt(e.v)+" "+e.u));if(r.trips)parts.push("рейсов "+fmt(r.trips,0));const p=pplOf(r);if(p)parts.push("люди "+p);
     s.textContent=parts.join(" · ")||"без объёмов";b.appendChild(s);
     b.onclick=()=>{$("f-date").value=r.date;setShift(r.shift);show("form");window.scrollTo(0,0);};el.appendChild(b);});
 }
