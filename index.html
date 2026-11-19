@@ -1229,7 +1229,7 @@ async function syncObjects(){
     sset("raport2-tok",JSON.stringify(tok));sset("raport2-pids",now);
     sset("raport2-menu",JSON.stringify(arr.length>1?arr:[]));
     if(!arr.length)return {none:1};
-    if(now===prev||!prev)return null;
+    if(now===prev)return null;if(!prev&&hp)return null;
     if(arr.length>1)return {go:"#menu"};
     return {go:"#p="+await encodeCfg(arr[0])};
   }catch(e){return null;}
@@ -1251,6 +1251,27 @@ function showMenu(arr){
 // ---------- запуск ----------
 (async function(){
   bindAdmin();
+  window.__entryBox=()=>{if($("inv-paste"))return;const box=document.createElement("div");box.style.cssText="margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)";
+   box.innerHTML='<div style="font-weight:600;margin-bottom:6px">Вход по приглашению</div><div style="font-size:14px;color:var(--muted);margin-bottom:8px">Вставьте сюда ссылку-приглашение (скопируйте её из сообщения руководителя) и нажмите «Подключить».</div><input id="inv-paste" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Вставьте ссылку" style="width:100%;margin-bottom:8px"><button type="button" class="btn primary" id="inv-go" style="width:100%">Подключить</button><div id="inv-err" style="color:var(--bad);font-size:14px;margin-top:6px" hidden></div><hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><div style="font-weight:600;margin-bottom:6px">Или войдите по логину и паролю</div><div style="font-size:14px;color:var(--muted);margin-bottom:8px">Логин и временный пароль вам выдаст руководитель. При первом входе система попросит придумать свой пароль.</div><input id="lg-u" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="Логин" style="width:100%;margin-bottom:8px"><input id="lg-p" type="password" autocomplete="current-password" placeholder="Пароль" style="width:100%;margin-bottom:8px"><div id="lg-new" hidden><input id="lg-n1" type="password" autocomplete="new-password" placeholder="Новый пароль (от 6 знаков)" style="width:100%;margin-bottom:8px"><input id="lg-n2" type="password" autocomplete="new-password" placeholder="Повторите новый пароль" style="width:100%;margin-bottom:8px"></div><button type="button" class="btn primary" id="lg-go" style="width:100%">Войти</button><div id="lg-err" style="color:var(--bad);font-size:14px;margin-top:6px" hidden></div>';
+   const host=$("status").parentNode;host.insertBefore(box,$("status").nextSibling);
+   $("inv-go").onclick=()=>{const t=($("inv-paste").value||"").trim();const m=/[#&?]i=([A-Za-z0-9]{32})/.exec(t)||/^([A-Za-z0-9]{32})$/.exec(t);const er=$("inv-err");
+     if(!m){er.hidden=false;er.textContent="В тексте нет ссылки-приглашения. Скопируйте всю ссылку из сообщения целиком.";return;}
+     er.hidden=true;location.hash="#i="+m[1];};
+   $("lg-go").onclick=async()=>{const er=$("lg-err"),go=$("lg-go"),API=window.KRM_API;er.hidden=true;
+     const bad=t=>{er.hidden=false;er.textContent=t;go.disabled=false;};
+     const u=$("lg-u").value.trim().toLowerCase(),p=$("lg-p").value;if(!u||!p){bad("Введите логин и пароль.");return;}
+     go.disabled=true;
+     try{let tok=window.__lgTok;
+       if(!tok){const r=await fetch(API,{method:"POST",body:JSON.stringify({a:"login",u:u,p:p,dev:DEVN}),redirect:"follow"});const j=await r.json();
+         if(!j.ok){bad(j.error==="locked"?"Слишком много попыток. Подождите 15 минут.":"Неверный логин или пароль.");return;}
+         if(j.must){window.__lgTok=j.token;$("lg-new").hidden=false;bad("Придумайте свой пароль: от 6 знаков, цифры и/или буквы, и нажмите «Войти» ещё раз.");return;}
+         tok=j.token;}
+       else{const n1=$("lg-n1").value,n2=$("lg-n2").value;if(n1!==n2){bad("Новые пароли не совпадают.");return;}
+         const r=await fetch(API,{method:"POST",body:JSON.stringify({a:"chpass",t:tok,p:n1,dev:DEVN}),redirect:"follow"});const j=await r.json();
+         if(!j.ok){bad(j.error==="short"?"Пароль: от 6 знаков, только цифры и буквы.":j.error==="weak"?"Слишком простой пароль (123456, 111111 и т. п.). Придумайте другой.":"Не получилось. Попробуйте ещё раз.");return;}
+         tok=j.token;}
+       sset("raport2-tok",JSON.stringify({u:API,k:"tk:"+tok}));sset("raport2-pids","");try{history.replaceState(null,"",location.pathname);}catch(e){}location.reload();
+     }catch(e){bad("Нет связи. Повторите.");}};};
   // v2: одноразовое приглашение #i=КОД — обменять на личный вход этого телефона
   {const im=/[#&]i=([A-Za-z0-9]{32})/.exec(location.hash||"");
    if(im){try{history.replaceState(null,"",location.pathname);}catch(e){}
@@ -1264,7 +1285,7 @@ function showMenu(arr){
        if(!arr.length){st.className="banner bad";st.textContent="Вход выполнен, но за вами пока не закреплён ни один объект. Сообщите руководителю.";return;}
        if(arr.length===1){location.replace("#p="+await encodeCfg(arr[0]));location.reload();return;}
        sset("raport2-menu",JSON.stringify(arr));location.replace("#menu");location.reload();return;
-     }catch(e){st.className="banner bad";st.textContent=e&&e.message==="invite"?"Ссылка-приглашение недействительна: она уже использована или просрочена. Попросите у руководителя новую.":"Не удалось подключиться. Проверьте интернет и откройте ссылку ещё раз.";return;}
+     }catch(e){st.className="banner bad";st.textContent=e&&e.message==="invite"?"Ссылка-приглашение недействительна: она уже использована или просрочена. Попросите у руководителя новую.":"Не удалось подключиться. Проверьте интернет и откройте ссылку ещё раз.";window.__entryBox();return;}
    }}
   // v2.1: при каждом открытии сверяем список объектов с сервером — администратор мог переставить прораба на другой объект
   {const act=await syncObjects();
@@ -1286,12 +1307,7 @@ function showMenu(arr){
   }
   let cfg=null;if(p){try{cfg=await decodeCfg(p);}catch(e){}}
   {const st=$("status");st.hidden=false;st.className="banner";st.textContent="Откройте личную ссылку-приглашение, которую прислал руководитель. Конструктор в этой версии отключён: объекты и доступы настраивает администратор на странице «Доступы».";}
-  {const box=document.createElement("div");box.style.cssText="margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)";
-   box.innerHTML='<div style="font-weight:600;margin-bottom:6px">Вход по приглашению</div><div style="font-size:14px;color:var(--muted);margin-bottom:8px">Вставьте сюда ссылку-приглашение (скопируйте её из сообщения руководителя) и нажмите «Подключить».</div><input id="inv-paste" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Вставьте ссылку" style="width:100%;margin-bottom:8px"><button type="button" class="btn primary" id="inv-go" style="width:100%">Подключить</button><div id="inv-err" style="color:var(--bad);font-size:14px;margin-top:6px" hidden></div>';
-   const host=$("status").parentNode;host.insertBefore(box,$("status").nextSibling);
-   $("inv-go").onclick=()=>{const t=($("inv-paste").value||"").trim();const m=/[#&?]i=([A-Za-z0-9]{32})/.exec(t)||/^([A-Za-z0-9]{32})$/.exec(t);const er=$("inv-err");
-     if(!m){er.hidden=false;er.textContent="В тексте нет ссылки-приглашения. Скопируйте всю ссылку из сообщения целиком.";return;}
-     er.hidden=true;location.hash="#i="+m[1];};}
+  window.__entryBox();
 })();
 window.addEventListener("hashchange",()=>location.reload());
 })();
