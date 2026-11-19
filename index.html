@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#2E671F">
+<link rel="manifest" href="manifest-prorab.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Рапорт">
+<script src="config.js"></script>
+<script src="pwa.js"></script>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
@@ -552,15 +558,17 @@ function delProject(pid){const m=loadProjects();delete m[pid];sset(PKEY,JSON.str
 // ---------- база (Apps Script) ----------
 const DBKEY="raport2-db";
 function dbSettings(){try{return JSON.parse(sget(DBKEY)||"null");}catch(e){return null;}}
+const DEVN=(navigator.userAgent||"").replace(/^Mozilla\/5\.0 /,"").slice(0,80);
+// v2: все запросы — POST, личный токен в теле запроса (не в адресе)
 async function dbGet(db,params){
-  const u=db.u+(db.u.includes("?")?"&":"?")+new URLSearchParams(Object.assign({k:db.k},params)).toString();
-  const r=await fetch(u,{method:"GET",redirect:"follow"});const j=await r.json();if(!j.ok)throw new Error(j.error||"db");return j;
+  const r=await fetch(db.u,{method:"POST",body:JSON.stringify(Object.assign({k:db.k,dev:DEVN},params)),redirect:"follow"});
+  const j=await r.json();if(!j.ok)throw new Error(j.error||"db");return j;
 }
 async function dbPost(db,payload){
-  const body=JSON.stringify(Object.assign({k:db.k},payload));
-  try{const r=await fetch(db.u,{method:"POST",body:body,redirect:"follow"});const j=await r.json();if(!j.ok)throw new Error(j.error||"db");return "ok";}
-  catch(e){if(e&&e.message==="key")throw e;
-    try{await fetch(db.u,{method:"POST",body:body,mode:"no-cors"});return "sent";}catch(e2){throw e2;}}
+  const body=JSON.stringify(Object.assign({k:db.k,dev:DEVN},payload));
+  let r;try{r=await fetch(db.u,{method:"POST",body:body,redirect:"follow"});}
+  catch(e){try{await fetch(db.u,{method:"POST",body:body,mode:"no-cors"});return "sent";}catch(e2){throw e2;}}
+  const j=await r.json();if(!j.ok)throw new Error(j.error||"db");return "ok";
 }
 // =====================================================================
 // КОНСТРУКТОР
@@ -713,7 +721,7 @@ let C=null, WORKS=[], MATS=[], reports={}, shift="D", dirty=false, LKEY="", OKEY
 const slug=s=>nrm(s).replace(/[^a-zа-яё0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"x";
 function startForm(cfg){
   {const bm=$("back-menu");let ok=false;try{const m=JSON.parse(sget("raport2-menu")||"null");ok=Array.isArray(m)&&m.some(x=>x&&x.pid===cfg.pid);}catch(e){}bm.hidden=!ok;bm.onclick=()=>{location.hash="#menu";};}
-  C=cfg;try{$("tab-haul").style.display=zvTok()?"":"none";setTimeout(zvAuto,1500);}catch(e){}WORKS=(cfg.works||[]).map(w=>Object.assign({k:"w_"+String(w.c).replace(/[^\wА-Яа-яЁё]/g,"_")},w));
+  C=cfg;try{$("tab-haul").style.display=(ZV_URL&&zvTok())?"":"none";setTimeout(zvAuto,1500);}catch(e){}WORKS=(cfg.works||[]).map(w=>Object.assign({k:"w_"+String(w.c).replace(/[^\wА-Яа-яЁё]/g,"_")},w));
   MATS=(cfg.mats&&cfg.mats.length?cfg.mats:DEF_MATS);LKEY="raport2-"+cfg.pid;OKEY="raport2-outbox-"+cfg.pid;
   document.title=(cfg.title||"Рапорт прораба")+" — "+(cfg.name||"");
   $("hdr-obj").textContent=cfg.name||"";$("hdr-title").textContent=cfg.title||"Рапорт прораба";
@@ -734,6 +742,7 @@ function startForm(cfg){
   reports=loadLocal();
   Object.keys(reports).forEach(k=>{const r=reports[k];if(r&&!r.id){r.id=r.date+"_"+r.shift+"_"+slug(r.foreman);if(r.id!==k){reports[r.id]=r;delete reports[k];}}});saveAllLocal();
   buildForm();bindForm();
+  if(C.me){sset("raport2-foreman",C.me);const ff=$("f-foreman");if(ff){ff.value=C.me;ff.readOnly=true;ff.title="ФИО по вашей учётной записи";}}
   checkCfgUpdate();
   $("f-date").value=todayISO();$("s-date").value=todayISO();
   loadForm();
@@ -745,11 +754,11 @@ async function openCfg(j){if(!C.db||!C.db.k||!crypto.subtle)return null;
   const key=await crypto.subtle.importKey("raw",raw,"AES-GCM",false,["decrypt"]);
   const d=await crypto.subtle.decrypt({name:"AES-GCM",iv:b64u8(j.iv)},key,b64u8(j.d));return JSON.parse(new TextDecoder().decode(d));}
 async function checkCfgUpdate(){
-  if(!C.cu)return;
-  try{const r=await fetch(new URL(C.cu,BASE).href+"?t="+Date.now(),{cache:"no-store"});if(!r.ok)return;
-    let j=await r.json();if(j&&j.e)j=await openCfg(j);if(!j||j.pid!==C.pid||!((j.ts||0)>(C.ts||0)))return;
-    if(C.db&&!j.db)j.db=C.db;
-    const link=BASE+"#p="+(await encodeCfg(j));
+  // v2: свежий паспорт объекта отдаёт сервер по личному входу (папка o/ не нужна)
+  if(!C.db||!C.db.k||String(C.db.k).indexOf("tk:")!==0)return;
+  try{const j=await dbGet(C.db,{a:"cfgget",pid:C.pid});const c=j.cfg;
+    if(!c||c.pid!==C.pid||!((c.ts||0)>(C.ts||0)))return;
+    c.db=C.db;const link=BASE+"#p="+(await encodeCfg(c));
     if(dirty){syncStatus("Паспорт объекта обновлён руководителем. Сохраните рапорт и откройте форму заново.","");return;}
     location.replace(link);location.reload();
   }catch(e){}
@@ -760,7 +769,7 @@ function saveAllLocal(){try{localStorage.setItem(LKEY,JSON.stringify(reports));}
 const outbox=()=>{try{return JSON.parse(sget(OKEY)||"[]");}catch(e){return [];}};
 const setOutbox=a=>sset(OKEY,JSON.stringify(Array.from(new Set(a))));
 let syncing=false,linkDead=false;
-const DEAD_MSG="Эта ссылка больше не действует. Попросите у руководителя новую ссылку на рапорт — сохранённые рапорты не пропадут, они отправятся по новой ссылке.";
+const DEAD_MSG="Вход на этом телефоне отключён или просрочен. Попросите у руководителя новое приглашение — сохранённые рапорты не пропадут и отправятся после входа.";
 function syncStatus(t,cls){const s=$("status");s.hidden=false;s.className="banner"+(cls?" "+cls:"");s.textContent=t;}
 async function flush(){
   if(!C.db||syncing)return;syncing=true;let sent=0,left=0;
@@ -784,7 +793,6 @@ async function sync(){
   if(!C.db){syncStatus("Рапорты сохраняются только на этом телефоне. После заполнения отправьте рапорт в рабочий чат кнопкой внизу формы.");return;}
   syncStatus("Синхронизация с базой…");
   try{await flush();const total=await pull();const left=outbox().length;
-    {const ck="raport2-cfgday-"+C.pid,td=todayISO();if(sget(ck)!==td){dbPost(C.db,{a:"cfg",cfg:C}).then(()=>sset(ck,td)).catch(()=>{});}}
     syncStatus(left?"В базе: "+total+" рапорт(ов). Не отправлено: "+left+" — отправятся, когда появится связь.":"Синхронизировано с базой: "+total+" рапорт(ов) по объекту от всех прорабов.",left?"":"okb");
     if(!dirty)loadForm();updProg();if(!$("v-sum").hidden)renderSum();if(!$("v-log").hidden)renderLog();if(!$("v-pass").hidden)renderPass();}
   catch(e){if(e&&e.message==="key"){linkDead=true;syncStatus(DEAD_MSG,"bad");return;}
@@ -795,7 +803,7 @@ const haulOf=r=>Array.isArray(r&&r.haul)?r.haul:[];
 const subsOf=r=>Array.isArray(r&&r.subs)?r.subs:[];
 const machOf=r=>Array.isArray(r&&r.mach)?r.mach:[];
 const pplOf=r=>r?((r.people&&+r.people.own)||0)+subsOf(r).reduce((a,x)=>a+(+x.p||0),0):0;
-const docId=()=>$("f-date").value+"_"+shift+"_"+slug($("f-foreman").value||sget("raport2-foreman")||"");
+const docId=()=>$("f-date").value+"_"+shift+"_"+slug((C&&C.me)||$("f-foreman").value||sget("raport2-foreman")||"");
 
 const secOn=k=>!C.sec||C.sec[k]!==0;
 const isMachSrc=x=>!!x.src&&String(x.src).startsWith("mach:")&&secOn("mach");
@@ -897,7 +905,7 @@ function updProg(){
 }
 function setShift(s){shift=s;dirty=false;document.querySelectorAll("#f-shift button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.s===s)));loadForm();}
 const val=(id,v)=>{const e=$(id);if(e)e.value=(v===null||v===undefined)?"":(typeof v==="number"?String(v).replace(".",","):v);};
-function prevWith(fn){const me=slug($("f-foreman").value||sget("raport2-foreman")||"");const cur=$("f-date").value+shift;
+function prevWith(fn){const me=slug((C&&C.me)||$("f-foreman").value||sget("raport2-foreman")||"");const cur=$("f-date").value+shift;
   const c=list().filter(x=>fn(x).length&&(x.date+x.shift)<cur).sort((a,b)=>(b.date+b.shift).localeCompare(a.date+a.shift));
   return c.find(x=>slug(x.foreman)===me)||c[0];}
 function fillForemen(){const d=$("foreman-list");if(!d)return;d.innerHTML="";Array.from(new Set(list().map(r=>(r.foreman||"").trim()).filter(Boolean))).sort().forEach(n=>{const o=document.createElement("option");o.value=n;d.appendChild(o);});}
@@ -921,8 +929,8 @@ function loadForm(){fillForemen();
   $("f-dt").innerHTML="";(r&&r.downtime||[]).forEach(addDt);
   updProg();
   const ex=$("f-exists");
-  if(r){val("f-foreman",r.foreman||sget("raport2-foreman")||"");ex.hidden=false;ex.textContent="Рапорт за эту смену уже сохранён"+(r.savedAt?" ("+new Date(r.savedAt).toLocaleString("ru-RU",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+")":"")+". Изменения перезапишут его.";}
-  else{if(!$("f-foreman").value.trim())val("f-foreman",sget("raport2-foreman")||"");ex.hidden=true;}
+  if(r){val("f-foreman",(C&&C.me)||r.foreman||sget("raport2-foreman")||"");ex.hidden=false;ex.textContent="Рапорт за эту смену уже сохранён"+(r.savedAt?" ("+new Date(r.savedAt).toLocaleString("ru-RU",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})+")":"")+". Изменения перезапишут его.";}
+  else{if(C&&C.me)val("f-foreman",C.me);else if(!$("f-foreman").value.trim())val("f-foreman",sget("raport2-foreman")||"");ex.hidden=true;}
   {const wl=x=>Object.keys(x.works||{}).filter(c=>{const w=WORKS.find(z=>z.c===c);return w&&!isAuto(w);}).concat((x.extra||[]).map(e=>e.n));
     const p=r?null:prevWith(wl),b=$("f-prev");b.hidden=!p;
     if(p){b.textContent="↺ Заполнить работы по рапорту за "+ruDate(p.date)+(p.foreman?" ("+p.foreman+")":"")+" — останется вписать объёмы";
@@ -1123,10 +1131,10 @@ function renderLog(){
 }
 function show(v){["form","pass","sum","log","haul"].forEach(x=>{$("v-"+x).hidden=x!==v;$("tab-"+x).setAttribute("aria-selected",String(x===v));});$("savebar").hidden=v!=="form";if(v==="pass")renderPass();if(v==="sum")renderSum();if(v==="log")renderLog();if(v==="haul")renderHaul();sset("raport2-tab",v);}
 function zvTok(){let t=(C&&C.zv)||"";if(!t){const m=/[#&]zv=([A-Za-z0-9_\-]+)/.exec(location.hash||"");if(m)t=m[1];}if(!t){try{t=localStorage.getItem("raport2-zv-"+(C&&C.pid))||"";}catch(e){}}if(!t){try{const a=JSON.parse(localStorage.getItem("raport2-zva-"+(C&&C.pid))||"null");if(a&&a.t)t=a.t;}catch(e){}}return t;}
-const ZV_URL="https://script.google.com/macros/s/AKfycbwYTcUvCaVu4E7Erh2btGNPJmlS8Ma0jJcD2JCAZec_RQPYBjOuUZVM-1RWJlrmUwMn/exec";
+const ZV_URL=window.KRM_ZV_URL||"";  // v2: адрес «Заявок» из config.js; пусто — вкладка скрыта
 /* Автоматическое включение «Вывоза»: код заявок ищется по объекту и ФИО прораба из рапорта. Любая ошибка — молча, форма работает как раньше. */
 let zvBusy=false;
-async function zvAuto(){try{
+async function zvAuto(){if(!ZV_URL)return;try{
   if(!C||!C.pid||zvBusy)return;
   if(C.zv||/[#&]zv=/.test(location.hash||""))return;
   try{if(localStorage.getItem("raport2-zv-"+C.pid))return;}catch(e){}
@@ -1140,7 +1148,7 @@ async function zvAuto(){try{
   const r=await fetch(ZV_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({op:"find",obj:C.pid,fio:fio})});
   const j=await r.json();
   try{localStorage.setItem(key,JSON.stringify({fio:fio,t:(j&&j.ok&&j.t)?j.t:"",at:Date.now()}));}catch(e){}
-  $("tab-haul").style.display=zvTok()?"":"none";
+  $("tab-haul").style.display=(ZV_URL&&zvTok())?"":"none";
 }catch(e){}finally{zvBusy=false;}}
 function renderHaul(){
   const tok=zvTok(),fr=$("h-fr");
@@ -1180,7 +1188,7 @@ function bindForm(){
 }
 
 // ---------- пароль конструктора ----------
-const ADM_SALT="6e7ee92de3397291c1d458ec84eaba79",ADM_HASH="0e69da4217b22b38058f5e56853dad46b4234aa4d46ff0cc783452247374ab13";
+const ADM_SALT="6e7ee92de3397291c1d458ec84eaba79",ADM_HASH="—";
 async function admHash(pw){const km=await crypto.subtle.importKey("raw",new TextEncoder().encode(pw),"PBKDF2",false,["deriveBits"]);
   const b=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:Uint8Array.from(ADM_SALT.match(/../g),x=>parseInt(x,16)),iterations:200000},km,256);
   return Array.from(new Uint8Array(b),x=>x.toString(16).padStart(2,"0")).join("");}
@@ -1199,6 +1207,30 @@ function adminLock(go){
     b.disabled=false;};
 }
 
+// ---------- v2.1: сверка списка объектов с сервером ----------
+// Возвращает {go:"#…"} (перейти), {none:1} (объектов нет) или null (ничего не менять). Нет связи — работаем с тем, что на телефоне.
+async function syncObjects(){
+  try{
+    if(/admin/.test(location.hash)||navigator.onLine===false)return null;
+    let tok=null;try{tok=JSON.parse(sget("raport2-tok")||"null");}catch(e){}
+    let menu=null;try{menu=JSON.parse(sget("raport2-menu")||"null");}catch(e){}
+    if(!(tok&&tok.k)&&Array.isArray(menu)){for(const c0 of menu){const d0=c0&&c0.db;if(d0&&String(d0.k||"").indexOf("tk:")===0){tok={u:d0.u,k:d0.k};break;}}}
+    let curPid="";const hp=cfgParam(location.hash);
+    if(hp){try{const c1=await decodeCfg(hp);curPid=c1.pid||"";if(!(tok&&tok.k)&&c1.db&&String(c1.db.k||"").indexOf("tk:")===0)tok={u:c1.db.u,k:c1.db.k};}catch(e){}}
+    if(!(tok&&tok.k)||String(tok.k).indexOf("tk:")!==0||!tok.u)return null;
+    const j=await Promise.race([dbGet(tok,{a:"my"}),new Promise((_,rj)=>setTimeout(()=>rj(new Error("t")),5000))]);
+    const arr=(j.objects||[]).filter(o=>o&&o.cfg&&!o.closed).map(o=>Object.assign(o.cfg,{db:{u:tok.u,k:tok.k}}));
+    const now=arr.map(o=>o.pid).sort().join(",");
+    let prev=sget("raport2-pids");
+    if(prev===null||prev===undefined||prev===""){prev=Array.isArray(menu)&&menu.length?menu.map(o=>o&&o.pid).filter(Boolean).sort().join(","):curPid;}
+    sset("raport2-tok",JSON.stringify(tok));sset("raport2-pids",now);
+    sset("raport2-menu",JSON.stringify(arr.length>1?arr:[]));
+    if(!arr.length)return {none:1};
+    if(now===prev||!prev)return null;
+    if(arr.length>1)return {go:"#menu"};
+    return {go:"#p="+await encodeCfg(arr[0])};
+  }catch(e){return null;}
+}
 // ---------- меню объектов руководителя проекта ----------
 function showMenu(arr){
   document.title="Рапорт прораба — выбор объекта";
@@ -1208,7 +1240,7 @@ function showMenu(arr){
     let today=false;try{const r=JSON.parse(sget("raport2-"+c.pid)||"{}")||{};today=Object.keys(r).some(k=>String(k).slice(0,10)===td);}catch(e){}
     const b=document.createElement("button");b.type="button";b.className="btn mitem";
     const t=document.createElement("span");t.textContent=c.name||c.pid;
-    const sm=document.createElement("small");sm.textContent=today?"Сегодня рапорт сохранён ✓":"Сегодня рапорта ещё нет";t.appendChild(sm);b.appendChild(t);
+    const sm=document.createElement("small");sm.textContent=(c.paused?"Объект приостановлен · ":"")+(today?"Сегодня рапорт сохранён ✓":"Сегодня рапорта ещё нет");t.appendChild(sm);b.appendChild(t);
     const ar=document.createElement("span");ar.textContent="›";b.appendChild(ar);
     b.onclick=async()=>{location.hash="#p="+await encodeCfg(c);};
     M.appendChild(b);});
@@ -1216,6 +1248,25 @@ function showMenu(arr){
 // ---------- запуск ----------
 (async function(){
   bindAdmin();
+  // v2: одноразовое приглашение #i=КОД — обменять на личный вход этого телефона
+  {const im=/[#&]i=([A-Za-z0-9]{32})/.exec(location.hash||"");
+   if(im){try{history.replaceState(null,"",location.pathname);}catch(e){}
+     const st=$("status");st.hidden=false;st.className="banner";st.textContent="Подключаем телефон…";
+     try{const API=window.KRM_API;if(!API)throw new Error("cfg");
+       const r=await fetch(API,{method:"POST",body:JSON.stringify({a:"invite",code:im[1],dev:DEVN}),redirect:"follow"});const j=await r.json();
+       if(!j.ok)throw new Error(j.error||"invite");
+       const arr=(j.objects||[]).filter(o=>o&&o.cfg&&!o.closed).map(o=>Object.assign(o.cfg,{db:{u:API,k:"tk:"+j.token}}));
+       if(j.name)sset("raport2-foreman",j.name);
+       sset("raport2-tok",JSON.stringify({u:API,k:"tk:"+j.token}));sset("raport2-pids",arr.map(o=>o.pid).sort().join(","));
+       if(!arr.length){st.className="banner bad";st.textContent="Вход выполнен, но за вами пока не закреплён ни один объект. Сообщите руководителю.";return;}
+       if(arr.length===1){location.replace("#p="+await encodeCfg(arr[0]));location.reload();return;}
+       sset("raport2-menu",JSON.stringify(arr));location.replace("#menu");location.reload();return;
+     }catch(e){st.className="banner bad";st.textContent=e&&e.message==="invite"?"Ссылка-приглашение недействительна: она уже использована или просрочена. Попросите у руководителя новую.":"Не удалось подключиться. Проверьте интернет и откройте ссылку ещё раз.";return;}
+   }}
+  // v2.1: при каждом открытии сверяем список объектов с сервером — администратор мог переставить прораба на другой объект
+  {const act=await syncObjects();
+   if(act&&act.go){location.replace(act.go);location.reload();return;}
+   if(act&&act.none){const st=$("status");st.hidden=false;st.className="banner bad";st.textContent="За вами сейчас не закреплён ни один объект. Сообщите руководителю.";return;}}
   const h=location.hash;const p=cfgParam(h);const mp=menuParam(h);
   if((mp||h==="#menu")&&!/admin/.test(h)){
     try{let arr=null;
@@ -1231,7 +1282,7 @@ function showMenu(arr){
     return;
   }
   let cfg=null;if(p){try{cfg=await decodeCfg(p);}catch(e){}}
-  if(sget("raport2-adm")===ADM_HASH)startAdmin(cfg);else adminLock(()=>startAdmin(cfg));
+  {const st=$("status");st.hidden=false;st.className="banner";st.textContent="Откройте личную ссылку-приглашение, которую прислал руководитель. Конструктор в этой версии отключён: объекты и доступы настраивает администратор на странице «Доступы».";}
 })();
 window.addEventListener("hashchange",()=>location.reload());
 })();

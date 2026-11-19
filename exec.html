@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#2E671F">
 <meta name="robots" content="noindex">
+<script src="config.js"></script>
+<script src="auth.js"></script>
+<link rel="manifest" href="manifest-exec.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Светофор">
+<script src="pwa.js"></script>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
@@ -443,17 +450,17 @@ applyTheme(isDark()?"dark":"light");
 $("thm").onclick=()=>{const t=isDark()?"light":"dark";applyTheme(t);sset("raport2-theme",t);};
 const h=new URLSearchParams(location.hash.slice(1));
 let db=null;
-if(h.get("u")&&h.get("k")){db={u:h.get("u"),k:h.get("k")};sset("raport2-exec",JSON.stringify(db));}
-else{try{db=JSON.parse(sget("raport2-exec")||"null");}catch(e){}}
-const keep=()=>{if(!db)return;try{history.replaceState(null,"",location.pathname+"#u="+encodeURIComponent(db.u)+"&k="+encodeURIComponent(db.k)+(cur&&mode==="tl"?"&o="+encodeURIComponent(cur):"")+(mode==="wk"?"&m=wk&w="+encodeURIComponent(wcur):"")+(mode==="fin"?"&m=fin&f="+encodeURIComponent(fcur||""):""));}catch(e){}};
+db=(window.RaportAuth&&RaportAuth.db())||null;try{localStorage.removeItem("raport2-exec");}catch(e){}
+async function api(q){const r=await fetch(db.u,{method:"POST",body:JSON.stringify(Object.assign({k:db.k,dev:RaportAuth.dev},q)),redirect:"follow"});return r.json();}
+const keep=()=>{if(!db)return;try{history.replaceState(null,"",location.pathname+"#v=2"+(cur&&mode==="tl"?"&o="+encodeURIComponent(cur):"")+(mode==="wk"?"&m=wk&w="+encodeURIComponent(wcur):"")+(mode==="fin"?"&m=fin&f="+encodeURIComponent(fcur||""):""));}catch(e){}};
 let M=null,date=null,cur=h.get("o")||null,mode=h.get("m")==="wk"?"wk":h.get("m")==="fin"?"fin":"tl",wcur=h.get("w")||"all",fcur=h.get("f")||null,FL=null,FC={};
 const todayISO=()=>iso(new Date());
 function status(t,cls){const s=$("status");s.hidden=!t;s.className="banner"+(cls?" "+cls:"");s.textContent=t||"";}
 async function load(quiet){
-  if(!db){status("Откройте панель по ссылке из письма или от администратора (в ней адрес базы и ключ).","bad");$("list").innerHTML="";return;}
+  if(!db){status("Войдите по логину и паролю (роль «Директор» или администратор).","bad");$("list").innerHTML="";return;}
   if(!quiet){$("list").innerHTML='<div class="empty">Загрузка данных…</div>';const dd=date||addD(todayISO(),-1);$("d-lab").innerHTML="";$("d-lab").appendChild(document.createTextNode("за "+ru(dd)));$("d-lab").appendChild(el("small",null,"загрузка…"));}
-  try{const q={k:db.k,a:"exec"};if(date)q.date=date;
-    const r=await fetch(db.u+(db.u.includes("?")?"&":"?")+new URLSearchParams(q),{redirect:"follow"});const j=await r.json();
+  try{const q={a:"exec"};if(date)q.date=date;
+    const j=await api(q);
     if(!j.ok)throw new Error(j.error==="action"||j.error==="key"?"доступ закрыт или скрипт базы не обновлён (нужна новая версия развертывания)":(j.error||"ошибка"));
     M=j;M.objects.forEach(o=>{if(o.closed)o.light="c";});date=j.date;status("");render();}
   catch(e){status("Не удалось загрузить: "+(e.message||"нет связи"),"bad");}
@@ -742,19 +749,12 @@ function renderWk(){
   if(o)wkObj(B,o);else{wcur="all";wkAll(B);}
 }
 
-/* ---------- финансы объекта: зашифрованный файл f/*.json (ключ — из ссылки панели) ---------- */
+/* ---------- финансы объекта: с сервера по личному входу ---------- */
 const FX={};
 const hex=b=>Array.from(new Uint8Array(b),x=>x.toString(16).padStart(2,"0")).join("");
 async function finLoad(pid){
-  try{
-    if(!crypto.subtle)return null;
-    const te=new TextEncoder(),nm=hex(await crypto.subtle.digest("SHA-256",te.encode("raport-fin-n|"+db.k+"|"+pid))).slice(0,24);
-    const r=await fetch("f/"+nm+".json?"+Date.now(),{cache:"no-store"});if(!r.ok)return null;const j=await r.json();
-    const raw=await crypto.subtle.digest("SHA-256",te.encode("raport-fin|"+db.k+"|"+pid));
-    const key=await crypto.subtle.importKey("raw",raw,"AES-GCM",false,["decrypt"]);
-    const u8=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
-    return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:u8(j.iv)},key,u8(j.d))));
-  }catch(e){return null;}
+  // v2: финансы отдаёт сервер только роли «Директор» и администратору
+  try{const j=await api({a:"fin",pid:pid});return j&&j.ok?j.fin:null;}catch(e){return null;}
 }
 const rub=v=>v===null||v===undefined?"—":fmt(Math.round(v),0)+" ₽";
 const mln=v=>(v/1e6).toLocaleString("ru-RU",{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -859,8 +859,8 @@ function finMoney(B,X,F){
 }
 /* ---------- финальный отчёт по завершённым объектам ---------- */
 async function finApi(pid){
-  const q={k:db.k,a:"final"};if(pid)q.pid=pid;
-  const r=await fetch(db.u+(db.u.includes("?")?"&":"?")+new URLSearchParams(q),{redirect:"follow"});const j=await r.json();
+  const q={a:"final"};if(pid)q.pid=pid;
+  const j=await api(q);
   if(!j.ok)throw new Error(j.error==="action"||j.error==="key"?"скрипт базы не обновлён: нужна новая версия развертывания":(j.error||"ошибка"));
   return j;}
 async function renderFin(){

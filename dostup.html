@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#2E671F">
 <meta name="robots" content="noindex">
+<script src="config.js"></script>
 <script src="auth.js"></script>
 <title>Доступы — ГК «КРАШМАШ»</title>
 <style>
@@ -46,13 +47,14 @@ input,select{font:16px var(--f-ui);color:var(--fg);background:var(--bg);border:1
 .msg.bad{color:var(--bad)}.msg.ok{color:var(--ok)}
 pre.inv{white-space:pre-wrap;font:14px/1.5 var(--f-num);background:var(--sunk);border-radius:8px;padding:12px;margin:8px 0 0}
 .hint{font-size:12px;color:var(--muted);margin-top:8px}
+.logt{border-collapse:collapse;font-size:12px;width:100%}.logt th,.logt td{border:1px solid var(--line,#ccc);padding:3px 6px;text-align:left;vertical-align:top;white-space:nowrap}.logt tr.bad td{color:#b3362c}
 </style>
 <link rel="stylesheet" href="tema.css">
 <script src="tema.js"></script>
 </head>
 <body>
 <div class="wrap">
-  <header class="top"><h1>Доступы</h1><div>Кто и как входит в «Руководитель проектов» и «Светофор»</div></header>
+  <header class="top"><h1>Доступы</h1><div>Кто и как входит: прорабы, руководители проектов, «Светофор», администратор</div></header>
   <div id="deny" class="card" hidden></div>
   <div id="main" hidden>
     <section class="card"><h2>Добавить человека</h2>
@@ -65,7 +67,8 @@ pre.inv{white-space:pre-wrap;font:14px/1.5 var(--f-num);background:var(--sunk);b
       <div id="a-inv" hidden></div>
     </section>
     <section class="card"><h2>Люди <span id="u-cnt"></span></h2><div id="u-out">Загрузка…</div>
-      <div class="hint">Пароль, который человек задал себе сам, никому не виден: сохраняется только его шифр. Если забыл — «Сбросить пароль» выдаст новый временный.</div></section>
+      <div class="hint">Прорабы входят по одноразовой ссылке-приглашению: пересланная ссылка уже не сработает. Пароль, который человек задал себе сам, никому не виден: сохраняется только его шифр. Если забыл — «Сбросить пароль» выдаст новый временный.</div></section>
+    <section class="card"><h2>Журнал действий</h2><div class="hint">Последние 150 событий: входы, рапорты, отказы, действия администратора. Красным — отказы и ошибки входа.</div><div id="log-out" style="overflow:auto;max-height:420px;margin-top:8px">Загрузка…</div></section>
   </div>
 </div>
 <script>
@@ -74,22 +77,23 @@ pre.inv{white-space:pre-wrap;font:14px/1.5 var(--f-num);background:var(--sunk);b
 const $=id=>document.getElementById(id);
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;};
 const A=window.RaportAuth||{};const U=A.u&&A.u();let T=A.token&&A.token();
-const ROLE_NAME={admin:"Администратор",pm:"Руководитель проектов",exec:"Директор"};
+const ROLE_NAME={admin:"Администратор",pm:"Руководитель проектов",exec:"Директор",prorab:"Прораб"};const TEMP={},INV={};
 let users=[],objects=[];
 const base=location.origin+location.pathname.replace(/[^\/]*$/,"");
-const pageFor=r=>base+(r==="exec"?"exec.html":r==="admin"?"dostup.html":"director.html")+"#u="+encodeURIComponent(U);
+const pageFor=r=>base+(r==="exec"?"exec.html":r==="admin"?"dostup.html":"director.html");
 function deny(t){const d=$("deny");d.hidden=false;d.textContent=t;}
-async function api(body){const r=await fetch(U,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body),redirect:"follow"});return r.json();}
+async function api(body){body.dev=A.dev;const r=await fetch(U,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body),redirect:"follow"});const j=await r.json();if(j&&j.user&&j.user.temp)TEMP[j.user.login]=j.user.temp;if(j&&j.user&&j.invite){if(!/^https?:/.test(j.invite.link))j.invite.link=base+"index.html#i="+j.invite.code;INV[j.user.login]=j.invite;}return j;}
+function invText(u,v){return "Рапорт прораба — ГК КРАШМАШ\n"+u.name+", откройте эту ссылку на своём телефоне (один раз, действует до "+v.exp+"):\n"+v.link+"\nПосле открытия добавьте страницу на экран. Ссылку никому не пересылайте — она срабатывает только один раз.";}
 function say(id,t,cls){const m=$(id);m.textContent=t||"";m.className="msg"+(cls?" "+cls:"");}
 const errText={login:"Логин: латиница, цифры, точка, дефис, 3–30 знаков",name:"Укажите имя",role:"Выберите роль",exists:"Такой логин уже есть",nouser:"Человек не найден",self:"Себя отключить нельзя",auth:"Вход устарел, обновите страницу"};
-function invite(u){return "Кабинет: "+pageFor(u.role)+"\nЛогин: "+u.login+"\nВременный пароль: "+u.temp+"\nПри первом входе система попросит задать свой пароль.";}
+function invite(u){if(u.role==="prorab"&&INV[u.login])return invText(u,INV[u.login]);return "Кабинет: "+pageFor(u.role)+"\nЛогин: "+u.login+"\nВременный пароль: "+(u.temp||TEMP[u.login]||"")+"\nПри первом входе система попросит задать свой пароль.";}
 function copy(txt,btn){try{navigator.clipboard.writeText(txt).then(()=>{const o=btn.textContent;btn.textContent="Скопировано";setTimeout(()=>btn.textContent=o,1500);});}catch(e){}}
 function objPicker(box,sel){box.innerHTML="";
   [["msk","Москва"],["reg","Регионы"]].forEach(([rg,title])=>{
     const g=objects.filter(o=>o.region===rg);
     const h=el("div","hint",title+" — "+g.length);h.style.gridColumn="1/-1";h.style.fontWeight="700";h.style.marginTop="4px";box.appendChild(h);
     if(!g.length){const e=el("div","hint","объектов нет");e.style.gridColumn="1/-1";box.appendChild(e);}
-    g.forEach(o=>{const l=el("label");const c=el("input");c.type="checkbox";c.value=o.pid;c.checked=sel.includes(o.pid);l.appendChild(c);l.appendChild(el("span",null,(o.name||o.pid)));box.appendChild(l);});
+    g.forEach(o=>{const l=el("label");const c=el("input");c.type="checkbox";c.value=o.pid;c.checked=sel.includes(o.pid);l.appendChild(c);l.appendChild(el("span",null,(o.name||o.pid)+(o.st?" ("+o.st+")":"")));box.appendChild(l);});
   });
   if(!objects.length)box.appendChild(el("div","hint","Список объектов не загрузился"));}
 const picked=box=>[...box.querySelectorAll("input:checked")].map(c=>c.value);
@@ -101,14 +105,18 @@ function drawUsers(){
     const tgs=el("div");tgs.style.display="flex";tgs.style.gap="6px";tgs.style.flexWrap="wrap";
     tgs.appendChild(el("span","tg "+(u.active?(u.must?"warn":"ok"):"bad"),!u.active?"отключён":u.must?"ждёт смены пароля":"пароль задан"));
     h.appendChild(tgs);b.appendChild(h);
-    if(u.active&&u.must&&u.temp){const t=el("div","temp");t.appendChild(document.createTextNode("Временный пароль: "));t.appendChild(el("code",null,u.temp));
+    u.temp=u.temp||TEMP[u.login]||"";
+    if(u.active&&INV[u.login]){const t=el("div","temp");t.appendChild(el("div",null,"Приглашение на телефон (до "+INV[u.login].exp+"):"));t.appendChild(el("code",null,INV[u.login].link));const cp=el("button","btn","Скопировать приглашение");cp.type="button";cp.style.marginLeft="10px";cp.onclick=()=>copy(invText(u,INV[u.login]),cp);t.appendChild(cp);b.appendChild(t);}
+    if(u.active&&u.must&&u.temp&&u.role!=="prorab"){const t=el("div","temp");t.appendChild(document.createTextNode("Временный пароль: "));t.appendChild(el("code",null,u.temp));
       const cp=el("button","btn","Скопировать приглашение");cp.type="button";cp.style.marginLeft="10px";cp.onclick=()=>copy(invite(u),cp);t.appendChild(cp);b.appendChild(t);}
     const acts=el("div","acts");
     const rs=el("button","btn","Сбросить пароль");rs.type="button";rs.onclick=async()=>{if(!confirm("Выдать "+u.name+" новый временный пароль? Старый перестанет работать.")) return;const r=await api({a:"ureset",t:T,login:u.login});if(!r.ok){alert(errText[r.error]||r.error);return;}await load();};acts.appendChild(rs);
+    if(u.role==="prorab"){const iv=el("button","btn primary","Пригласить на телефон");iv.type="button";iv.onclick=async()=>{if(!confirm("Выдать "+u.name+" новую ссылку-приглашение? Прежний телефон отключится, когда человек откроет новую ссылку.")) return;const r=await api({a:"uinvite",t:T,login:u.login});if(!r.ok){alert(errText[r.error]||r.error);return;}drawUsers();};acts.appendChild(iv);}
+    const kk=el("button","btn","Выйти на всех устройствах");kk.type="button";kk.onclick=async()=>{if(!confirm("Отключить "+u.name+" на всех телефонах и компьютерах? Войти можно будет заново по паролю или новому приглашению.")) return;const r=await api({a:"ukick",t:T,login:u.login});if(!r.ok){alert(errText[r.error]||r.error);return;}await load();};acts.appendChild(kk);
     const tg=el("button","btn"+(u.active?" danger":""),u.active?"Отключить":"Включить");tg.type="button";tg.onclick=async()=>{const r=await api({a:"utoggle",t:T,login:u.login,active:!u.active});if(!r.ok){alert(errText[r.error]||r.error);return;}await load();};acts.appendChild(tg);
     b.appendChild(acts);
-    if(u.role==="pm"){
-      const w=el("div");w.appendChild(el("div","hint","Объекты, которые "+u.name+" видит полностью (остальные — только обзор):"));
+    if(u.role==="pm"||u.role==="prorab"){
+      const w=el("div");w.appendChild(el("div","hint",u.role==="prorab"?"Объекты, по которым "+u.name+" сдаёт рапорты:":"Объекты, которые "+u.name+" видит полностью (остальные — только обзор):"));
       const box=el("div","objs");objPicker(box,u.objs||[]);w.appendChild(box);
       const sv=el("button","btn","Сохранить объекты");sv.type="button";sv.style.marginTop="8px";const mg=el("div","msg");
       sv.onclick=async()=>{const r=await api({a:"uobjs",t:T,login:u.login,objs:picked(box)});if(r.ok){mg.textContent="Сохранено";mg.className="msg ok";u.objs=r.user.objs;}else{mg.textContent=errText[r.error]||r.error;mg.className="msg bad";}};
@@ -124,21 +132,21 @@ async function load(){
   users=r.users;drawUsers();
 }
 async function loadObjects(){
-  try{const r=await fetch(U+(U.includes("?")?"&":"?")+new URLSearchParams({a:"objects",k:"tk:"+T}),{redirect:"follow"});const j=await r.json();
-    if(j.ok)objects=(j.objects||[]).filter(o=>o&&o.pid).map(o=>({pid:o.pid,name:o.name||o.pid,region:(o.region==="reg"?"reg":"msk")})).sort((a,b)=>String(a.name).localeCompare(String(b.name),"ru"));}catch(e){}
+  try{const j=await api({a:"objects",t:T});
+    if(j.ok)objects=(j.objects||[]).filter(o=>o&&o.pid).map(o=>({pid:o.pid,name:o.name||o.pid,region:(o.region==="reg"?"reg":"msk"),st:o.closed?"завершён":(o.paused?"приостановлен":"")})).sort((a,b)=>String(a.name).localeCompare(String(b.name),"ru"));}catch(e){}
 }
 async function init(){
   if(!U||!T){deny("Войдите по логину и паролю администратора.");return;}
   $("main").hidden=false;
-  const sel=$("a-role");["pm","exec","admin"].forEach(r=>{const o=el("option",null,ROLE_NAME[r]);o.value=r;sel.appendChild(o);});
+  const sel=$("a-role");["prorab","pm","exec","admin"].forEach(r=>{const o=el("option",null,ROLE_NAME[r]);o.value=r;sel.appendChild(o);});
   await loadObjects();objPicker($("a-objs"),[]);
-  const upd=()=>{$("a-objs-w").hidden=sel.value!=="pm";};sel.onchange=upd;upd();
+  const upd=()=>{$("a-objs-w").hidden=sel.value!=="pm"&&sel.value!=="prorab";};sel.onchange=upd;upd();
   $("a-go").onclick=async()=>{
     say("a-msg","");const name=$("a-name").value.trim(),login=$("a-login").value.trim().toLowerCase();
     if(!name){say("a-msg","Укажите имя","bad");return;}
     if(!/^[a-z0-9._-]{3,30}$/.test(login)){say("a-msg",errText.login,"bad");return;}
     $("a-go").disabled=true;
-    try{const r=await api({a:"uadd",t:T,name:name,login:login,role:sel.value,objs:sel.value==="pm"?picked($("a-objs")):[]});
+    try{const r=await api({a:"uadd",t:T,name:name,login:login,role:sel.value,objs:(sel.value==="pm"||sel.value==="prorab")?picked($("a-objs")):[]});
       if(!r.ok){say("a-msg",errText[r.error]||("Ошибка: "+r.error),"bad");}
       else{say("a-msg","Создано","ok");const inv=$("a-inv");inv.hidden=false;inv.innerHTML="";inv.appendChild(el("div","hint","Отправьте человеку (например, в MAX) — это сообщение уже готово:"));
         const pre=el("pre","inv",invite(r.user));inv.appendChild(pre);const cp=el("button","btn primary","Скопировать");cp.type="button";cp.style.marginTop="8px";cp.onclick=()=>copy(invite(r.user),cp);inv.appendChild(cp);
@@ -146,8 +154,11 @@ async function init(){
     }catch(e){say("a-msg","Нет связи, повторите","bad");}
     $("a-go").disabled=false;
   };
-  load();
+  load();loadLog();
 }
+async function loadLog(){const box=$("log-out");if(!box)return;const r=await api({a:"ulog",t:T});if(!r.ok){box.textContent="Журнал недоступен";return;}
+  const tb=el("table","logt");const hr=el("tr");r.hdr.forEach(x=>hr.appendChild(el("th",null,x)));tb.appendChild(hr);
+  r.rows.slice(0,150).forEach(v=>{const tr=el("tr");if(/отказ|невер|заблок|недейств/.test(v[6]))tr.className="bad";v.forEach(x=>tr.appendChild(el("td",null,x)));tb.appendChild(tr);});box.innerHTML="";box.appendChild(tb);}
 init();
 })();
 </script>

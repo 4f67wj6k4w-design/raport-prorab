@@ -5,7 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#2E671F">
 <meta name="robots" content="noindex">
+<script src="config.js"></script>
 <script src="auth.js"></script>
+<link rel="manifest" href="manifest-director.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Руководитель">
+<script src="pwa.js"></script>
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
@@ -238,10 +244,8 @@ const fmt=(v,d)=>{if(v===null||v===undefined||v===""||isNaN(v))return "—";retu
 const el=(tag,cls,txt)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e;};
 const h=new URLSearchParams(location.hash.slice(1));
 let db=null;
-if(h.get("u")&&h.get("k")){db={u:h.get("u"),k:h.get("k")};sset("raport2-director",JSON.stringify(db));}
-else{try{db=JSON.parse(sget("raport2-director")||"null");}catch(e){}}
+db=(window.RaportAuth&&RaportAuth.db())||null;try{localStorage.removeItem("raport2-director");}catch(e){}
 // адрес с ключом остаётся в строке: iPhone «На экран Домой» сохраняет текущий адрес, а у значка своё хранилище
-if(db&&!(h.get("u")&&h.get("k"))){try{history.replaceState(null,"",location.pathname+"#u="+encodeURIComponent(db.u)+"&k="+encodeURIComponent(db.k));}catch(e){}}
 let D=null,view=sget("raport2-dtab")||"sum",open={};
 const F={st:sget("raport2-dst")||"work",mg:sget("raport2-dmgr")||"all",rg:sget("raport2-dreg")||"all"};
 if(!["work","done"].includes(F.st))F.st="work";
@@ -318,11 +322,10 @@ function newCount(){if(!D)return 0;const s=lastSeen();return D.feed.filter(f=>f.
 function markSeen(){if(!D)return;const mx=D.feed.reduce((a,f)=>f.savedAt>a?f.savedAt:a,lastSeen());setTimeout(()=>{sset("raport2-dseen",mx);paintCnt();},4000);}
 function paintCnt(){const n=newCount(),c=$("new-cnt");c.hidden=!n;c.textContent=n;}
 async function load(quiet){
-  if(!db){status("Откройте приложение по ссылке руководителя (в ней адрес базы).","bad");return;}
+  if(!db){status("Войдите по логину и паролю.","bad");return;}
   const date=$("d-date").value||todayISO();
   if(!quiet){$("sum-out").innerHTML='<div class="empty" style="padding:10px">Загрузка…</div>';}
-  try{const u=db.u+(db.u.includes("?")?"&":"?")+new URLSearchParams({k:db.k,a:"dash",date:date,days:3,vol:1});
-    const r=await fetch(u,{redirect:"follow"});const j=await r.json();
+  try{const r=await fetch(db.u,{method:"POST",body:JSON.stringify({k:db.k,dev:RaportAuth.dev,a:"dash",date:date,days:3,vol:1}),redirect:"follow"});const j=await r.json();
     if(!j.ok)throw new Error(j.error==="action"?"обновите скрипт базы (новая версия развертывания)":j.error==="key"?"неверный ключ":(j.error||"ошибка"));
     D=j;enrich();status("");render();
     $("upd").textContent="Обновлено в "+new Date().toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"})+" · рапортов за "+ru(date)+": "+j.digest.ok+" из "+j.digest.total+(j.me&&j.me.name?" · вход: "+j.me.name:"");}
