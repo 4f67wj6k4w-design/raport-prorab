@@ -92,7 +92,7 @@ async function api(body){body.dev=A.dev;const r=await fetch(U,{method:"POST",hea
 function invText(u,v){return "Рапорт прораба — ГК КРАШМАШ\n"+u.name+", откройте эту ссылку на своём телефоне (один раз, действует до "+v.exp+"):\n"+v.link+"\nПосле открытия добавьте страницу на экран. Ссылку никому не пересылайте — она срабатывает только один раз.";}
 function say(id,t,cls){const m=$(id);m.textContent=t||"";m.className="msg"+(cls?" "+cls:"");}
 const errText={login:"Логин: латиница, цифры, точка, дефис, 3–30 знаков",name:"Укажите имя",role:"Выберите роль",exists:"Такой логин уже есть",nouser:"Человек не найден",self:"Себя отключить нельзя",auth:"Вход устарел, обновите страницу"};
-function invite(u){if(u.role==="prorab"&&INV[u.login])return invText(u,INV[u.login]);return "Кабинет: "+pageFor(u.role)+"\nЛогин: "+u.login+"\nВременный пароль: "+(u.temp||TEMP[u.login]||"")+"\nПри первом входе система попросит задать свой пароль.";}
+function invite(u){if(u.role==="prorab")return "Рапорт: "+base+"index.html\nЛогин: "+u.login+"\nВременный пароль: "+(u.temp||TEMP[u.login]||"")+"\nОткройте ссылку, в поле «Или войдите по логину и паролю» введите логин и пароль, затем задайте свой пароль (от 6 знаков).";return "Кабинет: "+pageFor(u.role)+"\nЛогин: "+u.login+"\nВременный пароль: "+(u.temp||TEMP[u.login]||"")+"\nПри первом входе система попросит задать свой пароль.";}
 function copy(txt,btn){try{navigator.clipboard.writeText(txt).then(()=>{const o=btn.textContent;btn.textContent="Скопировано";setTimeout(()=>btn.textContent=o,1500);});}catch(e){}}
 function objPicker(box,sel){box.innerHTML="";
   [["msk","Москва"],["reg","Регионы"]].forEach(([rg,title])=>{
@@ -113,7 +113,7 @@ function drawUsers(){
     h.appendChild(tgs);b.appendChild(h);
     u.temp=u.temp||TEMP[u.login]||"";
     if(u.active&&INV[u.login]){const t=el("div","temp");t.appendChild(el("div",null,"Приглашение на телефон (до "+INV[u.login].exp+"):"));t.appendChild(el("code",null,INV[u.login].link));const cp=el("button","btn","Скопировать приглашение");cp.type="button";cp.style.marginLeft="10px";cp.onclick=()=>copy(invText(u,INV[u.login]),cp);t.appendChild(cp);b.appendChild(t);}
-    if(u.active&&u.must&&u.temp&&u.role!=="prorab"){const t=el("div","temp");t.appendChild(document.createTextNode("Временный пароль: "));t.appendChild(el("code",null,u.temp));
+    if(u.active&&u.must&&u.temp){const t=el("div","temp");t.appendChild(document.createTextNode("Временный пароль: "));t.appendChild(el("code",null,u.temp));
       const cp=el("button","btn","Скопировать приглашение");cp.type="button";cp.style.marginLeft="10px";cp.onclick=()=>copy(invite(u),cp);t.appendChild(cp);b.appendChild(t);}
     const acts=el("div","acts");
     const rs=el("button","btn","Сбросить пароль");rs.type="button";rs.onclick=async()=>{if(!confirm("Выдать "+u.name+" новый временный пароль? Старый перестанет работать.")) return;const r=await api({a:"ureset",t:T,login:u.login});if(!r.ok){alert(errText[r.error]||r.error);return;}await load();};acts.appendChild(rs);
