@@ -1286,6 +1286,12 @@ function showMenu(arr){
   }
   let cfg=null;if(p){try{cfg=await decodeCfg(p);}catch(e){}}
   {const st=$("status");st.hidden=false;st.className="banner";st.textContent="Откройте личную ссылку-приглашение, которую прислал руководитель. Конструктор в этой версии отключён: объекты и доступы настраивает администратор на странице «Доступы».";}
+  {const box=document.createElement("div");box.style.cssText="margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)";
+   box.innerHTML='<div style="font-weight:600;margin-bottom:6px">Вход по приглашению</div><div style="font-size:14px;color:var(--muted);margin-bottom:8px">Вставьте сюда ссылку-приглашение (скопируйте её из сообщения руководителя) и нажмите «Подключить».</div><input id="inv-paste" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Вставьте ссылку" style="width:100%;margin-bottom:8px"><button type="button" class="btn primary" id="inv-go" style="width:100%">Подключить</button><div id="inv-err" style="color:var(--bad);font-size:14px;margin-top:6px" hidden></div>';
+   const host=$("status").parentNode;host.insertBefore(box,$("status").nextSibling);
+   $("inv-go").onclick=()=>{const t=($("inv-paste").value||"").trim();const m=/[#&?]i=([A-Za-z0-9]{32})/.exec(t)||/^([A-Za-z0-9]{32})$/.exec(t);const er=$("inv-err");
+     if(!m){er.hidden=false;er.textContent="В тексте нет ссылки-приглашения. Скопируйте всю ссылку из сообщения целиком.";return;}
+     er.hidden=true;location.hash="#i="+m[1];};}
 })();
 window.addEventListener("hashchange",()=>location.reload());
 })();
