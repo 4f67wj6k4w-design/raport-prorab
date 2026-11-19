@@ -44,10 +44,12 @@ body{background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:16px
 .wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:0 96px}
 header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--brand);color:#fff;margin-inline:-16px;padding:10px 16px 0}
 .brandrow{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
-.brandrow img{height:48px;width:auto;flex:0 0 auto;display:block}
+.brandrow img{height:40px;width:auto;flex:0 0 auto;display:block}
 .brandrow .ttl{min-width:0}
-.obj{font-size:16px;font-weight:600;line-height:1.3}
-h1{font-size:20px;margin:2px 0 8px;font-weight:700;text-wrap:balance}
+.obj{font-size:15px;font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.objk{font-size:12.5px;opacity:.85;line-height:1.3;margin-top:1px;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.objk:empty{display:none}
+h1{font-size:18px;margin:4px 0 8px;font-weight:700;text-wrap:balance}
 nav.tabs{display:flex;gap:4px}
 nav.tabs button{flex:1;border:0;background:transparent;color:inherit;font:600 15px var(--f-ui);padding:10px 4px 12px;border-bottom:3px solid transparent;opacity:.75;cursor:pointer}
 nav.tabs button[aria-selected="true"]{opacity:1;border-bottom-color:#fff}
@@ -217,6 +219,7 @@ td.src small{display:block;color:var(--muted);font-size:11px}
       <div class="ttl">
         <div id="mode-pill" class="mode-pill" hidden>Конструктор</div>
         <div class="obj" id="hdr-obj">Рапорт прораба</div>
+        <div class="objk" id="hdr-kind"></div>
         <h1 id="hdr-title">Рапорт прораба</h1>
         <button type="button" class="btn small" id="back-menu" hidden style="margin-top:8px">← Другие объекты</button>
       </div>
@@ -577,7 +580,7 @@ let A=null;
 function startAdmin(cfg){
   document.title="Конструктор рапорта — ГК «КРАШМАШ»";
   $("mode-pill").hidden=false;$("tabs-admin").hidden=false;
-  $("hdr-obj").textContent="Новый объект: виды работ и объёмы";$("hdr-title").textContent="Конструктор рапорта";
+  $("hdr-obj").textContent="Новый объект: виды работ и объёмы";$("hdr-kind").textContent="";$("hdr-title").textContent="Конструктор рапорта";
   $("foot").textContent="Конструктор хранит объекты в этом браузере. Прорабы получают только ссылку.";
   A=cfg||blankCfg();fillAdmin();showA(cfg?"edit":(Object.keys(loadProjects()).length?"list":"edit"));
 }
@@ -724,7 +727,7 @@ function startForm(cfg){
   C=cfg;try{$("tab-haul").style.display=(ZV_URL&&zvTok())?"":"none";setTimeout(zvAuto,1500);}catch(e){}WORKS=(cfg.works||[]).map(w=>Object.assign({k:"w_"+String(w.c).replace(/[^\wА-Яа-яЁё]/g,"_")},w));
   MATS=(cfg.mats&&cfg.mats.length?cfg.mats:DEF_MATS);LKEY="raport2-"+cfg.pid;OKEY="raport2-outbox-"+cfg.pid;
   document.title=(cfg.title||"Рапорт прораба")+" — "+(cfg.name||"");
-  $("hdr-obj").textContent=cfg.name||"";$("hdr-title").textContent=cfg.title||"Рапорт прораба";
+  {const nm=String(cfg.name||""),pp=nm.split(" — "),ad=pp[0].replace(/^г\.\s*Москва,\s*/i,"");$("hdr-obj").textContent=ad;$("hdr-obj").title=nm;$("hdr-kind").textContent=pp.slice(1).join(" — ");}$("hdr-title").textContent=cfg.title||"Рапорт прораба";
   $("tabs-form").hidden=false;$("savebar").hidden=false;
   // разделы
   const sec=cfg.sec||{};const on=k=>sec[k]!==0;
@@ -1143,7 +1146,7 @@ async function zvAuto(){if(!ZV_URL)return;try{
   const key="raport2-zva-"+C.pid;let a=null;try{a=JSON.parse(localStorage.getItem(key)||"null");}catch(e){}
   const same=a&&a.fio===fio;
   if(same&&a.t)return;
-  if(same&&!a.t&&Date.now()-(a.at||0)<3600000)return;
+  if(same&&!a.t&&Date.now()-(a.at||0)<120000)return;
   zvBusy=true;
   const r=await fetch(ZV_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({op:"find",obj:C.pid,fio:fio})});
   const j=await r.json();
@@ -1193,7 +1196,7 @@ async function admHash(pw){const km=await crypto.subtle.importKey("raw",new Text
   const b=await crypto.subtle.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:Uint8Array.from(ADM_SALT.match(/../g),x=>parseInt(x,16)),iterations:200000},km,256);
   return Array.from(new Uint8Array(b),x=>x.toString(16).padStart(2,"0")).join("");}
 function adminLock(go){
-  document.title="Конструктор рапорта — ГК «КРАШМАШ»";$("hdr-title").textContent="Конструктор рапорта";$("hdr-obj").textContent="Вход для руководителя";
+  document.title="Конструктор рапорта — ГК «КРАШМАШ»";$("hdr-title").textContent="Конструктор рапорта";$("hdr-obj").textContent="Вход для руководителя";$("hdr-kind").textContent="";
   const st=$("status");st.hidden=false;st.className="banner";st.innerHTML="";
   const f=document.createElement("form");f.style.cssText="display:flex;flex-wrap:wrap;gap:8px;align-items:center";
   const l=document.createElement("label");l.textContent="Пароль конструктора";l.style.cssText="width:100%;font-weight:600";
@@ -1234,7 +1237,7 @@ async function syncObjects(){
 // ---------- меню объектов руководителя проекта ----------
 function showMenu(arr){
   document.title="Рапорт прораба — выбор объекта";
-  $("hdr-obj").textContent="Выберите объект";$("hdr-title").textContent="Рапорт прораба";
+  $("hdr-obj").textContent="Выберите объект";$("hdr-kind").textContent="";$("hdr-title").textContent="Рапорт прораба";
   const M=$("menu");M.hidden=false;M.innerHTML="";const td=todayISO();
   arr.forEach(c=>{if(!c||!c.pid)return;
     let today=false;try{const r=JSON.parse(sget("raport2-"+c.pid)||"{}")||{};today=Object.keys(r).some(k=>String(k).slice(0,10)===td);}catch(e){}
