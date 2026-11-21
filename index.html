@@ -1285,7 +1285,7 @@ function showMenu(arr){
        if(!arr.length){st.className="banner bad";st.textContent="Вход выполнен, но за вами пока не закреплён ни один объект. Сообщите руководителю.";return;}
        if(arr.length===1){location.replace("#p="+await encodeCfg(arr[0]));location.reload();return;}
        sset("raport2-menu",JSON.stringify(arr));location.replace("#menu");location.reload();return;
-     }catch(e){st.className="banner bad";st.textContent=e&&e.message==="invite"?"Ссылка-приглашение недействительна: она уже использована или просрочена. Попросите у руководителя новую.":"Не удалось подключиться. Проверьте интернет и откройте ссылку ещё раз.";window.__entryBox();return;}
+     }catch(e){if(e&&e.message==="invite"){let t0=null;try{t0=JSON.parse(sget("raport2-tok")||"null");}catch(_){}if(t0&&t0.k){sset("raport2-pids","");const a0=await syncObjects();if(a0&&a0.go){location.replace(a0.go);location.reload();return;}}}st.className="banner bad";st.textContent=e&&e.message==="invite"?"Ссылка-приглашение недействительна: она уже использована или просрочена. Попросите у руководителя новую.":"Не удалось подключиться. Проверьте интернет и откройте ссылку ещё раз.";window.__entryBox();return;}
    }}
   // v2.1: при каждом открытии сверяем список объектов с сервером — администратор мог переставить прораба на другой объект
   {const act=await syncObjects();
