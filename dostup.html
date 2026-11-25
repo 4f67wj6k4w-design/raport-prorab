@@ -68,12 +68,14 @@ pre.inv{white-space:pre-wrap;font:14px/1.5 var(--f-num);background:var(--sunk);b
       <label class="f">Логин (латиницей, 3–30 знаков)<input id="a-login" autocapitalize="none" autocorrect="off" placeholder="например, zharikov"></label>
       <label class="f">Кто это<select id="a-role"></select></label>
       <div id="a-objs-w" hidden><div class="hint" style="margin-top:10px">Объекты этого руководителя (их он видит полностью; остальные — только обзор):</div><div class="objs" id="a-objs"></div></div>
+      <label class="f" id="a-password-wrap">Пароль прораба: 8–64 знака, пусто — сгенерировать<input id="a-password" type="password" autocomplete="new-password" autocapitalize="none" spellcheck="false" placeholder="Свой пароль или оставьте пустым"></label>
+      <div class="hint" id="password-build">Проверяется поддержка назначаемых паролей сервером…</div>
       <div class="acts"><button class="btn primary" id="a-go" type="button">Создать и получить временный пароль</button></div>
       <div id="a-msg" class="msg"></div>
       <div id="a-inv" hidden></div>
     </section>
     <section class="card"><h2>Люди <span id="u-cnt"></span></h2><div id="u-out">Загрузка…</div>
-      <div class="hint">Прорабы входят по одноразовой ссылке-приглашению: пересланная ссылка уже не сработает. Пароль, который человек задал себе сам, никому не виден: сохраняется только его шифр. Если забыл — «Сбросить пароль» выдаст новый временный.</div></section>
+      <div class="hint">Прорабу можно задать пароль без обязательной смены. Выданный пароль показывается только в этой вкладке; в базе хранится хеш. При его замене отключаются старые входы только этого человека. Приглашения сохранены как альтернативный способ входа.</div></section>
     <section class="card"><h2>Журнал действий</h2><div class="hint">Последние 150 событий: входы, рапорты, отказы, действия администратора. Красным — отказы и ошибки входа.</div><div id="log-out" style="overflow:auto;max-height:420px;margin-top:8px">Загрузка…</div></section>
   </div>
 </div>
@@ -83,17 +85,50 @@ pre.inv{white-space:pre-wrap;font:14px/1.5 var(--f-num);background:var(--sunk);b
 const $=id=>document.getElementById(id);
 const el=(t,c,x)=>{const e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e;};
 const A=window.RaportAuth||{};const U=A.u&&A.u();let T=A.token&&A.token();
-const ROLE_NAME={admin:"Администратор",pm:"Руководитель проектов",exec:"Директор",prorab:"Прораб"};const TEMP={},INV={};
-let users=[],objects=[];
+const ROLE_NAME={admin:"Администратор",pm:"Руководитель проектов",exec:"Директор",prorab:"Прораб"};const TEMP={},INV={},ASSIGNED={};
+let users=[],objects=[],passwordReady=false;
 const base=location.origin+location.pathname.replace(/[^\/]*$/,"");
 const pageFor=r=>base+(r==="exec"?"exec.html":r==="admin"?"dostup.html":"director.html");
 function deny(t){const d=$("deny");d.hidden=false;d.textContent=t;}
-async function api(body){body.dev=A.dev;const r=await fetch(U,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body),redirect:"follow"});const j=await r.json();if(j&&j.user&&j.user.temp)TEMP[j.user.login]=j.user.temp;if(j&&j.user&&j.invite){if(!/^https?:/.test(j.invite.link))j.invite.link=base+"index.html#i="+j.invite.code;INV[j.user.login]=j.invite;}return j;}
+async function api(body){body.dev=A.dev;const r=await fetch(U,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify(body),redirect:"follow"});const j=await r.json();
+  if(j&&j.ok&&j.user){const lg=j.user.login;if(j.user.temp)TEMP[lg]=j.user.temp;
+    if(j.passwordMode==="assigned-v1"){ASSIGNED[lg]=true;delete INV[lg];}else if(j.user.must){delete ASSIGNED[lg];}
+    if(j.invite){if(!/^https?:/.test(j.invite.link))j.invite.link=base+"index.html#i="+j.invite.code;INV[lg]=j.invite;}
+  }return j;}
+
 function invText(u,v){return "Рапорт прораба — ГК КРАШМАШ\n"+u.name+", откройте эту ссылку на своём телефоне (один раз, действует до "+v.exp+"):\n"+v.link+"\nПосле открытия добавьте страницу на экран. Ссылку никому не пересылайте — она срабатывает только один раз.";}
 function say(id,t,cls){const m=$(id);m.textContent=t||"";m.className="msg"+(cls?" "+cls:"");}
-const errText={login:"Логин: латиница, цифры, точка, дефис, 3–30 знаков",name:"Укажите имя",role:"Выберите роль",exists:"Такой логин уже есть",nouser:"Человек не найден",self:"Себя отключить нельзя",auth:"Вход устарел, обновите страницу"};
-function invite(u){if(u.role==="prorab")return "Рапорт: "+base+"index.html\nЛогин: "+u.login+"\nВременный пароль: "+(u.temp||TEMP[u.login]||"")+"\nОткройте ссылку, в поле «Или войдите по логину и паролю» введите логин и пароль, затем задайте свой пароль (от 6 знаков).";return "Кабинет: "+pageFor(u.role)+"\nЛогин: "+u.login+"\nВременный пароль: "+(u.temp||TEMP[u.login]||"")+"\nПри первом входе система попросит задать свой пароль.";}
+const errText={pwformat:"Пароль: 8–64 знака, только цифры и/или буквы, без пробелов",weak:"Слишком простой пароль. Выберите другой",inactive:"Сначала включите учётную запись",login:"Логин: латиница, цифры, точка, дефис, 3–30 знаков",name:"Укажите имя",role:"Выберите роль",exists:"Такой логин уже есть",nouser:"Человек не найден",self:"Себя отключить нельзя",auth:"Вход устарел, обновите страницу"};
+function invite(u){if(u.role==="prorab"){
+  if(ASSIGNED[u.login])return "Рапорт: "+base+"index.html\nЛогин: "+u.login+"\nПароль: "+(TEMP[u.login]||u.temp||"")+"\nОткройте ссылку, введите логин и пароль и нажмите «Войти». Менять пароль не нужно. Пароль никому не пересылайте.";
+  return "Рапорт: "+base+"index.html\nЛогин: "+u.login+"\nПопросите администратора назначить пароль кнопкой «Задать пароль».";}
+  return "Кабинет: "+pageFor(u.role)+"\nЛогин: "+u.login+"\nВременный пароль: "+(u.temp||TEMP[u.login]||"")+"\nПри первом входе система попросит задать свой пароль.";}
+
 function copy(txt,btn){try{navigator.clipboard.writeText(txt).then(()=>{const o=btn.textContent;btn.textContent="Скопировано";setTimeout(()=>btn.textContent=o,1500);});}catch(e){}}
+
+function assignedPasswordEditor(u){
+  const panel=el('div','card');panel.hidden=true;
+  panel.appendChild(el('div',null,'Назначить пароль: '+u.name+' ('+u.login+')'));
+  panel.appendChild(el('div','hint','8–64 знака, цифры и/или буквы. Пусто — сгенерировать. Старые входы и неиспользованные приглашения только этого человека будут отозваны.'));
+  const label=el('label','f','Новый пароль'),pw=el('input');pw.type='password';pw.autocomplete='new-password';pw.autocapitalize='none';pw.spellcheck=false;label.appendChild(pw);panel.appendChild(label);
+  const buttons=el('div','acts'),save=el('button','btn primary','Сохранить и получить сообщение'),cancel=el('button','btn','Отмена');save.type='button';cancel.type='button';buttons.appendChild(save);buttons.appendChild(cancel);panel.appendChild(buttons);
+  const msg=el('div','msg');msg.setAttribute('role','status');panel.appendChild(msg);
+  cancel.onclick=()=>{pw.value='';msg.textContent='';panel.hidden=true;};
+  save.onclick=async()=>{
+    if(!passwordReady){msg.textContent='Сначала обновите сервер Apps Script и страницу «Доступы».';return;}
+    if(pw.value&&!/^[0-9A-Za-zА-Яа-яЁё]{8,64}$/.test(pw.value)){msg.textContent=errText.pwformat;return;}
+    if(!confirm('Назначить новый пароль '+u.name+' ('+u.login+')? Его старые сеансы и приглашения перестанут действовать. Остальные сотрудники не затрагиваются.'))return;
+    save.disabled=true;cancel.disabled=true;msg.textContent='';
+    try{const r=await api({a:'usetpw',t:T,login:u.login,password:pw.value});
+      if(!r.ok){msg.textContent=errText[r.error]||'Не удалось назначить пароль.';return;}
+      if(r.passwordMode!=='assigned-v1'){msg.textContent='Неожиданный ответ сервера. Не повторяйте операцию, сообщите администратору.';return;}
+      pw.value='';await load();
+    }catch(e){msg.textContent='Нет подтверждения сервера. Пароль мог уже измениться. Проверьте вход с введённым паролем. Если пароль генерировался, назначьте новый после восстановления связи.';}
+    finally{pw.value='';save.disabled=false;cancel.disabled=false;}
+  };
+  return panel;
+}
+
 function objPicker(box,sel){box.innerHTML="";
   [["msk","Москва"],["reg","Регионы"]].forEach(([rg,title])=>{
     const g=objects.filter(o=>o.region===rg);
@@ -113,10 +148,15 @@ function drawUsers(){
     h.appendChild(tgs);b.appendChild(h);
     u.temp=u.temp||TEMP[u.login]||"";
     if(u.active&&INV[u.login]){const t=el("div","temp");t.appendChild(el("div",null,"Приглашение на телефон (до "+INV[u.login].exp+"):"));t.appendChild(el("code",null,INV[u.login].link));const cp=el("button","btn","Скопировать приглашение");cp.type="button";cp.style.marginLeft="10px";cp.onclick=()=>copy(invText(u,INV[u.login]),cp);t.appendChild(cp);b.appendChild(t);}
-    if(u.active&&u.must&&u.temp){const t=el("div","temp");t.appendChild(document.createTextNode("Временный пароль: "));t.appendChild(el("code",null,u.temp));
+    if(u.active&&u.must&&u.temp&&u.role!=="prorab"){const t=el("div","temp");t.appendChild(document.createTextNode("Временный пароль: "));t.appendChild(el("code",null,u.temp));
       const cp=el("button","btn","Скопировать приглашение");cp.type="button";cp.style.marginLeft="10px";cp.onclick=()=>copy(invite(u),cp);t.appendChild(cp);b.appendChild(t);}
+    if(u.active&&!u.must&&ASSIGNED[u.login]&&TEMP[u.login]){const p=el("div","temp");p.appendChild(el("div",null,"Выданный в этой вкладке пароль (после перезагрузки скрывается):"));p.appendChild(el("code",null,TEMP[u.login]));const cp=el("button","btn","Скопировать сообщение для входа");cp.type="button";cp.onclick=()=>copy(invite(u),cp);p.appendChild(cp);b.appendChild(p);}
     const acts=el("div","acts");
+
+    if(u.role==="prorab"){const editor=assignedPasswordEditor(u),rs=el("button","btn primary","Задать пароль");rs.type="button";rs.disabled=!passwordReady||!u.active;rs.onclick=()=>{editor.hidden=!editor.hidden;};acts.appendChild(rs);b.appendChild(editor);}
+    else{
     const rs=el("button","btn","Сбросить пароль");rs.type="button";rs.onclick=async()=>{if(!confirm("Выдать "+u.name+" новый временный пароль? Старый перестанет работать.")) return;const r=await api({a:"ureset",t:T,login:u.login});if(!r.ok){alert(errText[r.error]||r.error);return;}await load();};acts.appendChild(rs);
+    }
     if(u.role==="prorab"){const iv=el("button","btn primary","Пригласить на телефон");iv.type="button";iv.onclick=async()=>{if(!confirm("Выдать "+u.name+" новую ссылку-приглашение? Прежний телефон отключится, когда человек откроет новую ссылку.")) return;const r=await api({a:"uinvite",t:T,login:u.login});if(!r.ok){alert(errText[r.error]||r.error);return;}drawUsers();};acts.appendChild(iv);}
     const kk=el("button","btn","Выйти на всех устройствах");kk.type="button";kk.onclick=async()=>{if(!confirm("Отключить "+u.name+" на всех телефонах и компьютерах? Войти можно будет заново по паролю или новому приглашению.")) return;const r=await api({a:"ukick",t:T,login:u.login});if(!r.ok){alert(errText[r.error]||r.error);return;}await load();};acts.appendChild(kk);
     const tg=el("button","btn"+(u.active?" danger":""),u.active?"Отключить":"Включить");tg.type="button";tg.onclick=async()=>{const r=await api({a:"utoggle",t:T,login:u.login,active:!u.active});if(!r.ok){alert(errText[r.error]||r.error);return;}await load();};acts.appendChild(tg);
@@ -145,18 +185,22 @@ async function init(){
   if(!U||!T){deny("Войдите по логину и паролю администратора.");return;}
   $("main").hidden=false;
   const sel=$("a-role");["prorab","pm","exec","admin"].forEach(r=>{const o=el("option",null,ROLE_NAME[r]);o.value=r;sel.appendChild(o);});
+  try{const cap=await api({a:"upwinfo",t:T});passwordReady=!!(cap.ok&&cap.assignedPasswords===1&&cap.build==="20261125-3");}catch(e){passwordReady=false;}
+  $("password-build").textContent=passwordReady?"Назначаемые пароли включены. Версия 25.11.2026 / 3.":"Сервер ещё не обновлён или недоступен. Назначение паролей прорабам заблокировано до обновления Apps Script и этой страницы.";
   await loadObjects();objPicker($("a-objs"),[]);
-  const upd=()=>{$("a-objs-w").hidden=sel.value!=="pm"&&sel.value!=="prorab";};sel.onchange=upd;upd();
+  const upd=()=>{$("a-objs-w").hidden=sel.value!=="pm"&&sel.value!=="prorab";$("a-password-wrap").hidden=sel.value!=="prorab";$("a-go").textContent=sel.value==="prorab"?"Создать и получить пароль":"Создать и получить временный пароль";$("a-password").value="";};sel.onchange=upd;upd();
   $("a-go").onclick=async()=>{
     say("a-msg","");const name=$("a-name").value.trim(),login=$("a-login").value.trim().toLowerCase();
     if(!name){say("a-msg","Укажите имя","bad");return;}
     if(!/^[a-z0-9._-]{3,30}$/.test(login)){say("a-msg",errText.login,"bad");return;}
+    if(sel.value==="prorab"&&!passwordReady){say("a-msg","Обновите Apps Script: назначаемые пароли ещё не включены","bad");return;}
+    if(sel.value==="prorab"&&$("a-password").value&&!/^[0-9A-Za-zА-Яа-яЁё]{8,64}$/.test($("a-password").value)){say("a-msg",errText.pwformat,"bad");return;}
     $("a-go").disabled=true;
-    try{const r=await api({a:"uadd",t:T,name:name,login:login,role:sel.value,objs:(sel.value==="pm"||sel.value==="prorab")?picked($("a-objs")):[]});
+    try{const r=await api({a:"uadd",t:T,name:name,login:login,role:sel.value,passwordMode:sel.value==="prorab"?"assigned-v1":undefined,password:sel.value==="prorab"?$("a-password").value:undefined,objs:(sel.value==="pm"||sel.value==="prorab")?picked($("a-objs")):[]});
       if(!r.ok){say("a-msg",errText[r.error]||("Ошибка: "+r.error),"bad");}
       else{say("a-msg","Создано","ok");const inv=$("a-inv");inv.hidden=false;inv.innerHTML="";inv.appendChild(el("div","hint","Отправьте человеку (например, в MAX) — это сообщение уже готово:"));
         const pre=el("pre","inv",invite(r.user));inv.appendChild(pre);const cp=el("button","btn primary","Скопировать");cp.type="button";cp.style.marginTop="8px";cp.onclick=()=>copy(invite(r.user),cp);inv.appendChild(cp);
-        $("a-name").value="";$("a-login").value="";objPicker($("a-objs"),[]);await load();}
+        $("a-name").value="";$("a-login").value="";$("a-password").value="";objPicker($("a-objs"),[]);await load();}
     }catch(e){say("a-msg","Нет связи, повторите","bad");}
     $("a-go").disabled=false;
   };

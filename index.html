@@ -562,6 +562,60 @@ function delProject(pid){const m=loadProjects();delete m[pid];sset(PKEY,JSON.str
 const DBKEY="raport2-db";
 function dbSettings(){try{return JSON.parse(sget(DBKEY)||"null");}catch(e){return null;}}
 const DEVN=(navigator.userAgent||"").replace(/^Mozilla\/5\.0 /,"").slice(0,80);
+
+// Assigned-password login. Build 20261125-3.
+function createAssignedForemanLogin(env){
+  function check(j){if(!j||!j.ok)throw new Error(j&&j.error||'server');return j;}
+  return async function(login,password,pid){
+    login=String(login||'').trim().toLowerCase();if(!login||!password)throw new Error('empty');
+    const a=check(await env.post({a:'login',u:login,p:password}));
+    if(a.role!=='prorab')throw new Error('role');if(a.must)throw new Error('must');
+    if(typeof a.token!=='string'||!a.token)throw new Error('token');
+    const j=check(await env.post({a:'my',t:a.token}));if(!Array.isArray(j.objects))throw new Error('response');
+    const db={u:env.api,k:'tk:'+a.token};
+    const arr=j.objects.filter(o=>o&&o.cfg&&o.cfg.pid&&!o.closed).map(o=>Object.assign({},o.cfg,{db:Object.assign({},db)}));
+    const selected=arr.find(o=>String(o.pid)===String(pid||''))||(arr.length===1?arr[0]:null);
+    const route=selected?'#p='+await env.encode(selected):arr.length?'#menu':'';
+    const values={'raport2-foreman':String(j.name||a.name||''),'raport2-pids':arr.map(o=>o.pid).sort().join(','),'raport2-menu':JSON.stringify(arr.length>1?arr:[]),'raport2-tok':JSON.stringify(db)};
+    const prev={};Object.keys(values).forEach(k=>{prev[k]=env.storage.getItem(k);});
+    try{Object.keys(values).forEach(k=>env.storage.setItem(k,values[k]));}
+    catch(e){Object.keys(prev).forEach(k=>{try{if(prev[k]===null)env.storage.removeItem(k);else env.storage.setItem(k,prev[k]);}catch(ignore){}});throw new Error('storage');}
+    return {route:route,none:!arr.length};
+  };
+}
+async function assignedForemanPost(body){
+  if(!window.KRM_API)throw new Error('config');
+  const ctl=typeof AbortController!=='undefined'?new AbortController():null;
+  const timer=ctl?setTimeout(()=>ctl.abort(),30000):null;
+  try{const opts={method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(Object.assign({},body,{dev:DEVN})),redirect:'follow',cache:'no-store'};if(ctl)opts.signal=ctl.signal;
+    const r=await fetch(window.KRM_API,opts);if(!r.ok)throw new Error('network');
+    try{return await r.json();}catch(e){throw new Error('response');}
+  }catch(e){throw new Error(e.message==='response'?'response':'network');}finally{if(timer)clearTimeout(timer);}
+}
+function assignedForemanError(code){return ({empty:'Введите логин и пароль.',bad:'Неверный логин или пароль. Уточните их у руководителя.',locked:'Вход временно заблокирован. Подождите 15 минут или попросите руководителя назначить новый пароль.',
+  must:'Ещё установлен временный пароль. Попросите руководителя назначить постоянный кнопкой «Задать пароль» в «Доступах». Самостоятельно менять пароль не нужно.',
+  role:'Это вход прораба. Руководителю нужно открыть свой кабинет.',network:'Нет подтверждённого ответа сервера. Проверьте связь и попробуйте позже.',storage:'Не удалось сохранить вход в браузере. Черновики не удалялись.',
+  key:'База не приняла вход. Сообщите руководителю.',auth:'База не приняла вход. Сообщите руководителю.',rate:'Слишком много запросов. Попробуйте позже.',config:'Не настроен сервер. Сообщите руководителю.',response:'Неожиданный ответ сервера. Сообщите руководителю.',token:'Сервер не выдал сеанс. Сообщите руководителю.'})[code]||'Не удалось войти. Сообщите руководителю.';}
+function showAssignedForemanLogin(){
+  if($('assigned-foreman-login'))return;
+  const box=document.createElement('section');box.id='assigned-foreman-login';box.className='card';
+  const title=document.createElement('h2');title.textContent='Вход прораба по логину и паролю';box.appendChild(title);
+  const note=document.createElement('p');note.textContent='Введите логин и пароль, выданные руководителем. Менять пароль не нужно. Используйте свою учётную запись; черновики на устройстве не удаляются.';box.appendChild(note);
+  const form=document.createElement('form');box.appendChild(form);
+  function field(label,type,auto,name){const l=document.createElement('label');l.className='f';l.style.marginTop='10px';l.textContent=label;const i=document.createElement('input');i.type=type;i.autocomplete=auto;i.name=name;i.required=true;i.autocapitalize='none';i.spellcheck=false;l.appendChild(i);form.appendChild(l);return i;}
+  const username=field('Логин','text','username','username'),pw=field('Пароль','password','current-password','password');
+  const go=document.createElement('button');go.type='submit';go.className='btn primary';go.style.marginTop='12px';go.textContent='Войти';form.appendChild(go);
+  const err=document.createElement('div');err.style.cssText='color:var(--bad);margin-top:10px';err.setAttribute('role','alert');form.appendChild(err);let busy=false;
+  form.onsubmit=async e=>{e.preventDefault();if(busy)return;busy=true;go.disabled=true;err.textContent='';
+    try{let pid='';const p=cfgParam(location.hash);if(p){try{pid=(await decodeCfg(p)).pid||'';}catch(ignore){}}
+      const fn=createAssignedForemanLogin({api:window.KRM_API,post:assignedForemanPost,storage:localStorage,encode:encodeCfg});const r=await fn(username.value,pw.value,pid);pw.value='';
+      if(r.none){form.hidden=true;const msg=document.createElement('p');msg.textContent='Вход выполнен, но действующие объекты не назначены. Сообщите руководителю.';box.appendChild(msg);return;}
+      location.replace(r.route);location.reload();
+    }catch(ex){err.textContent=assignedForemanError(ex.message);}finally{pw.value='';busy=false;go.disabled=false;}
+  };
+  $('status').parentNode.insertBefore(box,$('status').nextSibling);
+}
+
 // v2: все запросы — POST, личный токен в теле запроса (не в адресе)
 async function dbGet(db,params){
   const r=await fetch(db.u,{method:"POST",body:JSON.stringify(Object.assign({k:db.k,dev:DEVN},params)),redirect:"follow"});
@@ -778,14 +832,14 @@ function saveAllLocal(){try{localStorage.setItem(LKEY,JSON.stringify(reports));}
 const outbox=()=>{try{return JSON.parse(sget(OKEY)||"[]");}catch(e){return [];}};
 const setOutbox=a=>sset(OKEY,JSON.stringify(Array.from(new Set(a))));
 let syncing=false,linkDead=false;
-const DEAD_MSG="Вход на этом телефоне отключён или просрочен. Попросите у руководителя новое приглашение — сохранённые рапорты не пропадут и отправятся после входа.";
+const DEAD_MSG="База не приняла вход или доступ к объекту. Войдите со своим логином и паролем в форме выше. Черновики на устройстве не удалялись; получение рапорта базой пока не подтверждено.";
 function syncStatus(t,cls){const s=$("status");s.hidden=false;s.className="banner"+(cls?" "+cls:"");s.textContent=t;}
 async function flush(){
   if(!C.db||syncing)return;syncing=true;let sent=0,left=0;
   try{
     for(const id of outbox()){const r=reports[id];if(!r){setOutbox(outbox().filter(x=>x!==id));continue;}
       try{const res=await dbPost(C.db,{a:"save",r:r,cfg:C});if(res==="ok"){setOutbox(outbox().filter(x=>x!==id));}sent++;}
-      catch(e){left++;}}
+      catch(e){left++;if(e&&(e.message==="key"||e.message==="auth")){linkDead=true;syncStatus(DEAD_MSG,"bad");showAssignedForemanLogin();break;}}}
   }finally{syncing=false;}
   return {sent:sent,left:left};
 }
@@ -802,9 +856,10 @@ async function sync(){
   if(!C.db){syncStatus("Рапорты сохраняются только на этом телефоне. После заполнения отправьте рапорт в рабочий чат кнопкой внизу формы.");return;}
   syncStatus("Синхронизация с базой…");
   try{await flush();const total=await pull();const left=outbox().length;
+    linkDead=false;
     syncStatus(left?"В базе: "+total+" рапорт(ов). Не отправлено: "+left+" — отправятся, когда появится связь.":"Синхронизировано с базой: "+total+" рапорт(ов) по объекту от всех прорабов.",left?"":"okb");
     if(!dirty)loadForm();updProg();if(!$("v-sum").hidden)renderSum();if(!$("v-log").hidden)renderLog();if(!$("v-pass").hidden)renderPass();}
-  catch(e){if(e&&e.message==="key"){linkDead=true;syncStatus(DEAD_MSG,"bad");return;}
+  catch(e){if(e&&(e.message==="key"||e.message==="auth")){linkDead=true;syncStatus(DEAD_MSG,"bad");showAssignedForemanLogin();return;}
     syncStatus("Нет связи с базой. Рапорты сохраняются на телефоне и отправятся позже. Не отправлено: "+outbox().length,"");}
 }
 const list=()=>Object.values(reports).filter(r=>r&&r.date&&r.id!==renameFrom);
@@ -1237,6 +1292,7 @@ async function syncObjects(){
     sset("raport2-tok",JSON.stringify(tok));sset("raport2-pids",now);
     sset("raport2-menu",JSON.stringify(arr.length>1?arr:[]));
     if(!arr.length)return {none:1};
+    if(!hp && location.hash!=="#menu" && !menuParam(location.hash))return {go:arr.length>1?"#menu":"#p="+await encodeCfg(arr[0])};
     if(now===prev||!prev)return null;
     if(arr.length>1)return {go:"#menu"};
     return {go:"#p="+await encodeCfg(arr[0])};
@@ -1272,7 +1328,7 @@ function showMenu(arr){
        if(!arr.length){st.className="banner bad";st.textContent="Вход выполнен, но за вами пока не закреплён ни один объект. Сообщите руководителю.";return;}
        if(arr.length===1){location.replace("#p="+await encodeCfg(arr[0]));location.reload();return;}
        sset("raport2-menu",JSON.stringify(arr));location.replace("#menu");location.reload();return;
-     }catch(e){st.className="banner bad";st.textContent=e&&e.message==="invite"?"Ссылка-приглашение недействительна: она уже использована или просрочена. Попросите у руководителя новую.":"Не удалось подключиться. Проверьте интернет и откройте ссылку ещё раз.";return;}
+     }catch(e){st.className="banner bad";st.textContent=e&&e.message==="invite"?"Ссылка-приглашение недействительна: она уже использована или просрочена. Попросите у руководителя новую.":"Не удалось подключиться. Проверьте интернет и откройте ссылку ещё раз.";showAssignedForemanLogin();return;}
    }}
   // v2.1: при каждом открытии сверяем список объектов с сервером — администратор мог переставить прораба на другой объект
   {const act=await syncObjects();
@@ -1293,7 +1349,8 @@ function showMenu(arr){
     return;
   }
   let cfg=null;if(p){try{cfg=await decodeCfg(p);}catch(e){}}
-  {const st=$("status");st.hidden=false;st.className="banner";st.textContent="Откройте личную ссылку-приглашение, которую прислал руководитель. Конструктор в этой версии отключён: объекты и доступы настраивает администратор на странице «Доступы».";}
+  showAssignedForemanLogin();
+  {const st=$("status");st.hidden=false;st.className="banner";st.textContent="Войдите по логину и паролю руководителя или по личному приглашению. Версия входа: 25.11.2026 / 3.";}
   {const box=document.createElement("div");box.style.cssText="margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)";
    box.innerHTML='<div style="font-weight:600;margin-bottom:6px">Вход по приглашению</div><div style="font-size:14px;color:var(--muted);margin-bottom:8px">Вставьте сюда ссылку-приглашение (скопируйте её из сообщения руководителя) и нажмите «Подключить».</div><input id="inv-paste" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Вставьте ссылку" style="width:100%;margin-bottom:8px"><button type="button" class="btn primary" id="inv-go" style="width:100%">Подключить</button><div id="inv-err" style="color:var(--bad);font-size:14px;margin-top:6px" hidden></div>';
    const host=$("status").parentNode;host.insertBefore(box,$("status").nextSibling);

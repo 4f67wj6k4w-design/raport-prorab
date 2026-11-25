@@ -1,6 +1,6 @@
 /* Фоновый модуль приложения ГК КРАШМАШ: хранит страницы, чтобы они открывались без интернета.
    Данные (запросы к серверу Google) НЕ кэшируются — они всегда идут напрямую. */
-var VER = "krm-v2-3-authfix-20261125-1";
+var VER = "krm-v2-3-assigned-20261125-3";
 var SHELL = ["./index.html", "./dsk.html", "./director.html", "./exec.html", "./auth.js", "./pwa.js", "./config.js", "./dostup.html",
   "./tema.css", "./tema.js", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 self.addEventListener("install", function (e) {
