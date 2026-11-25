@@ -570,7 +570,7 @@ async function dbGet(db,params){
 async function dbPost(db,payload){
   const body=JSON.stringify(Object.assign({k:db.k,dev:DEVN},payload));
   let r;try{r=await fetch(db.u,{method:"POST",body:body,redirect:"follow"});}
-  catch(e){try{await fetch(db.u,{method:"POST",body:body,mode:"no-cors"});return "sent";}catch(e2){throw e2;}}
+  catch(e){throw e;} // Keep queued until server confirmation.
   const j=await r.json();if(!j.ok)throw new Error(j.error||"db");return "ok";
 }
 // =====================================================================
@@ -723,6 +723,12 @@ let HL={t:"Вывоз",c:"Перевозчик",tn:0};
 let C=null, WORKS=[], MATS=[], reports={}, shift="D", dirty=false, LKEY="", OKEY="";
 const slug=s=>nrm(s).replace(/[^a-zа-яё0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,30)||"x";
 function startForm(cfg){
+  if(verifiedForemanSession && cfg && cfg.db &&
+     String(cfg.db.u)===String(verifiedForemanSession.u) &&
+     verifiedForemanSession.pids.includes(String(cfg.pid))){
+    cfg=Object.assign({},cfg,{db:{u:verifiedForemanSession.u,k:verifiedForemanSession.k}});
+  }
+
   {const bm=$("back-menu");let ok=false;try{const m=JSON.parse(sget("raport2-menu")||"null");ok=Array.isArray(m)&&m.some(x=>x&&x.pid===cfg.pid);}catch(e){}bm.hidden=!ok;bm.onclick=()=>{location.hash="#menu";};}
   C=cfg;try{$("tab-haul").style.display=(ZV_URL&&zvTok())?"":"none";setTimeout(zvAuto,1500);}catch(e){}WORKS=(cfg.works||[]).map(w=>Object.assign({k:"w_"+String(w.c).replace(/[^\wА-Яа-яЁё]/g,"_")},w));
   MATS=(cfg.mats&&cfg.mats.length?cfg.mats:DEF_MATS);LKEY="raport2-"+cfg.pid;OKEY="raport2-outbox-"+cfg.pid;
@@ -772,7 +778,7 @@ function saveAllLocal(){try{localStorage.setItem(LKEY,JSON.stringify(reports));}
 const outbox=()=>{try{return JSON.parse(sget(OKEY)||"[]");}catch(e){return [];}};
 const setOutbox=a=>sset(OKEY,JSON.stringify(Array.from(new Set(a))));
 let syncing=false,linkDead=false;
-const DEAD_MSG="Вход на этом телефоне устарел: руководитель сбросил пароль или отключил вход. Войдите по логину и паролю в рамке ниже — сохранённые рапорты не пропадут и отправятся сами.";
+const DEAD_MSG="Вход на этом телефоне отключён или просрочен. Попросите у руководителя новое приглашение — сохранённые рапорты не пропадут и отправятся после входа.";
 function syncStatus(t,cls){const s=$("status");s.hidden=false;s.className="banner"+(cls?" "+cls:"");s.textContent=t;}
 async function flush(){
   if(!C.db||syncing)return;syncing=true;let sent=0,left=0;
@@ -798,7 +804,7 @@ async function sync(){
   try{await flush();const total=await pull();const left=outbox().length;
     syncStatus(left?"В базе: "+total+" рапорт(ов). Не отправлено: "+left+" — отправятся, когда появится связь.":"Синхронизировано с базой: "+total+" рапорт(ов) по объекту от всех прорабов.",left?"":"okb");
     if(!dirty)loadForm();updProg();if(!$("v-sum").hidden)renderSum();if(!$("v-log").hidden)renderLog();if(!$("v-pass").hidden)renderPass();}
-  catch(e){if(e&&e.message==="key"){linkDead=true;syncStatus(DEAD_MSG,"bad");if(window.__entryBox)window.__entryBox();return;}
+  catch(e){if(e&&e.message==="key"){linkDead=true;syncStatus(DEAD_MSG,"bad");return;}
     syncStatus("Нет связи с базой. Рапорты сохраняются на телефоне и отправятся позже. Не отправлено: "+outbox().length,"");}
 }
 const list=()=>Object.values(reports).filter(r=>r&&r.date&&r.id!==renameFrom);
@@ -997,7 +1003,7 @@ function persist(o){
   const when=ruDate(o.date)+", "+(o.shift==="D"?"дневная":"ночная")+" смена";
   if(C.db){setOutbox(outbox().concat([o.id]));popup("info","Отправляем рапорт…",when,[],[]);
     flush().then(()=>{const left=outbox().length;
-      if(linkDead){syncStatus(DEAD_MSG,"bad");if(window.__entryBox)window.__entryBox();popup("bad","Нужно войти заново",DEAD_MSG,[],[{t:"Понятно",p:1}]);return;}
+      if(linkDead){syncStatus(DEAD_MSG,"bad");popup("bad","Ссылка не действует",DEAD_MSG,[],[{t:"Понятно",p:1}]);return;}
       syncStatus(left?"Рапорт сохранён на телефоне, в базу отправится при появлении связи (в очереди: "+left+").":"Рапорт записан в базу.",left?"":"okb");
       if(left)popup("warn","Сохранено на телефоне",when+". Связи с базой сейчас нет — рапорт отправится сам, когда появится интернет. Откройте форму ещё раз, когда будет связь.",[],[{t:"Хорошо",p:1}]);
       else popup("ok","Рапорт сохранён",when+". Рапорт записан в базу — руководитель его видит. Исправить можно в любой момент: откройте ту же дату и сохраните снова.",[],[{t:"Готово",p:1}]);}).catch(()=>{popup("warn","Сохранено на телефоне",when+". Отправится в базу, когда появится связь.",[],[{t:"Хорошо",p:1}]);});}
@@ -1212,6 +1218,7 @@ function adminLock(go){
 
 // ---------- v2.1: сверка списка объектов с сервером ----------
 // Возвращает {go:"#…"} (перейти), {none:1} (объектов нет) или null (ничего не менять). Нет связи — работаем с тем, что на телефоне.
+let verifiedForemanSession = null;
 async function syncObjects(){
   try{
     if(/admin/.test(location.hash)||navigator.onLine===false)return null;
@@ -1223,13 +1230,14 @@ async function syncObjects(){
     if(!(tok&&tok.k)||String(tok.k).indexOf("tk:")!==0||!tok.u)return null;
     const j=await Promise.race([dbGet(tok,{a:"my"}),new Promise((_,rj)=>setTimeout(()=>rj(new Error("t")),5000))]);
     const arr=(j.objects||[]).filter(o=>o&&o.cfg&&!o.closed).map(o=>Object.assign(o.cfg,{db:{u:tok.u,k:tok.k}}));
+    verifiedForemanSession={u:tok.u,k:tok.k,pids:arr.map(o=>String(o.pid))};
     const now=arr.map(o=>o.pid).sort().join(",");
     let prev=sget("raport2-pids");
     if(prev===null||prev===undefined||prev===""){prev=Array.isArray(menu)&&menu.length?menu.map(o=>o&&o.pid).filter(Boolean).sort().join(","):curPid;}
     sset("raport2-tok",JSON.stringify(tok));sset("raport2-pids",now);
     sset("raport2-menu",JSON.stringify(arr.length>1?arr:[]));
     if(!arr.length)return {none:1};
-    if(now===prev)return null;if(!prev&&hp)return null;
+    if(now===prev||!prev)return null;
     if(arr.length>1)return {go:"#menu"};
     return {go:"#p="+await encodeCfg(arr[0])};
   }catch(e){return null;}
@@ -1250,29 +1258,7 @@ function showMenu(arr){
 }
 // ---------- запуск ----------
 (async function(){
-  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
   bindAdmin();
-  window.__entryBox=()=>{if($("inv-paste"))return;const box=document.createElement("div");box.style.cssText="margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)";
-   box.innerHTML='<div style="font-weight:600;margin-bottom:6px">Вход по приглашению</div><div style="font-size:14px;color:var(--muted);margin-bottom:8px">Вставьте сюда ссылку-приглашение (скопируйте её из сообщения руководителя) и нажмите «Подключить».</div><input id="inv-paste" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Вставьте ссылку" style="width:100%;margin-bottom:8px"><button type="button" class="btn primary" id="inv-go" style="width:100%">Подключить</button><div id="inv-err" style="color:var(--bad);font-size:14px;margin-top:6px" hidden></div><hr style="border:0;border-top:1px solid var(--line);margin:16px 0"><div style="font-weight:600;margin-bottom:6px">Или войдите по логину и паролю</div><div style="font-size:14px;color:var(--muted);margin-bottom:8px">Логин и временный пароль вам выдаст руководитель. При первом входе система попросит придумать свой пароль.</div><input id="lg-u" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="Логин" style="width:100%;margin-bottom:8px"><input id="lg-p" type="password" autocomplete="current-password" placeholder="Пароль" style="width:100%;margin-bottom:8px"><div id="lg-new" hidden><input id="lg-n1" type="password" autocomplete="new-password" placeholder="Новый пароль (от 6 знаков)" style="width:100%;margin-bottom:8px"><input id="lg-n2" type="password" autocomplete="new-password" placeholder="Повторите новый пароль" style="width:100%;margin-bottom:8px"></div><button type="button" class="btn primary" id="lg-go" style="width:100%">Войти</button><div id="lg-err" style="color:var(--bad);font-size:14px;margin-top:6px" hidden></div>';
-   const host=$("status").parentNode;host.insertBefore(box,$("status").nextSibling);
-   $("inv-go").onclick=()=>{const t=($("inv-paste").value||"").trim();const m=/[#&?]i=([A-Za-z0-9]{32})/.exec(t)||/^([A-Za-z0-9]{32})$/.exec(t);const er=$("inv-err");
-     if(!m){er.hidden=false;er.textContent="В тексте нет ссылки-приглашения. Скопируйте всю ссылку из сообщения целиком.";return;}
-     er.hidden=true;location.hash="#i="+m[1];};
-   $("lg-go").onclick=async()=>{const er=$("lg-err"),go=$("lg-go"),API=window.KRM_API;er.hidden=true;
-     const bad=t=>{er.hidden=false;er.textContent=t;go.disabled=false;};
-     const u=$("lg-u").value.trim().toLowerCase(),p=$("lg-p").value;if(!u||!p){bad("Введите логин и пароль.");return;}
-     go.disabled=true;
-     try{let tok=window.__lgTok;
-       if(!tok){const r=await fetch(API,{method:"POST",body:JSON.stringify({a:"login",u:u,p:p,dev:DEVN}),redirect:"follow"});const j=await r.json();
-         if(!j.ok){bad(j.error==="locked"?"Слишком много попыток. Подождите 15 минут.":"Неверный логин или пароль.");return;}
-         if(j.must){window.__lgTok=j.token;$("lg-new").hidden=false;bad("Придумайте свой пароль: от 6 знаков, цифры и/или буквы, и нажмите «Войти» ещё раз.");return;}
-         tok=j.token;}
-       else{const n1=$("lg-n1").value,n2=$("lg-n2").value;if(n1!==n2){bad("Новые пароли не совпадают.");return;}
-         const r=await fetch(API,{method:"POST",body:JSON.stringify({a:"chpass",t:tok,p:n1,dev:DEVN}),redirect:"follow"});const j=await r.json();
-         if(!j.ok){bad(j.error==="short"?"Пароль: от 6 знаков, только цифры и буквы.":j.error==="weak"?"Слишком простой пароль (123456, 111111 и т. п.). Придумайте другой.":"Не получилось. Попробуйте ещё раз.");return;}
-         tok=j.token;}
-       sset("raport2-tok",JSON.stringify({u:API,k:"tk:"+tok}));sset("raport2-pids","");try{history.replaceState(null,"",location.pathname);}catch(e){}location.reload();
-     }catch(e){bad("Нет связи. Повторите.");}};};
   // v2: одноразовое приглашение #i=КОД — обменять на личный вход этого телефона
   {const im=/[#&]i=([A-Za-z0-9]{32})/.exec(location.hash||"");
    if(im){try{history.replaceState(null,"",location.pathname);}catch(e){}
@@ -1286,7 +1272,7 @@ function showMenu(arr){
        if(!arr.length){st.className="banner bad";st.textContent="Вход выполнен, но за вами пока не закреплён ни один объект. Сообщите руководителю.";return;}
        if(arr.length===1){location.replace("#p="+await encodeCfg(arr[0]));location.reload();return;}
        sset("raport2-menu",JSON.stringify(arr));location.replace("#menu");location.reload();return;
-     }catch(e){if(e&&e.message==="invite"){let t0=null;try{t0=JSON.parse(sget("raport2-tok")||"null");}catch(_){}if(t0&&t0.k){sset("raport2-pids","");const a0=await syncObjects();if(a0&&a0.go){location.replace(a0.go);location.reload();return;}}}st.className="banner bad";st.textContent=e&&e.message==="invite"?"Ссылка-приглашение недействительна: она уже использована или просрочена. Попросите у руководителя новую.":"Не удалось подключиться. Проверьте интернет и откройте ссылку ещё раз.";window.__entryBox();return;}
+     }catch(e){st.className="banner bad";st.textContent=e&&e.message==="invite"?"Ссылка-приглашение недействительна: она уже использована или просрочена. Попросите у руководителя новую.":"Не удалось подключиться. Проверьте интернет и откройте ссылку ещё раз.";return;}
    }}
   // v2.1: при каждом открытии сверяем список объектов с сервером — администратор мог переставить прораба на другой объект
   {const act=await syncObjects();
@@ -1308,7 +1294,12 @@ function showMenu(arr){
   }
   let cfg=null;if(p){try{cfg=await decodeCfg(p);}catch(e){}}
   {const st=$("status");st.hidden=false;st.className="banner";st.textContent="Откройте личную ссылку-приглашение, которую прислал руководитель. Конструктор в этой версии отключён: объекты и доступы настраивает администратор на странице «Доступы».";}
-  window.__entryBox();
+  {const box=document.createElement("div");box.style.cssText="margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--surface)";
+   box.innerHTML='<div style="font-weight:600;margin-bottom:6px">Вход по приглашению</div><div style="font-size:14px;color:var(--muted);margin-bottom:8px">Вставьте сюда ссылку-приглашение (скопируйте её из сообщения руководителя) и нажмите «Подключить».</div><input id="inv-paste" type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Вставьте ссылку" style="width:100%;margin-bottom:8px"><button type="button" class="btn primary" id="inv-go" style="width:100%">Подключить</button><div id="inv-err" style="color:var(--bad);font-size:14px;margin-top:6px" hidden></div>';
+   const host=$("status").parentNode;host.insertBefore(box,$("status").nextSibling);
+   $("inv-go").onclick=()=>{const t=($("inv-paste").value||"").trim();const m=/[#&?]i=([A-Za-z0-9]{32})/.exec(t)||/^([A-Za-z0-9]{32})$/.exec(t);const er=$("inv-err");
+     if(!m){er.hidden=false;er.textContent="В тексте нет ссылки-приглашения. Скопируйте всю ссылку из сообщения целиком.";return;}
+     er.hidden=true;location.hash="#i="+m[1];};}
 })();
 window.addEventListener("hashchange",()=>location.reload());
 })();
