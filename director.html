@@ -155,6 +155,50 @@ table.mt tr.tot td{font-weight:700;border-top:2px solid var(--line)}
 </style>
 <link rel="stylesheet" href="tema.css">
 <script src="tema.js"></script>
+<style>
+
+/* Passport readability, build 20261125-4. Scoped to project cards. */
+.grid2>.ob{scroll-margin-top:165px}
+.grid2>.ob.ob-expanded{grid-column:1 / -1;min-width:0;padding:20px;border:2px solid var(--accent)}
+.ob.ob-expanded .ob-h b{font-size:20px;line-height:1.4}
+.ob.ob-expanded .ob-s,.ob.ob-expanded .sch{font-size:14px;line-height:1.5}
+.ob.ob-expanded .compact-only{display:none}
+.passport-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0}
+.passport-heading{font-size:17px;font-weight:600;margin:0}
+.passport-help{font-size:14px;color:var(--muted);margin:8px 0;line-height:1.5}
+.passport-info{margin:14px 0;padding:12px 14px;border:1px solid var(--line);border-radius:8px;background:var(--sunk)}
+.passport-info>div+div{margin-top:6px}
+.passport-tablewrap{overflow-x:auto;margin:12px 0 18px;max-width:100%}
+table.passport-table{width:100%;font-size:15px;line-height:1.45}
+table.passport-table th{font-size:12px;white-space:normal;text-align:right;padding:12px 8px;background:var(--sunk);color:var(--fg);vertical-align:bottom;letter-spacing:0;text-transform:none}
+table.passport-table td{padding:13px 8px;vertical-align:top}
+table.passport-table td:first-child,table.passport-table th:first-child{text-align:left;white-space:normal;width:28%;min-width:170px}
+table.passport-table .work-name{font-size:16px;font-weight:500;overflow-wrap:anywhere}
+table.passport-table .work-note{font-size:12px;color:var(--muted);margin-top:4px}
+table.passport-table td.n{font-size:15px}
+table.passport-table tbody tr:nth-child(even){background:var(--sunk)}
+table.passport-table .bar{height:7px;min-width:50px}
+.ob.ob-expanded .vtt{font-size:15px;font-weight:600;color:var(--fg);margin-top:16px}
+.ob.ob-expanded .vt{font-size:15px}
+.ob.ob-expanded .vt td,.ob.ob-expanded .vt th{padding:10px 8px}
+.ob.ob-expanded .vt td:first-child{min-width:180px;overflow-wrap:anywhere}
+.passport-end{display:flex;justify-content:flex-end;margin-top:12px}
+@media(max-width:700px){
+ .grid2>.ob.ob-expanded{padding:14px 12px}
+ .ob.ob-expanded .ob-h{flex-wrap:wrap}
+ .ob.ob-expanded .ob-h b{font-size:18px}
+ table.passport-table,table.passport-table tbody,table.passport-table tr,table.passport-table td{display:block;width:auto;min-width:0}
+ table.passport-table thead{display:none}
+ table.passport-table tr{border:1px solid var(--line);border-radius:10px;margin:12px 0;padding:10px 12px}
+ table.passport-table td,table.passport-table td:first-child{width:auto;min-width:0;border:0;padding:6px 0;text-align:right;white-space:normal;overflow-wrap:anywhere}
+ table.passport-table td:first-child{text-align:left;border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:5px}
+ table.passport-table td[data-label]:before{content:attr(data-label);float:left;font-family:var(--f-ui);font-size:14px;color:var(--muted);text-align:left;margin-right:14px}
+ table.passport-table td:after{content:"";display:block;clear:both}
+ table.passport-table .work-name{font-size:17px}
+ .passport-actions .btn{min-height:44px}
+}
+
+</style>
 </head>
 <body>
 <div class="wrap">
@@ -340,9 +384,9 @@ function pw(w,tp){
   if(w.t&&!w.ro&&tp!=null){const ex=w.t*tp/100;add("по сроку",fmt(ex));if(w.done<ex-0.05*w.t)add("отставание",fmt(ex-w.done),true);}
   e.appendChild(pv);if(w.t){const bar=el("div","bar");const i=el("i");i.style.width=Math.min(100,w.done/w.t*100)+"%";bar.appendChild(i);e.appendChild(bar);}
   return e;}
-function vols(o){
+function vols(o,all){
   const ws=o.works.filter(w=>w.vd!=null||w.vw!=null||w.vm!=null);if(!ws.length)return null;
-  const rows=ws.filter(w=>(w.vd||0)||(w.vw||0)||(w.vm||0)).sort((a,b)=>(b.vm||0)-(a.vm||0)).slice(0,6);
+  let rows=ws.filter(w=>(w.vd||0)||(w.vw||0)||(w.vm||0)).sort((a,b)=>(b.vm||0)-(a.vm||0));if(!all)rows=rows.slice(0,6);
   const box=el("div");box.appendChild(el("div","vtt","Выполнено: день · неделя (7 дней) · месяц"));
   if(!rows.length){box.appendChild(el("div","ob-s","За выбранные день, неделю и месяц объёмов нет"));return box;}
   const wrap=el("div","tablewrap"),t=el("table","vt"),hd=el("tr");["Работа","День","Неделя","Месяц"].forEach(x=>hd.appendChild(el("th",null,x)));t.appendChild(hd);
@@ -352,9 +396,32 @@ function schedTag(S){
   if(S.kind==="none")return null;
   const t={ok:["ok","по графику"+(S.lag<-0.5?" ("+fmt(S.lag,0)+" п.п.)":"")],warn:["warn","отставание "+fmt(-S.lag,0)+" п.п."],bad:["bad","отстаёт от графика на "+fmt(-S.lag,0)+" п.п."],over:["bad","срок истёк "+S.over+" дн."],full:["ok","план выполнен"]}[S.kind];
   return el("span","tg "+t[0],t[1]);}
+
+function passportWorkTable(works,tp,isExtra){
+  const wrap=el("div","passport-tablewrap"),table=el("table","passport-table");
+  table.setAttribute("aria-label",isExtra?"Дополнительные работы: итог за всё время":"Паспорт работ: итог за всё время");
+  const labels=["Работа","Ед.","План","Выполнено всего","Остаток","Выполнение","По сроку","Отставание"];
+  const thead=el("thead"),head=el("tr");labels.forEach(x=>{const th=el("th",null,x);th.setAttribute("scope","col");head.appendChild(th);});thead.appendChild(head);table.appendChild(thead);
+  const tbody=el("tbody");
+  works.forEach(w=>{
+    const tr=el("tr"),name=el("td"),title=el("div","work-name",w.n||"Без названия");name.appendChild(title);
+    const note=[];if(w.c)note.push(w.c);if(w.ro)note.push("справочно");else if(w.auto)note.push("считается автоматически");
+    if(note.length)name.appendChild(el("div","work-note",note.join(" · ")));tr.appendChild(name);
+    const plan=!!w.t,done=w.done,expected=plan&&!w.ro&&tp!=null?w.t*tp/100:null;
+    const lag=expected!=null&&done<expected-0.05*w.t?expected-done:null;
+    const values=[w.u||"—",plan?fmt(w.t):"Не задан",fmt(done),plan?fmt(Math.max(0,w.t-done)):"—",plan?fmt(done/w.t*100,1)+"%":"—",expected==null?"—":fmt(expected),lag==null?"—":fmt(lag)];
+    values.forEach((v,i)=>{const td=el("td",i===0?null:"n",v);td.setAttribute("data-label",labels[i+1]);
+      if((i===2&&plan&&done>w.t)||(i===6&&lag!=null))td.className+=" bad";
+      if(i===4&&plan){const bar=el("div","bar"),fill=el("i");fill.style.width=Math.min(100,done/w.t*100)+"%";bar.appendChild(fill);td.appendChild(bar);}
+      tr.appendChild(td);
+    });tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);wrap.appendChild(table);return wrap;
+}
+
 function draw(o){
   const M=o.M,S=o.S,done=M.status==="done",wait=M.status==="wait";
-  const b=el("div","ob");const hd=el("div","ob-h");const t=el("div");t.appendChild(el("b",null,o.name));
+  const b=el("div",open[o.pid]?"ob ob-expanded":"ob");const hd=el("div","ob-h");const t=el("div");t.appendChild(el("b",null,o.name));
   t.appendChild(el("div","ob-s",o.last?"последний рапорт: "+ru(o.last.date)+", "+(o.last.shift==="N"?"ночь":"день")+(o.last.foreman?" — "+o.last.foreman:""):"рапортов пока нет"));hd.appendChild(t);
   hd.appendChild(el("span","st "+(done||wait?"":(o.today?"ok":(o.active?"no":""))),done?"завершён":wait?"ожидает старта":(o.today?"рапорт есть":(o.active?"нет рапорта":"нет рапортов 7 дн."))));b.appendChild(hd);
   const tags=el("div","tags");tags.appendChild(el("span","tg",M.region==="msk"?"Москва":"Регион"));
@@ -367,18 +434,26 @@ function draw(o){
   if(o.masked){b.appendChild(el("div","ob-s","Объект другого руководителя: доступен только обзор."));return b;}
   const tp=S.kind==="none"?null:S.tp;
   if(!done&&!wait){
-    const vv=vols(o);if(vv)b.appendChild(vv);
+    const vv=vols(o);if(vv){vv.className="compact-only";b.appendChild(vv);}
     let planned=o.works.filter(w=>w.t&&!w.ro&&w.done<w.t);
     planned=tp!=null?planned.sort((a,c)=>(c.t*tp/100-c.done)/c.t-(a.t*tp/100-a.done)/a.t):planned.sort((a,c)=>(c.done/c.t)-(a.done/a.t));
-    const top=el("div","top3");planned.slice(0,3).forEach(w=>top.appendChild(pw(w,tp)));if(top.children.length)b.appendChild(top);
+    const top=el("div","top3 compact-only");planned.slice(0,3).forEach(w=>top.appendChild(pw(w,tp)));if(top.children.length)b.appendChild(top);
   }
-  const full=el("div");full.hidden=!open[o.pid];
-  (o.info||[]).forEach(s=>full.appendChild(el("div","ob-s",s)));
-  o.works.forEach(w=>full.appendChild(pw(w,tp)));
-  if(o.extra&&o.extra.length){full.appendChild(el("div","grp","Новые работы объекта"));o.extra.forEach(x=>full.appendChild(pw({c:"",n:x.n,u:x.u,t:0,done:x.v})));}
+  const full=el("div","passport-full");full.hidden=!open[o.pid];
+  const actions=el("div","passport-actions");actions.appendChild(el("h3","passport-heading","Паспорт объекта"));
+  const topButton=el("button","btn small","Свернуть паспорт");topButton.type="button";actions.appendChild(topButton);full.appendChild(actions);
+  if(o.info&&o.info.length){const info=el("div","passport-info");info.appendChild(el("div","passport-heading","Сведения и примечания"));(o.info||[]).forEach(x=>info.appendChild(el("div","ob-s",x)));full.appendChild(info);}
+  if(!done&&!wait){const v=vols(o,true);if(v)full.appendChild(v);}
+  full.appendChild(el("h3","passport-heading","Итоги по работам за всё время"));
+  full.appendChild(el("div","passport-help","Здесь накопительный итог, не только объём за выбранный день. «По сроку» — расчёт по существующему графику. Если план не задан, остаток и процент не рассчитываются."));
+  if(o.works.length)full.appendChild(passportWorkTable(o.works,tp,false));else full.appendChild(el("div","empty","Работы в паспорте не заданы."));
+  if(o.extra&&o.extra.length){full.appendChild(el("h3","passport-heading","Дополнительные работы из рапортов"));full.appendChild(passportWorkTable(o.extra.map(x=>({c:"",n:x.n,u:x.u,t:0,done:x.v})),null,true));}
+  const end=el("div","passport-end"),bottomButton=el("button","btn small","Свернуть паспорт");bottomButton.type="button";end.appendChild(bottomButton);full.appendChild(end);
   b.appendChild(full);
-  const btn=el("button","btn small more",open[o.pid]?"Свернуть паспорт":"Весь паспорт объекта");btn.type="button";
-  btn.onclick=()=>{open[o.pid]=!open[o.pid];full.hidden=!open[o.pid];btn.textContent=open[o.pid]?"Свернуть паспорт":"Весь паспорт объекта";};
+  const btn=el("button","btn small more","Весь паспорт объекта");btn.type="button";btn.hidden=!!open[o.pid];btn.setAttribute("aria-expanded",String(!!open[o.pid]));
+  const toggle=()=>{open[o.pid]=!open[o.pid];const expanded=!!open[o.pid];b.className=expanded?"ob ob-expanded":"ob";full.hidden=!expanded;btn.hidden=expanded;btn.setAttribute("aria-expanded",String(expanded));
+    if(!expanded){btn.focus({preventScroll:true});}const reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;b.scrollIntoView({block:"start",behavior:reduced?"auto":"smooth"});};
+  btn.onclick=toggle;topButton.onclick=toggle;bottomButton.onclick=toggle;
   b.appendChild(btn);return b;}
 const rank=o=>o.M.status==="wait"?3:(!o.active?2:(["bad","over"].includes(o.S.kind)?0:1));
 function renderObjects(){
